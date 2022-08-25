@@ -3,4 +3,4 @@
  (inline_tests)
  (libraries lib core)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane ppx_deriving.ord)))

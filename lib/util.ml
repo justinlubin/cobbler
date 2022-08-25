@@ -1,6 +1,7 @@
 open Core
 
-let dedup_by xs ~f =
+let dedup_by : 'a. 'a list -> f:('a -> 'a -> bool) -> 'a list =
+ fun xs ~f ->
   let rec dedup_by' acc = function
     | [] -> List.rev acc
     | hd :: tl ->

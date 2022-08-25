@@ -1,3 +1,3 @@
 open Lang
 
-let synthesize lib e = failwith "TODO"
+let synthesize : library -> exp -> exp option = fun lib e -> failwith "TODO"

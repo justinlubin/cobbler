@@ -10,7 +10,7 @@ module Calc = struct
     | Plus of exp * exp
     | Times of exp * exp
     | IfNonNeg of exp * exp * exp
-  [@@deriving sexp, quickcheck]
+  [@@deriving sexp, quickcheck, ord]
 
   let rec eval (input : int) (e : exp) : int =
     match e with
@@ -53,39 +53,22 @@ module Calc = struct
 
   let enumerate (examples : (int * int) list) : exp option =
     Lib.Enumerate.search
-      ~max_iterations:3
+      ~max_iterations:2
+      ~terminals:[ Zero; One; In ]
       ~grow
       ~prune:(prune_obs_eq (List.map ~f:fst examples))
       ~is_correct:(satisfies_examples examples)
 
   module Test = struct
-    let reasonable_num = Int.gen_incl (-9) 9
+    let%test_unit "basic calculator example 1" =
+      [%test_eq: exp option] (enumerate [ 0, 1; 4, 5 ]) (Some (Plus (One, In)))
 
-    let reasonable_examples =
-      Quickcheck.Generator.list
-        (Quickcheck.Generator.both reasonable_num reasonable_num)
+    let%test_unit "basic calculator example 2" =
+      [%test_eq: exp option] (enumerate [ 0, 0; 0, 1 ]) None
 
-    let%test_unit "calculator enumeration sound" =
-      Quickcheck.test
-        ~sexp_of:[%sexp_of: (int * int) list]
-        reasonable_examples
-        ~f:(fun examples ->
-          match enumerate examples with
-          | None -> ()
-          | Some prog -> [%test_pred: exp] (satisfies_examples examples) prog)
-
-    let%test_unit "random calculator program can be synthesized" =
-      Quickcheck.test
-        ~sexp_of:[%sexp_of: exp]
-        [%quickcheck.generator: exp]
-        ~f:(fun reference_prog ->
-          let examples =
-            List.map
-              ~f:(fun i -> i, eval i reference_prog)
-              (List.range ~start:`inclusive ~stop:`inclusive (-5) 5)
-          in
-          match enumerate examples with
-          | None -> failwith "Failed to synthesize a program for examples"
-          | Some prog -> ())
+    let%test_unit "basic calculator example 3" =
+      [%test_eq: exp option]
+        (enumerate [ 2, 5; 3, 10; 4, 17 ])
+        (Some (Plus (One, Times (In, In))))
   end
 end
