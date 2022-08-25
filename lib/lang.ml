@@ -6,19 +6,16 @@
 
 open Base
 
-(* TODO: need to expand this definition *)
-
-(** Patterns *)
-type pat = PVar of string
-
-(* TODO: need to expand this definition *)
+type branch = string * (string * exp)
 
 (** Expressions *)
-type exp =
+and exp =
   | EVar of string
   | EApp of exp * exp
   | EAbs of string * exp
+  | EMatch of exp * branch list
+  | ECtor of string * exp
 [@@deriving sexp, ord]
 
-(** A library of expressions *)
-type library = (string, exp, String.comparator_witness) Map.t
+(** A environment of expressions *)
+type env = (string, exp, String.comparator_witness) Map.t

@@ -10,9 +10,9 @@
 
 open Lang
 
-(** [inline lib e] inlines all library expressions defined in [lib] into the
-    expression [e]. *)
-val inline : library -> exp -> exp
+(** [inline lib e] inlines all expressions defined in [env] into the expression
+    [e]. *)
+val inline : env -> exp -> exp
 
 (** [partially_evaluate_cases e] simplifies all case expressions in [e] whose
     scrutinee is a constructor literal. *)
@@ -22,6 +22,6 @@ val partially_evaluate_cases : exp -> exp
     no case expressions in [e] whose scrutinee is itself a case expression. *)
 val pull_out_cases : exp -> exp
 
-(** [all lib e] runs the entire normalization pipeline on [e] using the library
-    [lib]. *)
-val full : library -> exp -> exp
+(** [all env e] runs the entire normalization pipeline on [e] using the
+    environment [env]. *)
+val full : env -> exp -> exp

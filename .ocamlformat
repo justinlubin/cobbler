@@ -1,5 +1,6 @@
 profile = janestreet
 # version = 0.22.4
 let-binding-spacing = compact
+parens-tuple=always
 cases-exp-indent = 4
 margin=80

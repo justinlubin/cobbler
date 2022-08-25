@@ -61,14 +61,16 @@ module Calc = struct
 
   module Test = struct
     let%test_unit "basic calculator example 1" =
-      [%test_eq: exp option] (enumerate [ 0, 1; 4, 5 ]) (Some (Plus (One, In)))
+      [%test_eq: exp option]
+        (enumerate [ (0, 1); (4, 5) ])
+        (Some (Plus (One, In)))
 
     let%test_unit "basic calculator example 2" =
-      [%test_eq: exp option] (enumerate [ 0, 0; 0, 1 ]) None
+      [%test_eq: exp option] (enumerate [ (0, 0); (0, 1) ]) None
 
     let%test_unit "basic calculator example 3" =
       [%test_eq: exp option]
-        (enumerate [ 2, 5; 3, 10; 4, 17 ])
+        (enumerate [ (2, 5); (3, 10); (4, 17) ])
         (Some (Plus (One, Times (In, In))))
   end
 end
