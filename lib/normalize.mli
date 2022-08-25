@@ -10,7 +10,7 @@
 
 open Lang
 
-(** [inline lib e] inlines all library functions defined in [lib] into the
+(** [inline lib e] inlines all library expressions defined in [lib] into the
     expression [e]. *)
 val inline : library -> exp -> exp
 

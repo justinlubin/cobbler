@@ -17,6 +17,8 @@ type pat = PVar of string
 type exp =
   | EVar of string
   | EApp of exp * exp
+  | EAbs of string * exp
+[@@deriving sexp, ord]
 
 (** A library of expressions *)
 type library = (string, exp, String.comparator_witness) Map.t
