@@ -1,0 +1,5 @@
+profile = janestreet
+# version = 0.22.4
+let-binding-spacing = compact
+cases-exp-indent = 4
+margin=80
