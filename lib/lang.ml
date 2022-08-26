@@ -6,16 +6,24 @@
 
 open Base
 
-type branch = string * (string * exp)
+(** Expression identifiers *)
+type id = string
+
+(** Constructor tags (names) *)
+and tag = string
+
+(** Case branches *)
+and branch = tag * (id * exp)
 
 (** Expressions *)
 and exp =
-  | EVar of string
-  | EApp of exp * exp
-  | EAbs of string * exp
+  | EVar of id
+  | EApp of exp * exp list
+  | EAbs of id list * exp
   | EMatch of exp * branch list
-  | ECtor of string * exp
+  | ECtor of tag * exp
 [@@deriving sexp, ord]
 
-(** A environment of expressions *)
-type env = (string, exp, String.comparator_witness) Map.t
+(** A library of expressions; identifiers map to pairs of parameter names and
+    right-hand sides *)
+type library = (id, id list * exp, String.comparator_witness) Map.t
