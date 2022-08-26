@@ -18,12 +18,11 @@ and branch = tag * (id * exp)
 (** Expressions *)
 and exp =
   | EVar of id
-  | EApp of exp * exp list
-  | EAbs of id list * exp
+  | EApp of exp * exp
+  | EAbs of id * exp
   | EMatch of exp * branch list
   | ECtor of tag * exp
 [@@deriving sexp, ord]
 
-(** A library of expressions; identifiers map to pairs of parameter names and
-    right-hand sides *)
-type library = (id, id list * exp, String.comparator_witness) Map.t
+(** An environment of expressions *)
+type env = (id, exp, String.comparator_witness) Map.t

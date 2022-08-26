@@ -1,7 +1,6 @@
 open Lang
 
-(** [synthesize lib e] tries to find an expression [e'] that is
+(** [synthesize env e] tries to find an expression [e'] that is
     + semantically equivalent to [e], and
-    + defined solely in terms of compositions of combinators from the library
-      [lib] (and constants). *)
-val synthesize : library -> exp -> exp option
+    + defined in terms expressions from the environment [env]. *)
+val synthesize : env -> exp -> exp option
