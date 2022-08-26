@@ -22,7 +22,7 @@ and exp =
   | EAbs of id * exp
   | EMatch of exp * branch list
   | ECtor of tag * exp
-[@@deriving sexp, ord]
+[@@deriving sexp, ord, eq]
 
 (** An environment of expressions *)
 type env = (id, exp, String.comparator_witness) Map.t

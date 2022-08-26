@@ -20,7 +20,7 @@ deps:
 
 .PHONY: dev-deps
 dev-deps:
-	opam install utop ocamlformat ocaml-lsp-server
+	opam install utop ocamlformat.0.22.4 ocaml-lsp-server sexp
 
 .PHONY: fmt
 fmt:
