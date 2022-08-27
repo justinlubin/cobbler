@@ -2,20 +2,26 @@ open Core
 open Lib
 open Lang
 
-let%test "substitute 1" =
-  Lang_util.alpha_equivalent
+let%test_unit "substitute 1" =
+  [%test_result: exp]
+    ~equal:Lang_util.alpha_equivalent
     (Lang_util.substitute ("x", EVar "y") (EAbs ("x", EVar "x")))
-    (EAbs ("x", EVar "x"))
+    ~expect:(EAbs ("x", EVar "x"))
 
-let%test "substitute 2" =
-  Lang_util.alpha_equivalent
+let%test_unit "substitute 2" =
+  [%test_result: exp]
+    ~equal:Lang_util.alpha_equivalent
     (Lang_util.substitute ("z", EVar "x") (EAbs ("x", EVar "z")))
-    (EAbs ("__var0", EVar "x"))
+    ~expect:(EAbs ("__var0", EVar "x"))
 
-let%test "substitute 3" =
-  Lang_util.alpha_equivalent
+let%test_unit "substitute 3" =
+  [%test_result: exp]
+    ~equal:Lang_util.alpha_equivalent
     (Lang_util.substitute ("x", EVar "y") (EAbs ("x", EVar "x")))
-    (EAbs ("x", EVar "x"))
+    ~expect:(EAbs ("x", EVar "x"))
 
-let%test "alpha equivalent 1" =
-  Lang_util.alpha_equivalent (EAbs ("x", EVar "x")) (EAbs ("y", EVar "y"))
+let%test_unit "alpha equivalent 1" =
+  [%test_result: exp]
+    ~equal:Lang_util.alpha_equivalent
+    (EAbs ("x", EVar "x"))
+    ~expect:(EAbs ("y", EVar "y"))
