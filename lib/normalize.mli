@@ -10,6 +10,9 @@
 
 open Lang
 
+(** [inline env e] inlines all definitions in [env] into [e]. *)
+val inline : env -> exp -> exp
+
 (** [reduce e] reduces {i all} beta redexes in [e] (which must be closed),
     including those under abstractions. *)
 val fully_reduce : exp -> exp
@@ -23,7 +26,6 @@ val pull_out_cases : exp -> exp
     must be closed) whose scrutinee is a constructor literal. *)
 val partially_evaluate_cases : exp -> exp
 
-(** [full env e] inlines [env] (which must be closed) into [e] (which must be
-    closed under [env]) then runs the entire normalization pipeline on the
-    resulting expression. *)
+(** [full env e] inlines [env] into [e] then runs the entire normalization
+    pipeline on the resulting expression. *)
 val full : env -> exp -> exp

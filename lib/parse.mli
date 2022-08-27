@@ -5,6 +5,6 @@
 
 open Lang
 
-(** [program s] parses a string as a list of definitions and extracts the
-    "main" definition. *)
+(** [program s] parses a string as a list of definitions and extracts the "main"
+    definition. *)
 val program : string -> env * exp

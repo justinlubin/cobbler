@@ -10,7 +10,10 @@ let rec branch_of_sexp : Sexp.t -> branch = function
   | _ -> failwith "malformed branch"
 
 and exp_of_sexp : Sexp.t -> exp = function
-  | Sexp.Atom x -> EVar x
+  | Sexp.Atom x ->
+      if String.is_prefix ~prefix:"__" x
+      then failwith "cannot use name starting with double underscore"
+      else EVar x
   | Sexp.List [ Sexp.Atom "lambda"; Sexp.Atom param; body ] ->
       EAbs (param, exp_of_sexp body)
   | Sexp.List (Sexp.Atom "match" :: scrutinee :: branches) ->
