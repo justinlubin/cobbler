@@ -1,0 +1,5 @@
+- write more lang_util tests
+- implement integers
+- implement higher-order unification
+- implement fold extraction
+- implement fold fusion
