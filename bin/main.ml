@@ -11,6 +11,7 @@ let env, exp = parse_file "test_programs/classic.lisp"
 
 let () =
   print_endline "beginning synthesis...";
-  match Synthesize.synthesize env exp with
+  (match Synthesize.synthesize env exp with
   | None -> print_endline "no solution found"
-  | Some e -> printf "solution found:\n%s\n" (Lang_util.show_exp e)
+  | Some e -> printf "solution found:\n%s\n" (Lang_util.show_exp e));
+  print_endline "have a nice day!"

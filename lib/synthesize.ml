@@ -53,8 +53,8 @@ let grow_nonterminals
   in
   plist @ expansion1 @ expansion2 @ expansion3
 
-(* let close_over : id list -> exp -> exp =
- fun ids e -> List.fold_left ~init:e ~f:(fun acc id -> EAbs (id, acc)) ids *)
+let close_over : id list -> exp -> exp =
+ fun ids e -> List.fold_left ~init:e ~f:(fun acc id -> EAbs (id, acc)) ids
 
 let synthesize : env -> exp -> exp option =
  fun env reference_program ->
@@ -63,7 +63,7 @@ let synthesize : env -> exp -> exp option =
   let reference_params = params reference_program in
   let all_terminals = env_terminals @ reference_params in
   Enumerate.search
-    ~max_iterations:2
+    ~max_iterations:3
     ~terminals:(List.map ~f:(fun x -> EVar x) all_terminals)
     ~grow:(grow_nonterminals env_nonterminals)
     ~prune:
@@ -76,10 +76,7 @@ let synthesize : env -> exp -> exp option =
     ~is_correct:(fun e ->
       let result =
         Lang_util.alpha_equivalent
-          (Normalize.full env e)
+          (close_over reference_params (Normalize.full env e))
           normalized_reference_program
       in
-      printf "tried (non-raising) program '%s'\n" (Lang_util.show_exp e);
-      printf "normalizes to '%s'\n" (Lang_util.show_exp (Normalize.full env e));
-      printf "goal: '%s'\n" (Lang_util.show_exp normalized_reference_program);
       result)
