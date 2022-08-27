@@ -2,11 +2,6 @@ open Core
 open Lib
 open Lang
 
-let parse_file : string -> env * exp =
- fun filename ->
-  In_channel.with_file ("../../../test/" ^ filename) ~f:(fun file ->
-      Parse.program (In_channel.input_all file))
-
 let actual_env1 =
   Map.of_alist_exn
     (module String)
@@ -42,7 +37,7 @@ let actual_main1 =
             ( EApp (EVar "withDefault", EVar "zero")
             , EApp (EApp (EVar "map", EVar "f"), EVar "mx") ) ) )
 
-let parsed_env1, parsed_main1 = parse_file "test_programs/test1.lisp"
+let parsed_env1, parsed_main1 = Common.parse_file "test_programs/test1.lisp"
 
 let%test "parse program 1 (env)" =
   Map.equal [%equal: exp] parsed_env1 actual_env1

@@ -54,7 +54,7 @@ let grow_nonterminals
   plist @ expansion1 @ expansion2 @ expansion3
 
 let close_over : id list -> exp -> exp =
- fun ids e -> List.fold_left ~init:e ~f:(fun acc id -> EAbs (id, acc)) ids
+ fun ids e -> List.fold_right ~init:e ~f:(fun id acc -> EAbs (id, acc)) ids
 
 let synthesize : env -> exp -> exp option =
  fun env reference_program ->
