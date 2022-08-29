@@ -1,5 +1,4 @@
-- top-level sketching enumeration
-- nice recursive functions over the data type?
-- implement higher-order unification
-- implement fold extraction
-- implement fold fusion
+- top-down sketching enumeration
+- higher-order unification
+- recursive function to fold extraction
+- fold fusion in normalization
