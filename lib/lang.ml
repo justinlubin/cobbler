@@ -28,6 +28,15 @@ and exp =
 (** An environment of expressions *)
 type env = (id, exp, String.comparator_witness) Map.t
 
+(** Types *)
+type typ =
+  | TPlaceholder of string
+  | TArr of typ * typ
+[@@deriving sexp, ord, eq, compare]
+
+(** An environment of types (commonly called "gamma") *)
+type typ_env = (id, typ, String.comparator_witness) Map.t
+
 (** Useful as a comparator module *)
 module Exp = struct
   module T = struct

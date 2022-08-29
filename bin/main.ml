@@ -2,12 +2,12 @@ open Core
 open Lib
 open Lang
 
-let parse_file : string -> env * exp =
+let parse_file : string -> typ_env * env * exp =
  fun filename ->
   In_channel.with_file filename ~f:(fun file ->
       Parse.program (In_channel.input_all file))
 
-let env, exp = parse_file "test/test_data/programs/classic.lisp"
+let _, env, exp = parse_file "test/test_data/programs/classic.lisp"
 
 let () =
   print_endline "beginning synthesis...";

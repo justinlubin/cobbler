@@ -2,6 +2,24 @@ open Core
 open Lib
 open Lang
 
+let expected_typ_env1 =
+  Map.of_alist_exn
+    (module String)
+    [ ("zero", TPlaceholder "Peano")
+    ; ( "map"
+      , TArr
+          ( TArr (TPlaceholder "Peano", TPlaceholder "Peano")
+          , TArr (TPlaceholder "MaybePeano", TPlaceholder "MaybePeano") ) )
+    ; ( "withDefault"
+      , TArr
+          ( TPlaceholder "Peano"
+          , TArr (TPlaceholder "MaybePeano", TPlaceholder "Peano") ) )
+    ; ( "main"
+      , TArr
+          ( TArr (TPlaceholder "Peano", TPlaceholder "Peano")
+          , TArr (TPlaceholder "MaybePeano", TPlaceholder "Peano") ) )
+    ]
+
 let expected_env1 =
   Map.of_alist_exn
     (module String)
@@ -37,10 +55,18 @@ let expected_main1 =
             ( EApp (EVar "withDefault", EVar "zero")
             , EApp (EApp (EVar "map", EVar "f"), EVar "mx") ) ) )
 
-let parsed_env1, parsed_main1 = Common.parse_file "programs/test1.lisp"
+let parsed_typ_env1, parsed_env1, parsed_main1 =
+  Common.parse_file "programs/test1.lisp"
 
-let%test "parse program 1 (env)" =
-  Map.equal [%equal: exp] parsed_env1 expected_env1
+let%test_unit "parse program 1 (typ_env)" =
+  [%test_result: (id * typ) list]
+    (Map.to_alist parsed_typ_env1)
+    ~expect:(Map.to_alist expected_typ_env1)
+
+let%test_unit "parse program 1 (env)" =
+  [%test_result: (id * exp) list]
+    (Map.to_alist parsed_env1)
+    ~expect:(Map.to_alist expected_env1)
 
 let%test_unit "parse program 1 (main)" =
   [%test_result: exp] parsed_main1 ~expect:expected_main1

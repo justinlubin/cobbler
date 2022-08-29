@@ -5,4 +5,4 @@
    (glob_files_rec test_data/*)))
  (libraries lib core)
  (preprocess
-  (pps ppx_jane ppx_deriving.ord)))
+  (pps ppx_jane ppx_deriving.show ppx_deriving.ord)))
