@@ -1,6 +1,8 @@
 (library
  (name test)
- (inline_tests)
+ (inline_tests
+  (deps
+   (glob_files_rec test_data/*)))
  (libraries lib core)
  (preprocess
   (pps ppx_jane ppx_deriving.ord)))

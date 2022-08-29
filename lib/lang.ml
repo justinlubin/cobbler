@@ -22,6 +22,7 @@ and exp =
   | EAbs of id * exp
   | EMatch of exp * branch list
   | ECtor of tag * exp
+  | EInt of int
 [@@deriving sexp, ord, eq]
 
 (** An environment of expressions *)

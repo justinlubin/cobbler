@@ -16,6 +16,7 @@ let rec show_exp : exp -> string = function
                 sprintf "(%s %s -> %s)" ctor_name arg_name (show_exp rhs))
               branches))
   | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show_exp arg)
+  | EInt n -> string_of_int n
 
 let map_branches : branch list -> f:(exp -> exp) -> branch list =
  fun branches ~f ->
@@ -37,6 +38,7 @@ let rec free_variables : exp -> (id, String.comparator_witness) Set.t = function
                Set.remove (free_variables rhs) arg_name)
              branches)
   | ECtor (_, arg) -> free_variables arg
+  | EInt n -> Set.empty (module String)
 
 let suffix : int ref = ref (-1)
 
@@ -62,6 +64,7 @@ let replace : id * id -> exp -> exp =
                 then (ctor_name, (rhs, replace' branch_rhs))
                 else (ctor_name, (arg_name, replace' branch_rhs))) )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, replace' arg)
+    | EInt n -> EInt n
   in
   replace' e
 
@@ -96,6 +99,7 @@ let substitute : id * exp -> exp -> exp =
                     ) )))
               branches )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, substitute' arg)
+    | EInt n -> EInt n
   in
   substitute' e
 
@@ -116,6 +120,7 @@ let freshen_exp : (id -> id) -> exp -> exp =
                 , ( new_arg_name
                   , freshen_exp' (replace (arg_name, new_arg_name) rhs) ) )) )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, freshen_exp' arg)
+    | EInt n -> EInt n
   in
   freshen_exp' e
 

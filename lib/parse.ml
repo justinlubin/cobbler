@@ -13,7 +13,9 @@ and exp_of_sexp : Sexp.t -> exp = function
   | Sexp.Atom x ->
       if String.is_prefix ~prefix:"__" x
       then failwith "cannot use name starting with double underscore"
-      else EVar x
+      else (
+        try EInt (Int.of_string x) with
+        | _ -> EVar x)
   | Sexp.List [ Sexp.Atom "lambda"; Sexp.Atom param; body ] ->
       EAbs (param, exp_of_sexp body)
   | Sexp.List (Sexp.Atom "match" :: scrutinee :: branches) ->
@@ -39,3 +41,6 @@ let program : string -> env * exp =
   in
   let main = Map.find_exn definitions "main" in
   (Map.remove definitions "main", main)
+
+let exp : string -> exp =
+ fun text -> text |> Parsexp.Single.parse_string_exn |> exp_of_sexp

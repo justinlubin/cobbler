@@ -3,7 +3,7 @@ open Lib
 open Lang
 
 let%test_unit "classic synth 1" =
-  let env, exp = Common.parse_file "test_programs/classic.lisp" in
+  let env, exp = Common.parse_file "programs/classic.lisp" in
   let expected_solution =
     EApp
       ( EApp (EVar "withDefault", EVar "zero")

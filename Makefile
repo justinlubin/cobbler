@@ -10,6 +10,10 @@ test:
 exec:
 	dune exec bin/main.exe
 
+.PHONY: repl
+repl:
+	dune utop lib
+
 .PHONY: switch
 switch:
 	opam update && opam switch create 4.14.0
