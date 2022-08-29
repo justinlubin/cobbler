@@ -1,4 +1,3 @@
-- top-down sketching enumeration
 - higher-order unification
 - recursive function to fold extraction
 - fold fusion in normalization
