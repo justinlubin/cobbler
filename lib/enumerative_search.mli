@@ -1,6 +1,6 @@
 (** Enumerative search
 
-    This module provides functions to enumeratively search spaces.
+    This module provides functions to enumeratively search a space.
 *)
 
 open Core

@@ -57,22 +57,3 @@ let definitions : string -> typ_env * env =
 
 let exp : string -> exp =
  fun text -> text |> Parsexp.Single.parse_string_exn |> exp_of_sexp
-
-let extract : id -> typ_env * env -> typ_env * env * typ * exp =
- fun name (gamma, env) ->
-  ( Map.remove gamma name
-  , Map.remove env name
-  , Map.find_exn gamma name
-  , Map.find_exn env name )
-
-let extract_main_body
-    : typ_env * env -> typ_env * env * (id * typ) list * typ * exp
-  =
- fun defs ->
-  let gamma', env', main_typ, main_exp = extract "main" defs in
-  let domain, codomain = Lang_util.decompose_arrow main_typ in
-  ( gamma'
-  , env'
-  , List.zip_exn (Lang_util.params main_exp) domain
-  , codomain
-  , main_exp )

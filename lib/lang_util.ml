@@ -155,20 +155,3 @@ let alpha_normalize : exp -> exp =
 
 let alpha_equivalent : exp -> exp -> bool =
  fun e1 e2 -> [%eq: exp] (alpha_normalize e1) (alpha_normalize e2)
-
-let rec decompose_arrow : typ -> typ list * typ = function
-  | TPlaceholder x -> ([], TPlaceholder x)
-  | TArr (domain, codomain) ->
-      let domain', codomain' = decompose_arrow codomain in
-      (domain :: domain', codomain')
-
-let params : exp -> id list =
- fun e ->
-  let rec param_count' acc = function
-    | EAbs (param, body) -> param_count' (param :: acc) body
-    | _ -> List.rev acc
-  in
-  param_count' [] e
-
-let close_over : id list -> exp -> exp =
- fun ids e -> List.fold_right ~init:e ~f:(fun id acc -> EAbs (id, acc)) ids
