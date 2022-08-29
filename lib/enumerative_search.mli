@@ -8,20 +8,12 @@
 
 open Core
 
-(** The result of the [grow] function used in {!val:search}. The
-    [additions] is for new (unchecked) candidates and the [new_space] field
-    is the updated space. *)
-type ('e, 'comp) grow_result =
-  { additions : ('e, 'comp) Set.t
-  ; new_space : ('e, 'comp) Set.t
-  }
-
 (** [search ~max_iterations ~initial_space ~grow ~correct] repeatedly applies
     [grow] to [initial_space] at most [max_iterations] times searching for any
     value that satisfies the [correct] predicate. *)
 val search
   :  max_iterations:int
-  -> initial_space:('e, 'comp) Set.t
-  -> grow:(('e, 'comp) Set.t -> ('e, 'comp) grow_result)
+  -> initial_space:'e list
+  -> grow:('e list -> 'e list)
   -> correct:('e -> bool)
   -> 'e option

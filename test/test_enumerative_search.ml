@@ -2,26 +2,17 @@ open Core
 open Lib
 
 module Calc = struct
-  module Exp = struct
-    module T = struct
-      type t =
-        | Zero
-        | One
-        | In
-        | Negate of t
-        | Plus of t * t
-        | Times of t * t
-        | IfNonNeg of t * t * t
-      [@@deriving sexp, quickcheck, ord, compare]
-    end
+  type t =
+    | Zero
+    | One
+    | In
+    | Negate of t
+    | Plus of t * t
+    | Times of t * t
+    | IfNonNeg of t * t * t
+  [@@deriving sexp, ord]
 
-    include T
-    include Comparator.Make (T)
-  end
-
-  open Exp
-
-  let rec eval (input : int) (e : Exp.t) : int =
+  let rec eval (input : int) (e : t) : int =
     match e with
     | Zero -> 0
     | One -> 1
@@ -32,63 +23,52 @@ module Calc = struct
     | IfNonNeg (e1, e2, e3) ->
         if eval input e1 >= 0 then eval input e2 else eval input e3
 
-  let obs_eq (inputs : int list) (e1 : Exp.t) (e2 : Exp.t) : bool =
+  let obs_eq (inputs : int list) (e1 : t) (e2 : t) : bool =
     List.for_all ~f:(fun i -> eval i e1 = eval i e2) inputs
 
-  let prune_obs_eq (inputs : int list) (es : Exp.t list) : Exp.t list =
+  let prune_obs_eq (inputs : int list) (es : t list) : t list =
     Lib.Util.dedup_by ~f:(obs_eq inputs) es
 
-  let grow
-      (examples : (int * int) list)
-      (space : (Exp.t, Exp.comparator_witness) Set.t)
-      : (Exp.t, Exp.comparator_witness) Enumerative_search.grow_result
-    =
+  let grow (inputs : int list) (space : t list) : t list =
     let open List.Let_syntax in
-    let plist = Set.to_list space in
     let expansion1 =
-      let%bind e1 = plist in
+      let%bind e1 = space in
       [ Negate e1 ]
     in
     let expansion2 =
-      let%bind e1 = plist in
-      let%bind e2 = plist in
+      let%bind e1 = space in
+      let%bind e2 = space in
       [ Plus (e1, e2); Times (e1, e2) ]
     in
     let expansion3 =
-      let%bind e1 = plist in
-      let%bind e2 = plist in
-      let%bind e3 = plist in
+      let%bind e1 = space in
+      let%bind e2 = space in
+      let%bind e3 = space in
       [ IfNonNeg (e1, e2, e3) ]
     in
-    let additions =
-      expansion1 @ expansion2 @ expansion3
-      |> prune_obs_eq (List.map ~f:fst examples)
-      |> Set.of_list (module Exp)
-    in
-    let new_space = Set.union space additions in
-    Enumerative_search.{ additions; new_space }
+    prune_obs_eq inputs (space @ expansion1 @ expansion2 @ expansion3)
 
-  let satisfies_examples (examples : (int * int) list) (e : Exp.t) : bool =
+  let satisfies_examples (examples : (int * int) list) (e : t) : bool =
     List.for_all ~f:(fun (input, output) -> eval input e = output) examples
 
-  let enumerate (examples : (int * int) list) : Exp.t option =
+  let enumerate (examples : (int * int) list) : t option =
     Lib.Enumerative_search.search
       ~max_iterations:2
-      ~initial_space:(Set.of_list (module Exp) [ Zero; One; In ])
-      ~grow:(grow examples)
+      ~initial_space:(prune_obs_eq (List.map ~f:fst examples) [ Zero; One; In ])
+      ~grow:(grow (List.map ~f:fst examples))
       ~correct:(satisfies_examples examples)
 
   module Test = struct
     let%test_unit "basic calculator example 1" =
-      [%test_eq: Exp.t option]
+      [%test_eq: t option]
         (enumerate [ (0, 1); (4, 5) ])
         (Some (Plus (One, In)))
 
     let%test_unit "basic calculator example 2" =
-      [%test_eq: Exp.t option] (enumerate [ (0, 0); (0, 1) ]) None
+      [%test_eq: t option] (enumerate [ (0, 0); (0, 1) ]) None
 
     let%test_unit "basic calculator example 3" =
-      [%test_eq: Exp.t option]
+      [%test_eq: t option]
         (enumerate [ (2, 5); (3, 10); (4, 17) ])
         (Some (Plus (One, Times (In, In))))
   end
