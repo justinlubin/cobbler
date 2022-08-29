@@ -1,15 +1,7 @@
 open Core
 open Lang
 
-let params : exp -> id list =
- fun e ->
-  let rec param_count' acc = function
-    | EAbs (param, body) -> param_count' (param :: acc) body
-    | _ -> List.rev acc
-  in
-  param_count' [] e
-
-let param_count : exp -> int = fun e -> List.length (params e)
+let param_count : exp -> int = fun e -> List.length (Lang_util.params e)
 
 let make_grammar : env -> id list * (int, id list, Int.comparator_witness) Map.t
   =
@@ -64,23 +56,80 @@ let grow_nonterminals
   in
   additions @ space
 
-let close_over : id list -> exp -> exp =
- fun ids e -> List.fold_right ~init:e ~f:(fun id acc -> EAbs (id, acc)) ids
-
 let synthesize : env -> exp -> exp option =
  fun env reference_program ->
   let normalized_reference_program = Normalize.full env reference_program in
   let env_terminals, env_nonterminals = make_grammar env in
-  let reference_params = params reference_program in
+  let reference_params = Lang_util.params reference_program in
   let all_terminals = env_terminals @ reference_params in
-  Enumerative_search.search
+  Enumerative_search.bottom_up
     ~max_iterations:3
-    ~initial_space:(List.map ~f:(fun x -> EVar x) all_terminals)
+    ~initial_candidates:(List.map ~f:(fun x -> EVar x) all_terminals)
     ~grow:(grow_nonterminals env env_nonterminals)
+    ~correct:(fun e ->
+      printf "trying %s\n%!" (Lang_util.show_exp e);
+      let result =
+        Lang_util.alpha_equivalent
+          (Lang_util.close_over reference_params (Normalize.full env e))
+          normalized_reference_program
+      in
+      result)
+
+type grammar = (typ, (id * typ list) list, Typ.comparator_witness) Map.t
+
+let make_grammar' : typ_env -> env -> (id * typ) list -> grammar =
+ fun gamma env free_vars ->
+  Map.fold2
+    gamma
+    env
+    ~init:
+      (Map.of_alist_multi
+         (module Typ)
+         (List.map ~f:(fun (id, typ) -> (typ, (id, []))) free_vars))
+    ~f:(fun ~key ~data acc ->
+      match data with
+      | `Right _ -> failwith "env contains key gamma does not"
+      | `Left _ -> failwith "gamma contains key env does not"
+      | `Both (typ, exp) ->
+          let domain, codomain = Lang_util.decompose_arrow typ in
+          Map.add_multi acc ~key:codomain ~data:(key, domain))
+
+let make_app : id -> exp list -> exp =
+ fun head args ->
+  List.fold_left ~init:(EVar head) ~f:(fun acc x -> EApp (acc, x)) args
+
+let expand : grammar -> exp -> exp list =
+ fun grammar e ->
+  let open List.Let_syntax in
+  let rec expand' = function
+    | EVar x -> [ EVar x ]
+    | EApp (head, arg) ->
+        let%bind head' = expand' head in
+        let%bind arg' = expand' arg in
+        [ EApp (head', arg') ]
+    | EHole typ ->
+        List.map
+          ~f:(fun (x, typs) ->
+            make_app x (List.map ~f:(fun typ -> EHole typ) typs))
+          (Map.find_exn grammar typ)
+    | EAbs _ | EMatch _ | ECtor _ | EInt _ ->
+        failwith "expanding something other than var, app, or hole"
+  in
+  expand' e
+
+let synthesize' : typ_env -> env -> (id * typ) list -> exp -> typ -> exp option =
+ fun gamma env free_vars reference reference_typ ->
+  let reference_params = List.map ~f:fst free_vars in
+  let normalized_reference = Normalize.full env reference in
+  let grammar = make_grammar' gamma env free_vars in
+  Enumerative_search.top_down
+    ~max_iterations:3
+    ~start:(EHole reference_typ)
+    ~expand:(expand grammar)
     ~correct:(fun e ->
       let result =
         Lang_util.alpha_equivalent
-          (close_over reference_params (Normalize.full env e))
-          normalized_reference_program
+          (Lang_util.close_over reference_params (Normalize.full env e))
+          normalized_reference
       in
       result)

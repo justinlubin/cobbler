@@ -19,6 +19,7 @@ let rec fully_reduce : exp -> exp = function
         (fully_reduce scrutinee, Lang_util.map_branches ~f:fully_reduce branches)
   | ECtor (ctor_name, arg) -> ECtor (ctor_name, fully_reduce arg)
   | EInt n -> EInt n
+  | EHole typ -> EHole typ
 
 let rec pull_out_cases : exp -> exp = function
   | EVar x -> EVar x
@@ -38,6 +39,7 @@ let rec pull_out_cases : exp -> exp = function
       | outer_scrutinee' -> EMatch (outer_scrutinee', outer_branches'))
   | ECtor (ctor_name, arg) -> ECtor (ctor_name, pull_out_cases arg)
   | EInt n -> EInt n
+  | EHole typ -> EHole typ
 
 let rec partially_evaluate_cases : exp -> exp = function
   | EVar x -> EVar x
@@ -55,6 +57,7 @@ let rec partially_evaluate_cases : exp -> exp = function
         , Lang_util.map_branches ~f:partially_evaluate_cases branches )
   | ECtor (ctor_name, arg) -> ECtor (ctor_name, partially_evaluate_cases arg)
   | EInt n -> EInt n
+  | EHole typ -> EHole typ
 
 let full : env -> exp -> exp =
  fun env e ->

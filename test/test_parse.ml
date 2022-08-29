@@ -44,19 +44,17 @@ let expected_env1 =
                   , [ ("Nothing", ("n", EVar "default"))
                     ; ("Just", ("x", EVar "x"))
                     ] ) ) ) )
+    ; ( "main"
+      , EAbs
+          ( "f"
+          , EAbs
+              ( "mx"
+              , EApp
+                  ( EApp (EVar "withDefault", EVar "zero")
+                  , EApp (EApp (EVar "map", EVar "f"), EVar "mx") ) ) ) )
     ]
 
-let expected_main1 =
-  EAbs
-    ( "f"
-    , EAbs
-        ( "mx"
-        , EApp
-            ( EApp (EVar "withDefault", EVar "zero")
-            , EApp (EApp (EVar "map", EVar "f"), EVar "mx") ) ) )
-
-let parsed_typ_env1, parsed_env1, parsed_main1 =
-  Common.parse_file "programs/test1.lisp"
+let parsed_typ_env1, parsed_env1 = Common.parse_file "programs/test1.lisp"
 
 let%test_unit "parse program 1 (typ_env)" =
   [%test_result: (id * typ) list]
@@ -67,9 +65,6 @@ let%test_unit "parse program 1 (env)" =
   [%test_result: (id * exp) list]
     (Map.to_alist parsed_env1)
     ~expect:(Map.to_alist expected_env1)
-
-let%test_unit "parse program 1 (main)" =
-  [%test_result: exp] parsed_main1 ~expect:expected_main1
 
 let%test_unit "parse with ints 1" =
   [%test_result: exp]

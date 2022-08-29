@@ -1,21 +1,41 @@
 open Core
 
-let search :
+let bottom_up :
       'e.
       max_iterations:int
-      -> initial_space:'e list
+      -> initial_candidates:'e list
       -> grow:('e list -> 'e list)
       -> correct:('e -> bool)
       -> 'e option
   =
- fun ~max_iterations ~initial_space ~grow ~correct ->
-  let rec search' iterations space =
+ fun ~max_iterations ~initial_candidates ~grow ~correct ->
+  let rec bottom_up' iterations candidates =
     if iterations >= max_iterations
     then None
     else (
-      let new_space = grow space in
-      match List.find ~f:correct new_space with
+      let new_candidates = grow candidates in
+      match List.find ~f:correct new_candidates with
       | Some e -> Some e
-      | None -> search' (iterations + 1) new_space)
+      | None -> bottom_up' (iterations + 1) new_candidates)
   in
-  search' 0 initial_space
+  bottom_up' 0 initial_candidates
+
+let top_down :
+      'e.
+      max_iterations:int
+      -> start:'e
+      -> expand:('e -> 'e list)
+      -> correct:('e -> bool)
+      -> 'e option
+  =
+ fun ~max_iterations ~start ~expand ~correct ->
+  let rec top_down' iterations candidates =
+    if iterations >= max_iterations
+    then None
+    else (
+      let new_candidates = List.concat_map ~f:expand candidates in
+      match List.find ~f:correct new_candidates with
+      | Some e -> Some e
+      | None -> top_down' (iterations + 1) new_candidates)
+  in
+  top_down' 0 [ start ]

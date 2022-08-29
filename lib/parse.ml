@@ -39,7 +39,7 @@ and exp_of_sexp : Sexp.t -> exp = function
           EApp (acc, exp_of_sexp arg))
   | _ -> failwith "malformed expression"
 
-let program : string -> typ_env * env * exp =
+let definitions : string -> typ_env * env =
  fun text ->
   let typ_env_list, env_all_list =
     text
@@ -52,11 +52,27 @@ let program : string -> typ_env * env * exp =
            | _ -> failwith "malformed top-level definition")
     |> List.unzip
   in
-  let typ_env = Map.of_alist_exn (module String) typ_env_list in
-  let env_all = Map.of_alist_exn (module String) env_all_list in
-  (* let env_all = List.map ~f:(fun x) definitions *)
-  let main = Map.find_exn env_all "main" in
-  (typ_env, Map.remove env_all "main", main)
+  ( Map.of_alist_exn (module String) typ_env_list
+  , Map.of_alist_exn (module String) env_all_list )
 
 let exp : string -> exp =
  fun text -> text |> Parsexp.Single.parse_string_exn |> exp_of_sexp
+
+let extract : id -> typ_env * env -> typ_env * env * typ * exp =
+ fun name (gamma, env) ->
+  ( Map.remove gamma name
+  , Map.remove env name
+  , Map.find_exn gamma name
+  , Map.find_exn env name )
+
+let extract_main_body
+    : typ_env * env -> typ_env * env * (id * typ) list * typ * exp
+  =
+ fun defs ->
+  let gamma', env', main_typ, main_exp = extract "main" defs in
+  let domain, codomain = Lang_util.decompose_arrow main_typ in
+  ( gamma'
+  , env'
+  , List.zip_exn (Lang_util.params main_exp) domain
+  , codomain
+  , main_exp )

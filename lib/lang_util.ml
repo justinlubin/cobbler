@@ -1,6 +1,11 @@
 open Core
 open Lang
 
+let rec show_typ : typ -> string = function
+  | TPlaceholder x -> x
+  | TArr (domain, codomain) ->
+      sprintf "(%s -> %s)" (show_typ domain) (show_typ codomain)
+
 let rec show_exp : exp -> string = function
   | EVar id -> id
   | EApp (head, arg) -> sprintf "(%s %s)" (show_exp head) (show_exp arg)
@@ -17,6 +22,7 @@ let rec show_exp : exp -> string = function
               branches))
   | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show_exp arg)
   | EInt n -> string_of_int n
+  | EHole typ -> sprintf "??(%s)" (show_typ typ)
 
 let map_branches : branch list -> f:(exp -> exp) -> branch list =
  fun branches ~f ->
@@ -39,6 +45,7 @@ let rec free_variables : exp -> (id, String.comparator_witness) Set.t = function
              branches)
   | ECtor (_, arg) -> free_variables arg
   | EInt n -> Set.empty (module String)
+  | EHole typ -> Set.empty (module String)
 
 let suffix : int ref = ref (-1)
 
@@ -65,6 +72,7 @@ let replace : id * id -> exp -> exp =
                 else (ctor_name, (arg_name, replace' branch_rhs))) )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, replace' arg)
     | EInt n -> EInt n
+    | EHole typ -> EHole typ
   in
   replace' e
 
@@ -100,6 +108,7 @@ let substitute : id * exp -> exp -> exp =
               branches )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, substitute' arg)
     | EInt n -> EInt n
+    | EHole typ -> EHole typ
   in
   substitute' e
 
@@ -121,6 +130,7 @@ let freshen_exp : (id -> id) -> exp -> exp =
                   , freshen_exp' (replace (arg_name, new_arg_name) rhs) ) )) )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, freshen_exp' arg)
     | EInt n -> EInt n
+    | EHole typ -> EHole typ
   in
   freshen_exp' e
 
@@ -145,3 +155,20 @@ let alpha_normalize : exp -> exp =
 
 let alpha_equivalent : exp -> exp -> bool =
  fun e1 e2 -> [%eq: exp] (alpha_normalize e1) (alpha_normalize e2)
+
+let rec decompose_arrow : typ -> typ list * typ = function
+  | TPlaceholder x -> ([], TPlaceholder x)
+  | TArr (domain, codomain) ->
+      let domain', codomain' = decompose_arrow codomain in
+      (domain :: domain', codomain')
+
+let params : exp -> id list =
+ fun e ->
+  let rec param_count' acc = function
+    | EAbs (param, body) -> param_count' (param :: acc) body
+    | _ -> List.rev acc
+  in
+  param_count' [] e
+
+let close_over : id list -> exp -> exp =
+ fun ids e -> List.fold_right ~init:e ~f:(fun id acc -> EAbs (id, acc)) ids

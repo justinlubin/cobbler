@@ -52,9 +52,10 @@ module Calc = struct
     List.for_all ~f:(fun (input, output) -> eval input e = output) examples
 
   let enumerate (examples : (int * int) list) : t option =
-    Lib.Enumerative_search.search
+    Lib.Enumerative_search.bottom_up
       ~max_iterations:2
-      ~initial_space:(prune_obs_eq (List.map ~f:fst examples) [ Zero; One; In ])
+      ~initial_candidates:
+        (prune_obs_eq (List.map ~f:fst examples) [ Zero; One; In ])
       ~grow:(grow (List.map ~f:fst examples))
       ~correct:(satisfies_examples examples)
 

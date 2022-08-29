@@ -19,3 +19,7 @@ val substitute : id * exp -> exp -> exp
 (** [alpha_equivalent e1 e2] returns [true] if and only if [e1] and [e2] are
     alpha equivalent. *)
 val alpha_equivalent : exp -> exp -> bool
+
+val decompose_arrow : typ -> typ list * typ
+val params : exp -> id list
+val close_over : id list -> exp -> exp
