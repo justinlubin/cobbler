@@ -23,7 +23,20 @@ and exp =
   | EMatch of exp * branch list
   | ECtor of tag * exp
   | EInt of int
-[@@deriving sexp, ord, eq]
+[@@deriving sexp, ord, eq, compare]
 
 (** An environment of expressions *)
 type env = (id, exp, String.comparator_witness) Map.t
+
+(** Useful as a comparator module *)
+module Exp = struct
+  module T = struct
+    type t = exp
+
+    let compare = compare_exp
+    let sexp_of_t = sexp_of_exp
+  end
+
+  include T
+  include Comparator.Make (T)
+end

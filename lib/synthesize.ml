@@ -23,10 +23,13 @@ let make_grammar : env -> id list * (int, id list, Int.comparator_witness) Map.t
 
 (* TODO: support more than size-3 nonterminals *)
 let grow_nonterminals
-    : (int, id list, Int.comparator_witness) Map.t -> exp list -> exp list
+    :  env -> (int, id list, Int.comparator_witness) Map.t
+    -> (exp, Exp.comparator_witness) Set.t
+    -> (exp, Exp.comparator_witness) Enumerative_search.grow_result
   =
- fun nts plist ->
+ fun env nts space ->
   let open List.Let_syntax in
+  let plist = Set.to_list space in
   let expansion1 =
     match Map.find nts 1 with
     | Some nts1 ->
@@ -51,7 +54,23 @@ let grow_nonterminals
         List.map ~f:(fun f -> EApp (EApp (EApp (EVar f, e1), e2), e3)) nts3
     | None -> []
   in
-  plist @ expansion1 @ expansion2 @ expansion3
+  let additions =
+    Set.filter
+      ~f:(fun e ->
+        try
+          ignore (Normalize.full env e);
+          true
+        with
+        | _ -> false)
+      (Set.union_list
+         (module Exp)
+         [ Set.of_list (module Exp) expansion1
+         ; Set.of_list (module Exp) expansion2
+         ; Set.of_list (module Exp) expansion3
+         ])
+  in
+  let new_space = Set.union space additions in
+  Enumerative_search.{ additions; new_space }
 
 let close_over : id list -> exp -> exp =
  fun ids e -> List.fold_right ~init:e ~f:(fun id acc -> EAbs (id, acc)) ids
@@ -62,18 +81,12 @@ let synthesize : env -> exp -> exp option =
   let env_terminals, env_nonterminals = make_grammar env in
   let reference_params = params reference_program in
   let all_terminals = env_terminals @ reference_params in
-  Enumerate.search
+  Enumerative_search.search
     ~max_iterations:3
-    ~terminals:(List.map ~f:(fun x -> EVar x) all_terminals)
-    ~grow:(grow_nonterminals env_nonterminals)
-    ~prune:
-      (List.filter ~f:(fun e ->
-           try
-             ignore (Normalize.full env e);
-             true
-           with
-           | _ -> false))
-    ~is_correct:(fun e ->
+    ~initial_space:
+      (List.map ~f:(fun x -> EVar x) all_terminals |> Set.of_list (module Exp))
+    ~grow:(grow_nonterminals env env_nonterminals)
+    ~correct:(fun e ->
       let result =
         Lang_util.alpha_equivalent
           (close_over reference_params (Normalize.full env e))
