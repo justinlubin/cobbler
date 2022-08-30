@@ -1,3 +1,5 @@
+(** Top-level synthesis algorithm *)
+
 open Lang
 
 (* Specification for a synthesis problem. A solution to a synthesis problem
