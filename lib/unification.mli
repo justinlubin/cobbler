@@ -1,7 +1,8 @@
 (** Higher order unification
 
     This module implements Huet's 1974 higher-order pre-unification
-    semi-algorithm. *)
+    semi-algorithm introduced in "A Unification Algorithm for Typed
+    λ-Calculus." *)
 
 open Core
 open Lang
