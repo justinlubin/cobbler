@@ -1,4 +1,4 @@
-(** Language utilities.
+(** Language utilities
 
     This module provides helper functions specifically for working with the
     types defined in {!module:Lang}. *)

@@ -1,4 +1,4 @@
-(** Language module.
+(** Language module
 
     This module includes all the type definitions necessary to interoperate
     between all other modules. In particular, it provides the type definitions

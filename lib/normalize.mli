@@ -1,4 +1,4 @@
-(** Expression normalization.
+(** Expression normalization
     
     The key export of this module is the [full] function, which fully normalizes
     an expression. This is useful for doing a lightweight program equality

@@ -1,4 +1,4 @@
-(** Program parsing.
+(** Program parsing
     
     This module parses strings into programs (values using types in the
     [!module:Lang] module). *)
