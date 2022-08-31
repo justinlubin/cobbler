@@ -23,3 +23,7 @@ val substitute : id * exp -> exp -> exp
 (** [alpha_equivalent e1 e2] returns [true] if and only if [e1] and [e2] are
     alpha equivalent. *)
 val alpha_equivalent : exp -> exp -> bool
+
+(** [fully_beta_reduce e] recursively reduces all beta redexes (pending function
+    applications) in [e]. *)
+val fully_beta_reduce : exp -> exp

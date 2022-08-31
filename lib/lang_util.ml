@@ -155,3 +155,18 @@ let alpha_normalize : exp -> exp =
 
 let alpha_equivalent : exp -> exp -> bool =
  fun e1 e2 -> [%eq: exp] (alpha_normalize e1) (alpha_normalize e2)
+
+let rec fully_beta_reduce : exp -> exp = function
+  | EVar id -> EVar id
+  | EApp (head, arg) ->
+      let arg' = fully_beta_reduce arg in
+      (match fully_beta_reduce head with
+      | EAbs (param, body) -> substitute (param, arg') body
+      | head' -> EApp (head', arg'))
+  | EAbs (param, body) -> EAbs (param, fully_beta_reduce body)
+  | EMatch (scrutinee, branches) ->
+      EMatch
+        (fully_beta_reduce scrutinee, map_branches ~f:fully_beta_reduce branches)
+  | ECtor (ctor_name, arg) -> ECtor (ctor_name, fully_beta_reduce arg)
+  | EInt n -> EInt n
+  | EHole typ -> EHole typ

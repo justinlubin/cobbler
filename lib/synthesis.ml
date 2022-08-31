@@ -1,6 +1,21 @@
 open Core
 open Lang
 
+(* Normalization *)
+
+let inline : env -> exp -> exp =
+ fun env e ->
+  Map.fold env ~init:e ~f:(fun ~key:lhs ~data:rhs acc ->
+      Lang_util.substitute (lhs, rhs) acc)
+
+let norm : env -> exp -> exp =
+ fun env e ->
+  e
+  |> inline env
+  |> Lang_util.fully_beta_reduce
+  |> Fusion.pull_out_cases
+  |> Fusion.fully_case_reduce
+
 (* Helpers *)
 
 let rec decompose_arr : typ -> typ list * typ = function
@@ -100,7 +115,7 @@ let problem_of_definitions : typ_env * env -> problem =
 
 let solve : problem -> exp option =
  fun { gamma; env; free_vars; goal_typ; reference } ->
-  let normalized_reference = Normalize.full env reference in
+  let normalized_reference = norm env reference in
   let grammar = make_grammar gamma env free_vars in
   Enumerative_search.top_down
     ~max_iterations:5
@@ -108,6 +123,6 @@ let solve : problem -> exp option =
     ~expand:(expand grammar)
     ~correct:(fun e ->
       let result =
-        Lang_util.alpha_equivalent (Normalize.full env e) normalized_reference
+        Lang_util.alpha_equivalent (norm env e) normalized_reference
       in
       result)
