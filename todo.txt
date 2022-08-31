@@ -1,9 +1,3 @@
-- refactor lang_utils / normalize?
-    - lang_utils.ml should have fully_beta_reduce and fully_case_reduce
-    - normalize.ml should be called "fusion" and have pull_out_cases
-    - then maybe synthesis.ml should define a function "norm" that does
-      inline + fully_beta_reduce + fusion + fully_case_reduce
-        - or maybe "fusion" should actually do the fully_case_reduce...
 - higher-order unification
 - recursive function to fold extraction
 - fold fusion in normalization
