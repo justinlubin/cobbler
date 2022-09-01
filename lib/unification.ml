@@ -7,11 +7,13 @@ open Core
 type atom =
   | Variable of string
   | Constant of string
+[@@deriving show, eq, sexp, ord]
 
 type term =
   | Atom of atom
   | Application of term * term
   | Abstraction of string * term
+[@@deriving show, eq, sexp, ord]
 
 (* Substitution function *)
 
@@ -115,7 +117,7 @@ let build_applications : term -> term list -> term =
   List.fold_left args ~init:head ~f:(fun acc arg -> Application (acc, arg))
 
 (* Assumes input is normalized *)
-let abbreviation : term -> abbreviation =
+let abbreviate : term -> abbreviation =
  fun t ->
   let binding, inside_term = strip_abstractions t in
   let head_term, argument_terms = strip_applications inside_term in
@@ -126,77 +128,77 @@ let abbreviation : term -> abbreviation =
   in
   (binding, head, argument_terms)
 
-let rigid : abbreviation -> bool =
- fun (binding, head, _) ->
+let rigid : term -> bool =
+ fun t ->
+  let binding, head, _ = abbreviate t in
   match head with
   | Variable x -> List.mem ~equal:String.equal binding x
   | Constant _ -> true
 
 (* Substitutions *)
 
-type substitution_pair = string * term
-type substitution = substitution_pair list
+type substitution_pair = string * term [@@deriving show, eq, sexp, ord]
+type substitution = substitution_pair list [@@deriving show, eq, sexp, ord]
 
 (* === The unification algorithm ===  *)
 
 (* Types *)
 
-type disagreement_set = (term * term) list
+type disagreement_set = (term * term) list [@@deriving show, eq, sexp, ord]
 
 type matching_tree =
   | Terminal of bool
   | Nonterminal of disagreement_set * (substitution_pair * matching_tree) list
+[@@deriving show, eq, sexp, ord]
 
 (* SIMPL procedure *)
-
-let syntactically_equal : term -> term -> bool = fun t1 t2 -> failwith "TODO"
 
 let headings_equal : string list * atom -> string list * atom -> bool =
  fun (binding1, head1) (binding2, head2) ->
   Int.equal (List.length binding1) (List.length binding2)
-  && syntactically_equal
+  && [%eq: term]
        (Atom head1)
        (normalize
           (build_applications
              (build_abstractions binding2 (Atom head2))
              (List.map ~f:(fun x -> Atom (Variable x)) binding1)))
-(* match (head1, head2) with
-  | Variable x1, Variable x2 ->
-      (match
-         ( List.findi binding1 ~f:(fun _ x -> String.equal x1 x)
-         , List.findi binding2 ~f:(fun _ x -> String.equal x2 x) )
-       with
-      | Some (pos1, _), Some (pos2, _) -> Int.equal pos1 pos2
-      | None, None -> String.equal x1 x2
-      | _ -> false)
-  | Constant c1, Constant c2 -> String.equal c1 c2
-  | _, _ -> false *)
 
-(* Check:
-    normalize (
-      Application
-      ( add_abstractions binding2 (Atom head2)
-      , List.map ~f:(fun x -> Atom (Variable x)) binding
-      )
-    ) syntactically equal to head1 *)
-
-let rec simpl : disagreement_set -> matching_tree =
+let rec simpl_step1 : disagreement_set -> disagreement_set option =
  fun ds ->
   match
-    ds
-    |> List.map ~f:(fun (e1, e2) -> (abbreviation e1, abbreviation e2))
-    |> List.find ~f:(fun (e1, e2) -> rigid e1 && rigid e2)
+    Util.find_and_remove_first ds ~f:(fun (e1, e2) -> rigid e1 && rigid e2)
   with
-  | Some ((binding1, head1, argument1), (binding2, head2, argument2)) ->
+  | Some ((e1, e2), rest_ds) ->
+      let binding1, head1, argument1 = abbreviate e1 in
+      let binding2, head2, argument2 = abbreviate e2 in
       if headings_equal (binding1, head1) (binding2, head2)
       then (
         let new_ds =
           List.map2_exn argument1 argument2 ~f:(fun e1 e2 ->
               (build_abstractions binding1 e1, build_abstractions binding2 e2))
         in
-        simpl new_ds)
-      else Terminal false
-  | None -> failwith "step 2"
+        simpl_step1 (new_ds @ rest_ds))
+      else None
+  | None -> Some ds
+
+let simpl_step2 : disagreement_set -> disagreement_set =
+ fun ds ->
+  List.map
+    ~f:(fun (e1, e2) ->
+      if rigid e1 && not (rigid e2) then (e2, e1) else (e1, e2))
+    ds
+
+let simpl_step3 : disagreement_set -> matching_tree =
+ fun ds ->
+  if List.exists ~f:(fun (e1, e2) -> rigid e2) ds
+  then Nonterminal (ds, [])
+  else Terminal true
+
+let simpl : disagreement_set -> matching_tree =
+ fun ds ->
+  match simpl_step1 ds with
+  | Some ds -> simpl_step3 (simpl_step2 ds)
+  | None -> Terminal false
 
 (* MATCH procedure *)
 
@@ -226,7 +228,7 @@ let rec grow : matching_tree -> matching_tree = function
       failwith "non-reduced (empty) disagreement set in nonterminal"
   | Nonterminal (((e1, e2) :: tl as ds), []) ->
       (* Choosing the first pair is arbitrary *)
-      assert (rigid (abbreviation e2));
+      assert (rigid e2);
       let sigma = matchh e1 e2 (failwith "free variables of N") in
       if List.is_empty sigma
       then Terminal false
@@ -262,3 +264,75 @@ let rec search_and_grow : int -> matching_tree -> unification_result =
 
 let unify : int -> term -> term -> unification_result =
  fun fuel e0 e0' -> search_and_grow fuel (simpl [ (e0, e0') ])
+
+(* === Examples === *)
+
+let ds1 =
+  [ ( Application
+        ( Application
+            ( Atom (Constant "A")
+            , Abstraction
+                ( "u"
+                , Application
+                    ( Application (Atom (Constant "B"), Atom (Variable "x"))
+                    , Atom (Variable "u") ) ) )
+        , Atom (Constant "C") )
+    , Application
+        ( Application
+            ( Atom (Constant "A")
+            , Abstraction
+                ( "v"
+                , Application
+                    ( Application (Atom (Constant "B"), Atom (Variable "y"))
+                    , Atom (Variable "v") ) ) )
+        , Application (Atom (Variable "f"), Atom (Constant "C")) ) )
+  ]
+
+let ds2 =
+  [ ( Application
+        ( Atom (Constant "A")
+        , Abstraction
+            ( "u"
+            , Application
+                ( Application (Atom (Constant "B"), Atom (Variable "x"))
+                , Atom (Variable "u") ) ) )
+    , Application
+        ( Atom (Constant "A")
+        , Abstraction
+            ( "v"
+            , Application
+                ( Application (Atom (Constant "B"), Atom (Variable "y"))
+                , Atom (Variable "v") ) ) ) )
+  ]
+
+let ds3 =
+  [ ( Abstraction
+        ( "u"
+        , Abstraction
+            ( "v"
+            , Application
+                ( Application (Atom (Constant "A"), Atom (Variable "u"))
+                , Abstraction ("w", Atom (Variable "v")) ) ) )
+    , Abstraction
+        ( "v"
+        , Abstraction
+            ( "w"
+            , Application
+                ( Application (Atom (Constant "A"), Atom (Variable "v"))
+                , Abstraction ("u", Atom (Variable "v")) ) ) ) )
+  ]
+
+let _ =
+  [%test_result: matching_tree]
+    (simpl ds1)
+    ~expect:
+      (Nonterminal
+         ( [ ( Abstraction ("u", Atom (Variable "x"))
+             , Abstraction ("v", Atom (Variable "y")) )
+           ; ( Application (Atom (Variable "f"), Atom (Constant "C"))
+             , Atom (Constant "C") )
+           ]
+         , [] ))
+
+let _ = [%test_result: matching_tree] (simpl ds2) ~expect:(Terminal true)
+let _ = [%test_result: matching_tree] (simpl ds3) ~expect:(Terminal false)
