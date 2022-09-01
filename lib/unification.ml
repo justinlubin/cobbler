@@ -1,8 +1,8 @@
 open Core
 
-(* SECTION 2: An overview of typed lambda-calculus *)
+(* === Typed lambda calculus used in Huet '74 === *)
 
-(* 2.2: Terms *)
+(* Terms *)
 
 type atom =
   | Variable of string
@@ -13,7 +13,7 @@ type term =
   | Application of term * term
   | Abstraction of string * term
 
-(* 2.3: Conversion *)
+(* Substitution function *)
 
 let suffix : int ref = ref (-1)
 
@@ -61,6 +61,8 @@ let substitute : string * term -> term -> term =
   in
   substitute' e
 
+(* Lambda conversion *)
+
 let rec normal_order_step : term -> term option = function
   | Atom a -> None
   (* Outermost *)
@@ -85,7 +87,9 @@ let rec normalize : term -> term =
   | Some t' -> normalize t'
   | None -> t
 
-type standard_form = SF of string list * atom * standard_form list
+(* Normal form abbreviation *)
+
+type abbreviation = string list * atom * term list
 
 let strip_abstractions : term -> string list * term =
  fun t ->
@@ -103,33 +107,39 @@ let strip_applications : term -> term * term list =
   in
   strip_applications' [] t
 
-let rec standardize : term -> standard_form =
+let build_abstractions : string list -> term -> term =
+ fun xs t -> List.fold_right xs ~init:t ~f:(fun x acc -> Abstraction (x, acc))
+
+let build_applications : term -> term list -> term =
+ fun head args ->
+  List.fold_left args ~init:head ~f:(fun acc arg -> Application (acc, arg))
+
+(* Assumes input is normalized *)
+let abbreviation : term -> abbreviation =
  fun t ->
-  let binding, inside_term = strip_abstractions (normalize t) in
+  let binding, inside_term = strip_abstractions t in
   let head_term, argument_terms = strip_applications inside_term in
   let head =
     match head_term with
     | Atom a -> a
     | _ -> failwith "non-normalized head"
   in
-  SF (binding, head, List.map ~f:standardize argument_terms)
+  (binding, head, argument_terms)
 
-let heading : standard_form -> string list * atom = function
-  | SF (binding, head, _) -> (binding, head)
-
-let rigid : standard_form -> bool =
- fun sf ->
-  let binding, head = heading sf in
+let rigid : abbreviation -> bool =
+ fun (binding, head, _) ->
   match head with
   | Variable x -> List.mem ~equal:String.equal binding x
   | Constant _ -> true
 
-(* 2.4: Substitutions *)
+(* Substitutions *)
 
 type substitution_pair = string * term
 type substitution = substitution_pair list
 
-(* SECTION 3: The unification algorithm *)
+(* === The unification algorithm ===  *)
+
+(* Types *)
 
 type disagreement_set = (term * term) list
 
@@ -139,7 +149,54 @@ type matching_tree =
 
 (* SIMPL procedure *)
 
-let simpl : disagreement_set -> matching_tree = fun s -> failwith "TODO"
+let syntactically_equal : term -> term -> bool = fun t1 t2 -> failwith "TODO"
+
+let headings_equal : string list * atom -> string list * atom -> bool =
+ fun (binding1, head1) (binding2, head2) ->
+  Int.equal (List.length binding1) (List.length binding2)
+  && syntactically_equal
+       (Atom head1)
+       (normalize
+          (build_applications
+             (build_abstractions binding2 (Atom head2))
+             (List.map ~f:(fun x -> Atom (Variable x)) binding1)))
+(* match (head1, head2) with
+  | Variable x1, Variable x2 ->
+      (match
+         ( List.findi binding1 ~f:(fun _ x -> String.equal x1 x)
+         , List.findi binding2 ~f:(fun _ x -> String.equal x2 x) )
+       with
+      | Some (pos1, _), Some (pos2, _) -> Int.equal pos1 pos2
+      | None, None -> String.equal x1 x2
+      | _ -> false)
+  | Constant c1, Constant c2 -> String.equal c1 c2
+  | _, _ -> false *)
+
+(* Check:
+    normalize (
+      Application
+      ( add_abstractions binding2 (Atom head2)
+      , List.map ~f:(fun x -> Atom (Variable x)) binding
+      )
+    ) syntactically equal to head1 *)
+
+let rec simpl : disagreement_set -> matching_tree =
+ fun ds ->
+  match
+    ds
+    |> List.map ~f:(fun (e1, e2) -> (abbreviation e1, abbreviation e2))
+    |> List.find ~f:(fun (e1, e2) -> rigid e1 && rigid e2)
+  with
+  | Some ((binding1, head1, argument1), (binding2, head2, argument2)) ->
+      if headings_equal (binding1, head1) (binding2, head2)
+      then (
+        let new_ds =
+          List.map2_exn argument1 argument2 ~f:(fun e1 e2 ->
+              (build_abstractions binding1 e1, build_abstractions binding2 e2))
+        in
+        simpl new_ds)
+      else Terminal false
+  | None -> failwith "step 2"
 
 (* MATCH procedure *)
 
@@ -161,7 +218,7 @@ let rec saturated : matching_tree -> bool = function
   | Terminal _ -> true
   | Nonterminal (_, []) -> false
   | Nonterminal (_, edges) ->
-      List.exists ~f:(fun (_, child) -> saturated child) edges
+      List.for_all ~f:(fun (_, child) -> saturated child) edges
 
 let rec grow : matching_tree -> matching_tree = function
   | Terminal sf -> Terminal sf
@@ -169,7 +226,7 @@ let rec grow : matching_tree -> matching_tree = function
       failwith "non-reduced (empty) disagreement set in nonterminal"
   | Nonterminal (((e1, e2) :: tl as ds), []) ->
       (* Choosing the first pair is arbitrary *)
-      assert (rigid (standardize e2));
+      assert (rigid (abbreviation e2));
       let sigma = matchh e1 e2 (failwith "free variables of N") in
       if List.is_empty sigma
       then Terminal false
