@@ -5,22 +5,26 @@
     λ-Calculus." *)
 
 open Core
-open Lang
+
+(** Types in the language supported for unification *)
+type typ =
+  | Elementary of string
+  | Arrow of typ * typ
 
 (** Atoms in the language supported for unification *)
 type atom =
-  | Variable of string
-  | Constant of string
+  | Variable of string * typ
+  | Constant of string * typ
 
 (** Terms in the language supported for unification *)
 type term =
   | Atom of atom
   | Application of term * term
-  | Abstraction of string * term
+  | Abstraction of string * typ * term
 
 (** The result of the unification algorithm *)
 type unification_result =
-  | Solved of (id * term) list
+  | Solved of (string * term) list
   | Impossible
   | OutOfFuel
 
