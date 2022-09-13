@@ -18,11 +18,8 @@ and typ =
 (** An environment of types (commonly called "gamma") *)
 type typ_env = (id, typ, String.comparator_witness) Map.t
 
-(** Constructor tags (names) *)
-type tag = string
-
 (** Case branches *)
-and branch = tag * (id * exp)
+type branch = string * (id * exp)
 
 (** Expressions *)
 and exp =
@@ -30,7 +27,7 @@ and exp =
   | EApp of exp * exp
   | EAbs of id * exp
   | EMatch of exp * branch list
-  | ECtor of tag * exp
+  | ECtor of string * exp
   | EInt of int
   | EHole of typ
 [@@deriving sexp, ord, eq, compare]
