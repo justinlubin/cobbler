@@ -1,35 +1,42 @@
 open Core
 open Lang
 
-let rec show_typ : typ -> string = function
-  | TPlaceholder x -> x
-  | TArr (domain, codomain) ->
-      sprintf "(%s -> %s)" (show_typ domain) (show_typ codomain)
+(* Comparator stuff *)
 
-let rec show_exp : exp -> string = function
+module T = struct
+  type t = exp
+
+  let compare = compare_exp
+  let sexp_of_t = sexp_of_exp
+end
+
+include T
+include Comparator.Make (T)
+
+(* Normal stuff *)
+
+let rec show : exp -> string = function
   | EVar id -> id
-  | EApp (head, arg) -> sprintf "(%s %s)" (show_exp head) (show_exp arg)
-  | EAbs (param, body) -> sprintf "(lambda %s %s)" param (show_exp body)
+  | EApp (head, arg) -> sprintf "(%s %s)" (show head) (show arg)
+  | EAbs (param, body) -> sprintf "(lambda %s %s)" param (show body)
   | EMatch (scrutinee, branches) ->
       sprintf
         "(match %s %s)"
-        (show_exp scrutinee)
+        (show scrutinee)
         (String.concat
            ~sep:" "
            (List.map
               ~f:(fun (ctor_name, (arg_name, rhs)) ->
-                sprintf "(%s %s -> %s)" ctor_name arg_name (show_exp rhs))
+                sprintf "(%s %s -> %s)" ctor_name arg_name (show rhs))
               branches))
-  | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show_exp arg)
+  | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show arg)
   | EInt n -> string_of_int n
-  | EHole typ -> sprintf "??(%s)" (show_typ typ)
+  | EHole typ -> sprintf "??(%s)" (Typ.show typ)
 
 let map_branches : branch list -> f:(exp -> exp) -> branch list =
  fun branches ~f ->
   List.map branches ~f:(fun (ctor_name, (arg_name, rhs)) ->
       (ctor_name, (arg_name, f rhs)))
-
-(* (lambda z. z ) (x, y) -> [z/(x, y)] z -> [x/(x, y)] (x, y) -> ([x/(x, y)]x, [x/(x, y)]y)... *)
 
 let rec free_variables : exp -> (id, String.comparator_witness) Set.t = function
   | EVar x -> Set.singleton (module String) x
@@ -134,16 +141,6 @@ let freshen_exp : (id -> id) -> exp -> exp =
   in
   freshen_exp' e
 
-(* let freshen : env -> env =
- fun env ->
-  let suffix = ref (-1) in
-  Map.map
-    env
-    ~f:
-      (freshen_exp (fun x ->
-           suffix := !suffix + 1;
-           x ^ Int.to_string !suffix)) *)
-
 let alpha_normalize : exp -> exp =
  fun e ->
   let suffix = ref (-1) in
@@ -156,17 +153,16 @@ let alpha_normalize : exp -> exp =
 let alpha_equivalent : exp -> exp -> bool =
  fun e1 e2 -> [%eq: exp] (alpha_normalize e1) (alpha_normalize e2)
 
-let rec fully_beta_reduce : exp -> exp = function
+let rec beta_normalize : exp -> exp = function
   | EVar id -> EVar id
   | EApp (head, arg) ->
-      let arg' = fully_beta_reduce arg in
-      (match fully_beta_reduce head with
+      let arg' = beta_normalize arg in
+      (match beta_normalize head with
       | EAbs (param, body) -> substitute (param, arg') body
       | head' -> EApp (head', arg'))
-  | EAbs (param, body) -> EAbs (param, fully_beta_reduce body)
+  | EAbs (param, body) -> EAbs (param, beta_normalize body)
   | EMatch (scrutinee, branches) ->
-      EMatch
-        (fully_beta_reduce scrutinee, map_branches ~f:fully_beta_reduce branches)
-  | ECtor (ctor_name, arg) -> ECtor (ctor_name, fully_beta_reduce arg)
+      EMatch (beta_normalize scrutinee, map_branches ~f:beta_normalize branches)
+  | ECtor (ctor_name, arg) -> ECtor (ctor_name, beta_normalize arg)
   | EInt n -> EInt n
   | EHole typ -> EHole typ

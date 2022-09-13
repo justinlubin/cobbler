@@ -37,29 +37,3 @@ and exp =
 
 (** An environment of expressions *)
 type env = (id, exp, String.comparator_witness) Map.t
-
-(** Useful as a comparator module for exps *)
-module Exp = struct
-  module T = struct
-    type t = exp
-
-    let compare = compare_exp
-    let sexp_of_t = sexp_of_exp
-  end
-
-  include T
-  include Comparator.Make (T)
-end
-
-(** Useful as a comparator module for typs *)
-module Typ = struct
-  module T = struct
-    type t = typ
-
-    let compare = compare_typ
-    let sexp_of_t = sexp_of_typ
-  end
-
-  include T
-  include Comparator.Make (T)
-end

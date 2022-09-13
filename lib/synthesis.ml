@@ -6,13 +6,13 @@ open Lang
 let inline : env -> exp -> exp =
  fun env e ->
   Map.fold env ~init:e ~f:(fun ~key:lhs ~data:rhs acc ->
-      Lang_util.substitute (lhs, rhs) acc)
+      Exp.substitute (lhs, rhs) acc)
 
 let norm : env -> exp -> exp =
  fun env e ->
   e
   |> inline env
-  |> Lang_util.fully_beta_reduce
+  |> Exp.beta_normalize
   |> Fusion.pull_out_cases
   |> Fusion.fully_case_reduce
 
@@ -80,11 +80,9 @@ let expand : grammar -> exp -> exp list =
 
 let debug_expand : grammar -> exp -> exp list =
  fun grammar e ->
-  print_endline ("{ Expanding: " ^ Lang_util.show_exp e);
+  print_endline ("{ Expanding: " ^ Exp.show e);
   let expansion = expand grammar e in
-  List.iter
-    ~f:(fun e' -> print_endline ("  " ^ Lang_util.show_exp e'))
-    expansion;
+  List.iter ~f:(fun e' -> print_endline ("  " ^ Exp.show e')) expansion;
   print_endline "}";
   expansion
 
@@ -122,7 +120,5 @@ let solve : problem -> exp option =
     ~start:(EHole goal_typ)
     ~expand:(expand grammar)
     ~correct:(fun e ->
-      let result =
-        Lang_util.alpha_equivalent (norm env e) normalized_reference
-      in
+      let result = Exp.alpha_equivalent (norm env e) normalized_reference in
       result)

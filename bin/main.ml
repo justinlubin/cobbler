@@ -15,5 +15,5 @@ let () =
   print_endline "beginning synthesis...";
   (match Synthesis.solve problem with
   | None -> print_endline "no solution found"
-  | Some e -> printf "solution found:\n%s\n" (Lang_util.show_exp e));
+  | Some e -> printf "solution found:\n%s\n" (Exp.show e));
   print_endline "have a nice day!"
