@@ -19,3 +19,15 @@ let rec show : typ -> string = function
   | TPlaceholder x -> x
   | TArr (domain, codomain) ->
       sprintf "(%s -> %s)" (show domain) (show codomain)
+
+let rec decompose_arr : typ -> typ list * typ = function
+  | TPlaceholder x -> ([], TPlaceholder x)
+  | TArr (domain, codomain) ->
+      let domain', codomain' = decompose_arr codomain in
+      (domain :: domain', codomain')
+
+let rec build_arr : typ list -> typ -> typ =
+ fun domain codomain ->
+  match domain with
+  | [] -> codomain
+  | hd :: tl -> TArr (hd, build_arr tl codomain)

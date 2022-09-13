@@ -21,6 +21,13 @@ val show : t -> string
     branch in [branches]. *)
 val map_branches : branch list -> f:(t -> t) -> branch list
 
+(** TODO *)
+val decompose_abs : exp -> id list * exp
+
+val decompose_app : exp -> exp * exp list
+val build_abs : (id * typ) list -> exp -> exp
+val build_app : exp -> exp list -> exp
+
 (** [free_variables e] returns the free variables of [e] *)
 val free_variables : t -> (id, String.comparator_witness) Set.t
 

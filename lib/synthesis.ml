@@ -16,22 +16,6 @@ let norm : env -> exp -> exp =
   |> Fusion.pull_out_cases
   |> Fusion.fully_case_reduce
 
-(* Helpers *)
-
-let rec decompose_arr : typ -> typ list * typ = function
-  | TPlaceholder x -> ([], TPlaceholder x)
-  | TArr (domain, codomain) ->
-      let domain', codomain' = decompose_arr codomain in
-      (domain :: domain', codomain')
-
-let decompose_abs : exp -> id list * exp =
- fun e ->
-  let rec decompose_abs' acc = function
-    | EAbs (param, body) -> decompose_abs' (param :: acc) body
-    | rest -> (List.rev acc, rest)
-  in
-  decompose_abs' [] e
-
 (* Grammars *)
 
 type grammar = (typ, (id * typ list) list, Typ.comparator_witness) Map.t
@@ -50,7 +34,7 @@ let make_grammar : typ_env -> env -> (id * typ) list -> grammar =
       | `Right _ -> failwith "env contains key gamma does not"
       | `Left _ -> failwith "gamma contains key env does not"
       | `Both (typ, exp) ->
-          let domain, codomain = decompose_arr typ in
+          let domain, codomain = Typ.decompose_arr typ in
           Map.add_multi acc ~key:codomain ~data:(key, domain))
 
 (* Expansion *)
@@ -100,8 +84,8 @@ let problem_of_definitions : typ_env * env -> problem =
  fun (gamma, env) ->
   let main_typ = Map.find_exn gamma "main" in
   let main_exp = Map.find_exn env "main" in
-  let main_domain, main_codomain = decompose_arr main_typ in
-  let main_params, main_body = decompose_abs main_exp in
+  let main_domain, main_codomain = Typ.decompose_arr main_typ in
+  let main_params, main_body = Exp.decompose_abs main_exp in
   { gamma = Map.remove gamma "main"
   ; env = Map.remove env "main"
   ; free_vars = List.zip_exn main_params main_domain

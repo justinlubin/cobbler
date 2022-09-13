@@ -38,6 +38,29 @@ let map_branches : branch list -> f:(exp -> exp) -> branch list =
   List.map branches ~f:(fun (ctor_name, (arg_name, rhs)) ->
       (ctor_name, (arg_name, f rhs)))
 
+let decompose_abs : exp -> id list * exp =
+ fun e ->
+  let rec decompose_abs' acc = function
+    | EAbs (param, body) -> decompose_abs' (param :: acc) body
+    | rest -> (List.rev acc, rest)
+  in
+  decompose_abs' [] e
+
+let decompose_app : exp -> exp * exp list =
+ fun t ->
+  let rec decompose_app' acc = function
+    | EApp (t1, t2) -> decompose_app' (t2 :: acc) t1
+    | rest -> (rest, acc)
+  in
+  decompose_app' [] t
+
+let build_abs : (id * typ) list -> exp -> exp =
+ fun xs t -> List.fold_right xs ~init:t ~f:(fun (x, alpha) acc -> EAbs (x, acc))
+
+let build_app : exp -> exp list -> exp =
+ fun head args ->
+  List.fold_left args ~init:head ~f:(fun acc arg -> EApp (acc, arg))
+
 let rec free_variables : exp -> (id, String.comparator_witness) Set.t = function
   | EVar x -> Set.singleton (module String) x
   | EApp (head, arg) -> Set.union (free_variables head) (free_variables arg)

@@ -16,3 +16,8 @@ val comparator : (t, comparator_witness) Base.Comparator.t
 
 (** [show t] pretty-prints the type [t]. *)
 val show : t -> string
+
+(** TODO *)
+val decompose_arr : typ -> typ list * typ
+
+val build_arr : typ list -> typ -> typ
