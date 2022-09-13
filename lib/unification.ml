@@ -308,7 +308,7 @@ let matchh : term -> term -> substitution =
   let n2 = List.length binding2 in
   assert (Int.equal n1 n2);
   let p1 = List.length argument1 in
-  let p2 = List.length argument2 in
+  (* let p2 = List.length argument2 in *)
   let domain, codomain = decompose_arr head1_typ in
   assert (Int.equal p1 (List.length domain));
   let should_imitate =
