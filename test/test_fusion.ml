@@ -4,7 +4,7 @@ open Lang
 
 let%test_unit "fully case reduce 1" =
   [%test_eq: exp]
-    (Fusion.fully_case_reduce
+    (Fusion.case_normalize
        (EMatch
           ( ECtor ("Just", EVar "x")
           , [ ("Nothing", ("y", EVar "zero"))

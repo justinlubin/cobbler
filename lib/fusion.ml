@@ -19,19 +19,18 @@ let rec pull_out_cases : exp -> exp = function
   | EInt n -> EInt n
   | EHole typ -> EHole typ
 
-let rec fully_case_reduce : exp -> exp = function
+let rec case_normalize : exp -> exp = function
   | EVar x -> EVar x
-  | EApp (head, arg) -> EApp (fully_case_reduce head, fully_case_reduce arg)
-  | EAbs (param, body) -> EAbs (param, fully_case_reduce body)
+  | EApp (head, arg) -> EApp (case_normalize head, case_normalize arg)
+  | EAbs (param, body) -> EAbs (param, case_normalize body)
   | EMatch (ECtor (ctor_name, arg), branches) ->
       let arg_name, rhs =
         List.Assoc.find_exn ~equal:String.equal branches ctor_name
       in
-      fully_case_reduce (Exp.substitute (arg_name, arg) rhs)
+      case_normalize (Exp.substitute (arg_name, arg) rhs)
   | EMatch (scrutinee, branches) ->
       EMatch
-        ( fully_case_reduce scrutinee
-        , Exp.map_branches ~f:fully_case_reduce branches )
-  | ECtor (ctor_name, arg) -> ECtor (ctor_name, fully_case_reduce arg)
+        (case_normalize scrutinee, Exp.map_branches ~f:case_normalize branches)
+  | ECtor (ctor_name, arg) -> ECtor (ctor_name, case_normalize arg)
   | EInt n -> EInt n
   | EHole typ -> EHole typ

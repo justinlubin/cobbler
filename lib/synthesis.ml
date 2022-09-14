@@ -14,7 +14,7 @@ let norm : env -> exp -> exp =
   |> inline env
   |> Exp.beta_normalize
   |> Fusion.pull_out_cases
-  |> Fusion.fully_case_reduce
+  |> Fusion.case_normalize
 
 (* Grammars *)
 
