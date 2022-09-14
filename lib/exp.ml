@@ -77,13 +77,6 @@ let rec free_variables : exp -> (id, String.comparator_witness) Set.t = function
   | EInt n -> Set.empty (module String)
   | EHole typ -> Set.empty (module String)
 
-let suffix : int ref = ref (-1)
-
-let gensym : unit -> string =
- fun () ->
-  suffix := !suffix + 1;
-  sprintf "__var%i" !suffix
-
 let replace : id * id -> exp -> exp =
  fun (lhs, rhs) e ->
   let rec replace' = function
@@ -106,6 +99,8 @@ let replace : id * id -> exp -> exp =
   in
   replace' e
 
+let gensym_prefix : string = "__var"
+
 let substitute : id * exp -> exp -> exp =
  fun (lhs, rhs) e ->
   let rhs_fv = free_variables rhs in
@@ -118,7 +113,7 @@ let substitute : id * exp -> exp -> exp =
         else if not (Set.mem rhs_fv param)
         then EAbs (param, substitute' body)
         else (
-          let new_param = gensym () in
+          let new_param = Util.gensym gensym_prefix in
           EAbs (new_param, substitute' (replace (param, new_param) body)))
     | EMatch (scrutinee, branches) ->
         EMatch
@@ -130,7 +125,7 @@ let substitute : id * exp -> exp -> exp =
                 else if not (Set.mem rhs_fv arg_name)
                 then (ctor_name, (arg_name, substitute' branch_rhs))
                 else (
-                  let new_arg_name = gensym () in
+                  let new_arg_name = Util.gensym gensym_prefix in
                   ( ctor_name
                   , ( new_arg_name
                     , substitute' (replace (arg_name, new_arg_name) branch_rhs)
@@ -170,7 +165,7 @@ let alpha_normalize : exp -> exp =
   freshen_exp
     (fun _ ->
       suffix := !suffix + 1;
-      "var" ^ Int.to_string !suffix)
+      gensym_prefix ^ Int.to_string !suffix)
     e
 
 let alpha_equivalent : exp -> exp -> bool =

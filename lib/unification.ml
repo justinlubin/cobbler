@@ -1,9 +1,5 @@
 open Core
 
-(* Assumptions we have that are different from Huet's paper:
-   - Atoms of distinct types have distinct variable names
-   - Eta-expansion is allowed *)
-
 (* === Typed lambda calculus used in Huet '74 === *)
 
 (* Terms *)
@@ -277,23 +273,6 @@ let simpl : disagreement_set -> matching_tree =
   | None -> Terminal false
 
 (* MATCH procedure *)
-
-(* if n > 0 then (
-      let vars = ws @ List.sub binding2 ~pos:n1 ~len:n in
-      let h_domain = List.map ~f:snd vars in
-      [ ( head1_var
-        , build_abstractions
-            vars
-            (build_applications
-               (Atom head2)
-               (List.map argument2 ~f:(fun arg ->
-                    let h = gensym () in
-                    build_applications
-                      (Atom (Variable (h, build_arr h_domain (typ arg))))
-                      (List.map
-                         ~f:(fun (x, typ) -> Atom (Variable (x, typ)))
-                         vars)))) )
-      ]) *)
 
 let matchh : term -> term -> substitution =
  fun e1 e2 ->

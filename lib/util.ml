@@ -20,3 +20,10 @@ let find_and_remove_first :
         if f hd then Some (hd, List.rev acc @ tl) else helper (hd :: acc) tl
   in
   helper [] xs
+
+let gensym_suffix : int ref = ref (-1)
+
+let gensym : string -> string =
+ fun prefix ->
+  gensym_suffix := !gensym_suffix + 1;
+  sprintf "%s_%i" prefix !gensym_suffix

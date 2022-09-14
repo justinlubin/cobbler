@@ -5,3 +5,6 @@ val dedup_by : 'a list -> f:('a -> 'a -> bool) -> 'a list
 (** [find_and_remove_first xs ~f] tries to returns the first [x] in [xs] that
     satisfies [f], also returning the list [xs] with that element removed. *)
 val find_and_remove_first : 'a list -> f:('a -> bool) -> ('a * 'a list) option
+
+(** TODO *)
+val gensym : string -> string

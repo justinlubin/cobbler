@@ -2,7 +2,12 @@
 
     This module implements Huet's 1974 higher-order pre-unification
     semi-algorithm introduced in "A Unification Algorithm for Typed
-    λ-Calculus." *)
+    λ-Calculus." 
+    
+    This module relies on the following assumptions:
+    - Atoms of distinct types have distinct variable names
+    - Eta-expansion is allowed
+    *)
 
 open Core
 
