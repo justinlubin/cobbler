@@ -18,7 +18,8 @@ include Comparator.Make (T)
 let rec show : exp -> string = function
   | EVar id -> id
   | EApp (head, arg) -> sprintf "(%s %s)" (show head) (show arg)
-  | EAbs (param, body) -> sprintf "(lambda %s %s)" param (show body)
+  | EAbs (param, tau, body) ->
+      sprintf "(lambda %s : %s -> %s)" param (Typ.show tau) (show body)
   | EMatch (scrutinee, branches) ->
       sprintf
         "(match %s %s)"
@@ -38,10 +39,10 @@ let map_branches : branch list -> f:(exp -> exp) -> branch list =
   List.map branches ~f:(fun (ctor_name, (arg_name, rhs)) ->
       (ctor_name, (arg_name, f rhs)))
 
-let decompose_abs : exp -> id list * exp =
+let decompose_abs : exp -> (id * typ) list * exp =
  fun e ->
   let rec decompose_abs' acc = function
-    | EAbs (param, body) -> decompose_abs' (param :: acc) body
+    | EAbs (param, tau, body) -> decompose_abs' ((param, tau) :: acc) body
     | rest -> (List.rev acc, rest)
   in
   decompose_abs' [] e
@@ -55,7 +56,8 @@ let decompose_app : exp -> exp * exp list =
   decompose_app' [] t
 
 let build_abs : (id * typ) list -> exp -> exp =
- fun xs t -> List.fold_right xs ~init:t ~f:(fun (x, alpha) acc -> EAbs (x, acc))
+ fun xs t ->
+  List.fold_right xs ~init:t ~f:(fun (x, tau) acc -> EAbs (x, tau, acc))
 
 let build_app : exp -> exp list -> exp =
  fun head args ->
@@ -64,7 +66,7 @@ let build_app : exp -> exp list -> exp =
 let rec free_variables : exp -> (id, String.comparator_witness) Set.t = function
   | EVar x -> Set.singleton (module String) x
   | EApp (head, arg) -> Set.union (free_variables head) (free_variables arg)
-  | EAbs (param, body) -> Set.remove (free_variables body) param
+  | EAbs (param, _, body) -> Set.remove (free_variables body) param
   | EMatch (scrutinee, branches) ->
       Set.union_list
         (module String)
@@ -82,10 +84,10 @@ let replace : id * id -> exp -> exp =
   let rec replace' = function
     | EVar x -> if String.equal lhs x then EVar rhs else EVar x
     | EApp (head, arg) -> EApp (replace' head, replace' arg)
-    | EAbs (param, body) ->
+    | EAbs (param, tau, body) ->
         if String.equal lhs param
-        then EAbs (rhs, replace' body)
-        else EAbs (param, replace' body)
+        then EAbs (rhs, tau, replace' body)
+        else EAbs (param, tau, replace' body)
     | EMatch (scrutinee, branches) ->
         EMatch
           ( replace' scrutinee
@@ -107,14 +109,14 @@ let substitute : id * exp -> exp -> exp =
   let rec substitute' = function
     | EVar x -> if String.equal lhs x then rhs else EVar x
     | EApp (head, arg) -> EApp (substitute' head, substitute' arg)
-    | EAbs (param, body) ->
+    | EAbs (param, tau, body) ->
         if String.equal lhs param
-        then EAbs (param, body)
+        then EAbs (param, tau, body)
         else if not (Set.mem rhs_fv param)
-        then EAbs (param, substitute' body)
+        then EAbs (param, tau, substitute' body)
         else (
           let new_param = Util.gensym gensym_prefix in
-          EAbs (new_param, substitute' (replace (param, new_param) body)))
+          EAbs (new_param, tau, substitute' (replace (param, new_param) body)))
     | EMatch (scrutinee, branches) ->
         EMatch
           ( substitute' scrutinee
@@ -142,9 +144,9 @@ let freshen_exp : (id -> id) -> exp -> exp =
   let rec freshen_exp' = function
     | EVar x -> EVar x
     | EApp (head, arg) -> EApp (freshen_exp' head, freshen_exp' arg)
-    | EAbs (param, body) ->
+    | EAbs (param, tau, body) ->
         let new_param = renamer param in
-        EAbs (new_param, freshen_exp' (replace (param, new_param) body))
+        EAbs (new_param, tau, freshen_exp' (replace (param, new_param) body))
     | EMatch (scrutinee, branches) ->
         EMatch
           ( freshen_exp' scrutinee
@@ -176,9 +178,9 @@ let rec beta_normalize : exp -> exp = function
   | EApp (head, arg) ->
       let arg' = beta_normalize arg in
       (match beta_normalize head with
-      | EAbs (param, body) -> substitute (param, arg') body
+      | EAbs (param, _, body) -> substitute (param, arg') body
       | head' -> EApp (head', arg'))
-  | EAbs (param, body) -> EAbs (param, beta_normalize body)
+  | EAbs (param, tau, body) -> EAbs (param, tau, beta_normalize body)
   | EMatch (scrutinee, branches) ->
       EMatch (beta_normalize scrutinee, map_branches ~f:beta_normalize branches)
   | ECtor (ctor_name, arg) -> ECtor (ctor_name, beta_normalize arg)

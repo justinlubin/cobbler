@@ -8,8 +8,10 @@ let test_library1 : env =
     [ ( "map"
       , EAbs
           ( "map_f"
+          , TArr (TPlaceholder "Peano", TPlaceholder "Peano")
           , EAbs
               ( "map_mx"
+              , TPlaceholder "MaybePeano"
               , EMatch
                   ( EVar "map_mx"
                   , [ ("Nothing", ("map_n", ECtor ("Nothing", EVar "map_n")))
@@ -20,8 +22,10 @@ let test_library1 : env =
     ; ( "withDefault"
       , EAbs
           ( "default"
+          , TPlaceholder "Peano"
           , EAbs
               ( "wd_mx"
+              , TPlaceholder "MaybePeano"
               , EMatch
                   ( EVar "wd_mx"
                   , [ ("Nothing", ("wd_n", EVar "default"))
@@ -35,18 +39,26 @@ let%test_unit "norm 1" =
        test_library1
        (EAbs
           ( "f"
+          , TArr (TPlaceholder "Peano", TPlaceholder "Peano")
           , EAbs
               ( "mx"
+              , TPlaceholder "MaybePeano"
               , EApp
-                  ( EApp (EVar "withDefault", EAbs ("zero", EVar "zero"))
+                  ( EApp
+                      ( EVar "withDefault"
+                      , EAbs ("zero", TPlaceholder "Unit", EVar "zero") )
                   , EApp (EApp (EVar "map", EVar "f"), EVar "mx") ) ) )))
     (EAbs
        ( "f"
+       , TArr (TPlaceholder "Peano", TPlaceholder "Peano")
        , EAbs
            ( "mx"
+           , TPlaceholder "MaybePeano"
            , EMatch
                ( EVar "mx"
-               , [ ("Nothing", ("map_n", EAbs ("zero", EVar "zero")))
+               , [ ( "Nothing"
+                   , ("map_n", EAbs ("zero", TPlaceholder "Unit", EVar "zero"))
+                   )
                  ; ("Just", ("map_x", EApp (EVar "f", EVar "map_x")))
                  ] ) ) ))
 

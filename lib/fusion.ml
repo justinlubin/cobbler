@@ -4,7 +4,7 @@ open Lang
 let rec pull_out_cases : exp -> exp = function
   | EVar x -> EVar x
   | EApp (head, arg) -> EApp (pull_out_cases head, pull_out_cases arg)
-  | EAbs (param, body) -> EAbs (param, pull_out_cases body)
+  | EAbs (param, tau, body) -> EAbs (param, tau, pull_out_cases body)
   | EMatch (outer_scrutinee, outer_branches) ->
       let outer_branches' = Exp.map_branches ~f:pull_out_cases outer_branches in
       (match pull_out_cases outer_scrutinee with
@@ -22,7 +22,7 @@ let rec pull_out_cases : exp -> exp = function
 let rec case_normalize : exp -> exp = function
   | EVar x -> EVar x
   | EApp (head, arg) -> EApp (case_normalize head, case_normalize arg)
-  | EAbs (param, body) -> EAbs (param, case_normalize body)
+  | EAbs (param, tau, body) -> EAbs (param, tau, case_normalize body)
   | EMatch (ECtor (ctor_name, arg), branches) ->
       let arg_name, rhs =
         List.Assoc.find_exn ~equal:String.equal branches ctor_name

@@ -22,7 +22,7 @@ val show : t -> string
 val map_branches : branch list -> f:(t -> t) -> branch list
 
 (** TODO *)
-val decompose_abs : exp -> id list * exp
+val decompose_abs : exp -> (id * typ) list * exp
 
 val decompose_app : exp -> exp * exp list
 val build_abs : (id * typ) list -> exp -> exp

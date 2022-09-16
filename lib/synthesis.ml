@@ -84,11 +84,11 @@ let problem_of_definitions : typ_env * env -> problem =
  fun (gamma, env) ->
   let main_typ = Map.find_exn gamma "main" in
   let main_exp = Map.find_exn env "main" in
-  let main_domain, main_codomain = Typ.decompose_arr main_typ in
+  let _, main_codomain = Typ.decompose_arr main_typ in
   let main_params, main_body = Exp.decompose_abs main_exp in
   { gamma = Map.remove gamma "main"
   ; env = Map.remove env "main"
-  ; free_vars = List.zip_exn main_params main_domain
+  ; free_vars = main_params
   ; goal_typ = main_codomain
   ; reference = main_body
   }

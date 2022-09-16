@@ -25,7 +25,7 @@ type branch = string * (id * exp)
 and exp =
   | EVar of id
   | EApp of exp * exp
-  | EAbs of id * exp
+  | EAbs of id * typ * exp
   | EMatch of exp * branch list
   | ECtor of string * exp
   | EInt of int

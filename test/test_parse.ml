@@ -23,12 +23,14 @@ let expected_typ_env1 =
 let expected_env1 =
   Map.of_alist_exn
     (module String)
-    [ ("zero", ECtor ("Zero", EAbs ("z", EVar "z")))
+    [ ("zero", ECtor ("Zero", EAbs ("z", TPlaceholder "Unit", EVar "z")))
     ; ( "map"
       , EAbs
           ( "f"
+          , TArr (TPlaceholder "Peano", TPlaceholder "Peano")
           , EAbs
               ( "mx"
+              , TPlaceholder "MaybePeano"
               , EMatch
                   ( EVar "mx"
                   , [ ("Nothing", ("n", ECtor ("Nothing", EVar "n")))
@@ -37,8 +39,10 @@ let expected_env1 =
     ; ( "withDefault"
       , EAbs
           ( "default"
+          , TPlaceholder "Peano"
           , EAbs
               ( "mx"
+              , TPlaceholder "MaybePeano"
               , EMatch
                   ( EVar "mx"
                   , [ ("Nothing", ("n", EVar "default"))
@@ -47,8 +51,10 @@ let expected_env1 =
     ; ( "main"
       , EAbs
           ( "f"
+          , TArr (TPlaceholder "Peano", TPlaceholder "Peano")
           , EAbs
               ( "mx"
+              , TPlaceholder "MaybePeano"
               , EApp
                   ( EApp (EVar "withDefault", EVar "zero")
                   , EApp (EApp (EVar "map", EVar "f"), EVar "mx") ) ) ) )
