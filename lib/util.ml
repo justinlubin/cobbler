@@ -26,4 +26,4 @@ let gensym_suffix : int ref = ref (-1)
 let gensym : string -> string =
  fun prefix ->
   gensym_suffix := !gensym_suffix + 1;
-  sprintf "%s_%i" prefix !gensym_suffix
+  sprintf "__%s_%i" prefix !gensym_suffix

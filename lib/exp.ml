@@ -32,7 +32,7 @@ let rec show : exp -> string = function
               branches))
   | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show arg)
   | EInt n -> string_of_int n
-  | EHole typ -> sprintf "??(%s)" (Typ.show typ)
+  | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
 
 let map_branches : branch list -> f:(exp -> exp) -> branch list =
  fun branches ~f ->
@@ -76,8 +76,8 @@ let rec free_variables : exp -> (id, String.comparator_witness) Set.t = function
                Set.remove (free_variables rhs) arg_name)
              branches)
   | ECtor (_, arg) -> free_variables arg
-  | EInt n -> Set.empty (module String)
-  | EHole typ -> Set.empty (module String)
+  | EInt _ -> Set.empty (module String)
+  | EHole (_, _) -> Set.empty (module String)
 
 let replace : id * id -> exp -> exp =
  fun (lhs, rhs) e ->
@@ -97,7 +97,7 @@ let replace : id * id -> exp -> exp =
                 else (ctor_name, (arg_name, replace' branch_rhs))) )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, replace' arg)
     | EInt n -> EInt n
-    | EHole typ -> EHole typ
+    | EHole (name, typ) -> EHole (name, typ)
   in
   replace' e
 
@@ -135,7 +135,7 @@ let substitute : id * exp -> exp -> exp =
               branches )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, substitute' arg)
     | EInt n -> EInt n
-    | EHole typ -> EHole typ
+    | EHole (name, typ) -> EHole (name, typ)
   in
   substitute' e
 
@@ -157,7 +157,7 @@ let freshen_exp : (id -> id) -> exp -> exp =
                   , freshen_exp' (replace (arg_name, new_arg_name) rhs) ) )) )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, freshen_exp' arg)
     | EInt n -> EInt n
-    | EHole typ -> EHole typ
+    | EHole (name, typ) -> EHole (name, typ)
   in
   freshen_exp' e
 
@@ -185,4 +185,4 @@ let rec beta_normalize : exp -> exp = function
       EMatch (beta_normalize scrutinee, map_branches ~f:beta_normalize branches)
   | ECtor (ctor_name, arg) -> ECtor (ctor_name, beta_normalize arg)
   | EInt n -> EInt n
-  | EHole typ -> EHole typ
+  | EHole (name, typ) -> EHole (name, typ)

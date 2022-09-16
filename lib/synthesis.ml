@@ -52,10 +52,12 @@ let expand : grammar -> exp -> exp list =
         (* Only does one at a time (may want to change later) *)
         List.map ~f:(fun h -> EApp (h, arg)) (expand' head)
         @ List.map ~f:(fun a -> EApp (head, a)) (expand' arg)
-    | EHole typ ->
+    | EHole (_, typ) ->
         List.map
           ~f:(fun (x, typs) ->
-            make_app x (List.map ~f:(fun typ -> EHole typ) typs))
+            make_app
+              x
+              (List.map ~f:(fun typ -> EHole (Util.gensym "hole", typ)) typs))
           (Map.find grammar typ |> Option.value_or_thunk ~default:(fun _ -> []))
     | EAbs _ | EMatch _ | ECtor _ | EInt _ ->
         failwith "expanding something other than var, app, or hole"
@@ -101,7 +103,7 @@ let solve : problem -> exp option =
   let grammar = make_grammar gamma env free_vars in
   Enumerative_search.top_down
     ~max_iterations:5
-    ~start:(EHole goal_typ)
+    ~start:(EHole (Util.gensym "start", goal_typ))
     ~expand:(expand grammar)
     ~correct:(fun e ->
       let result = Exp.alpha_equivalent (norm env e) normalized_reference in

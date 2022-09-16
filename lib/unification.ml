@@ -293,10 +293,7 @@ let matchh : term -> term -> substitution =
   let should_imitate =
     match head2 with
     | Constant _ -> true
-    | Variable (x, alpha) ->
-        (match List.findi binding2 ~f:(fun _ (v, _) -> String.equal x v) with
-        | None -> false
-        | Some (i, _) -> i >= n1)
+    | Variable (_, _) -> false
   in
   let ws = List.map ~f:(fun alpha -> (gensym (), alpha)) domain in
   let imitation =
@@ -393,7 +390,9 @@ let rec search_and_grow : int -> matching_tree -> unification_result =
   then OutOfFuel
   else (
     match search m with
-    | Some sigma -> Solved sigma
+    | Some sigma ->
+        print_endline ([%show: substitution] sigma);
+        Solved sigma
     | None ->
         if saturated m then Impossible else search_and_grow (fuel - 1) (grow m))
 

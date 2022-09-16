@@ -28,6 +28,8 @@ and exp_of_sexp : Sexp.t -> exp = function
       else (
         try EInt (Int.of_string x) with
         | _ -> EVar x)
+  | Sexp.List [ Sexp.Atom "??"; Sexp.Atom name; tau ] ->
+      EHole (name, typ_of_sexp tau)
   | Sexp.List [ Sexp.Atom "lambda"; Sexp.Atom param; tau; body ] ->
       EAbs (param, typ_of_sexp tau, exp_of_sexp body)
   | Sexp.List (Sexp.Atom "match" :: scrutinee :: branches) ->

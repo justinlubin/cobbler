@@ -4,7 +4,7 @@
     between all other modules. In particular, it provides the type definitions
     for all concepts related to the language definition. *)
 
-open Base
+open Core
 
 (** Identifiers *)
 type id = string
@@ -18,6 +18,10 @@ and typ =
 (** An environment of types (commonly called "gamma") *)
 type typ_env = (id, typ, String.comparator_witness) Map.t
 
+(** An environment of datatypes (commonly called "sigma") *)
+type datatype_env =
+  (string, (string * typ) list, String.comparator_witness) Map.t
+
 (** Case branches *)
 type branch = string * (id * exp)
 
@@ -29,8 +33,16 @@ and exp =
   | EMatch of exp * branch list
   | ECtor of string * exp
   | EInt of int
-  | EHole of typ
+  | EHole of string * typ
 [@@deriving sexp, ord, eq, compare]
 
 (** An environment of expressions *)
 type env = (id, exp, String.comparator_witness) Map.t
+
+(** TODO: temporary! *)
+let default_datatype_env : datatype_env =
+  String.Map.of_alist_exn
+    [ ( "MaybePeano"
+      , [ ("Nothing", TPlaceholder "Unit"); ("Just", TPlaceholder "Peano") ] )
+    ; ("Gamma", [ ("B", TPlaceholder "Unit") ])
+    ]
