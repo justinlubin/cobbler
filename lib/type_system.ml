@@ -3,9 +3,9 @@ open Lang
 
 exception IllTyped of exp
 
-let ctor_typ : datatype_env -> string -> string * typ =
+let ctor_typ : datatype_env -> string -> (string * typ) option =
  fun sigma tag ->
-  List.find_map_exn (String.Map.to_alist sigma) ~f:(fun (dt, dt_info) ->
+  List.find_map (String.Map.to_alist sigma) ~f:(fun (dt, dt_info) ->
       Option.map
         (List.Assoc.find dt_info ~equal:String.equal tag)
         ~f:(fun domain -> (dt, domain)))
@@ -19,7 +19,9 @@ let rec infer : datatype_env -> typ_env -> exp -> typ =
       | Some tau -> tau)
   | EApp (e1, e2) ->
       (match infer sigma gamma e1 with
-      | TArr (domain, codomain) when check sigma gamma e2 domain -> codomain
+      | TArr (domain, codomain) ->
+          check sigma gamma e2 domain;
+          codomain
       | _ -> raise (IllTyped e))
   | EAbs (x, tau, body) ->
       TArr (tau, infer sigma (String.Map.update gamma x ~f:(fun _ -> tau)) body)
@@ -29,12 +31,15 @@ let rec infer : datatype_env -> typ_env -> exp -> typ =
           let ctors, return_types =
             List.unzip
               (List.map branches ~f:(fun (tag, (arg_name, rhs)) ->
-                   let _, domain = ctor_typ sigma tag in
-                   ( (tag, domain)
-                   , infer
-                       sigma
-                       (String.Map.update gamma arg_name ~f:(fun _ -> domain))
-                       rhs )))
+                   match ctor_typ sigma tag with
+                   | Some (_, domain) ->
+                       ( (tag, domain)
+                       , infer
+                           sigma
+                           (String.Map.update gamma arg_name ~f:(fun _ ->
+                                domain))
+                           rhs )
+                   | None -> raise (IllTyped e)))
           in
           if List.equal
                [%eq: id * typ]
@@ -49,22 +54,22 @@ let rec infer : datatype_env -> typ_env -> exp -> typ =
           else raise (IllTyped e)
       | _ -> raise (IllTyped e))
   | ECtor (tag, arg) ->
-      let datatype, domain = ctor_typ sigma tag in
-      if check sigma gamma arg domain
-      then TDatatype datatype
-      else raise (IllTyped e)
+      (match ctor_typ sigma tag with
+      | Some (datatype, domain) ->
+          check sigma gamma arg domain;
+          TDatatype datatype
+      | None -> raise (IllTyped e))
   | EUnit -> TUnit
   | EInt _ -> TInt
   | EHole (_, tau) -> tau
 
-and check : datatype_env -> typ_env -> exp -> typ -> bool =
+and check : datatype_env -> typ_env -> exp -> typ -> unit =
  fun sigma gamma e tau ->
-  try [%eq: typ] (infer sigma gamma e) tau with
-  | IllTyped _ -> false
+  if [%eq: typ] (infer sigma gamma e) tau then () else raise (IllTyped e)
 
-let well_typed : datatype_env -> typ_env -> env -> bool =
+let well_typed : datatype_env -> typ_env -> env -> unit =
  fun sigma gamma env ->
-  String.Map.for_alli env ~f:(fun ~key:name ~data:body ->
+  String.Map.iteri env ~f:(fun ~key:name ~data:body ->
       check
         sigma
         gamma

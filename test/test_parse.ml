@@ -23,7 +23,7 @@ let expected_typ_env1 =
 let expected_env1 =
   Map.of_alist_exn
     (module String)
-    [ ("zero", ECtor ("Zero", EAbs ("z", TUnit, EVar "z")))
+    [ ("zero", ECtor ("Zero", EUnit))
     ; ( "map"
       , EAbs
           ( "f"

@@ -1,5 +1,5 @@
 (define zero : Peano
-  (Zero (lambda z Unit z)))
+  (Zero ()))
 
 (define map : ((Peano -> Peano) -> (MaybePeano -> MaybePeano))
   (lambda f (Peano -> Peano) (lambda mx MaybePeano

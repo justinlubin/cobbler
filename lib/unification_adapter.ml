@@ -39,7 +39,7 @@ let rec to_unification_term'
   | EMatch (scrutinee, branches) ->
       let head = Util.gensym "match" in
       let datatype =
-        match Type_system.infer gamma scrutinee with
+        match Type_system.infer sigma gamma scrutinee with
         | TDatatype x -> x
         | _ -> failwith "matching on non-datatype"
       in
@@ -48,7 +48,7 @@ let rec to_unification_term'
           (String.Map.find_exn sigma datatype)
           ~compare:(fun (tag1, _) (tag2, _) -> String.compare tag1 tag2)
       in
-      let codomain = Type_system.infer gamma e in
+      let codomain = Type_system.infer sigma gamma e in
       let domain =
         TDatatype datatype
         :: List.map datatype_info ~f:(fun (_, typ) -> TArr (typ, codomain))
