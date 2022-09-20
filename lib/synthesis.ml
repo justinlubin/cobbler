@@ -39,10 +39,6 @@ let make_grammar : typ_env -> env -> (id * typ) list -> grammar =
 
 (* Expansion *)
 
-let make_app : id -> exp list -> exp =
- fun head args ->
-  List.fold_left ~init:(EVar head) ~f:(fun acc x -> EApp (acc, x)) args
-
 let expand : grammar -> exp -> exp list =
  fun grammar e ->
   let open List.Let_syntax in
@@ -55,8 +51,8 @@ let expand : grammar -> exp -> exp list =
     | EHole (_, typ) ->
         List.map
           ~f:(fun (x, typs) ->
-            make_app
-              x
+            Exp.build_app
+              (EVar x)
               (List.map ~f:(fun typ -> EHole (Util.gensym "hole", typ)) typs))
           (Map.find grammar typ |> Option.value_or_thunk ~default:(fun _ -> []))
     | EAbs _ | EMatch _ | ECtor _ | EInt _ ->

@@ -6,8 +6,7 @@
     
     This module relies on the following assumptions:
     - Atoms of distinct types have distinct variable names
-    - Eta-expansion is allowed
-    *)
+    - Eta-expansion is allowed *)
 
 open Core
 

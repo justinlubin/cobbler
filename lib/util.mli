@@ -6,5 +6,8 @@ val dedup_by : 'a list -> f:('a -> 'a -> bool) -> 'a list
     satisfies [f], also returning the list [xs] with that element removed. *)
 val find_and_remove_first : 'a list -> f:('a -> bool) -> ('a * 'a list) option
 
-(** TODO *)
+(** [gensym prefix] generates a string with the following properties:
+    + Starts with two underscores
+    + Guaranteed to be unique among all strings produced by [gensym] called with
+      the argument [prefix] in the course of a program's execution *)
 val gensym : string -> string
