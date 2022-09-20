@@ -16,12 +16,16 @@ include Comparator.Make (T)
 (* Normal stuff *)
 
 let rec show : typ -> string = function
-  | TPlaceholder x -> x
+  | TUnit -> "Unit"
+  | TInt -> "Int"
+  | TDatatype x -> x
   | TArr (domain, codomain) ->
       sprintf "(%s -> %s)" (show domain) (show codomain)
 
 let rec decompose_arr : typ -> typ list * typ = function
-  | TPlaceholder x -> ([], TPlaceholder x)
+  | TUnit -> ([], TUnit)
+  | TInt -> ([], TInt)
+  | TDatatype x -> ([], TDatatype x)
   | TArr (domain, codomain) ->
       let domain', codomain' = decompose_arr codomain in
       (domain :: domain', codomain')

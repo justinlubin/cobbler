@@ -5,7 +5,9 @@ open Unification
 let rec to_unification_typ : Lang.typ -> Unification.typ =
  fun tau ->
   match tau with
-  | TPlaceholder x -> Elementary x
+  | TUnit -> Elementary "Unit"
+  | TInt -> Elementary "Int"
+  | TDatatype x -> Elementary x
   | TArr (domain, codomain) ->
       Arrow (to_unification_typ domain, to_unification_typ codomain)
 
@@ -38,8 +40,8 @@ let rec to_unification_term'
       let head = Util.gensym "match" in
       let datatype =
         match Type_system.infer gamma scrutinee with
-        | TPlaceholder x -> x
-        | TArr (_, _) -> failwith "matching on non-datatype"
+        | TDatatype x -> x
+        | _ -> failwith "matching on non-datatype"
       in
       let datatype_info =
         List.sort
@@ -48,7 +50,7 @@ let rec to_unification_term'
       in
       let codomain = Type_system.infer gamma e in
       let domain =
-        TPlaceholder datatype
+        TDatatype datatype
         :: List.map datatype_info ~f:(fun (_, typ) -> TArr (typ, codomain))
       in
       to_unification_term'
@@ -68,12 +70,13 @@ let rec to_unification_term'
         List.find_map_exn (String.Map.to_alist sigma) ~f:(fun (dt, dt_info) ->
             Option.map
               (List.Assoc.find dt_info ~equal:String.equal tag)
-              ~f:(fun domain -> TArr (domain, TPlaceholder dt)))
+              ~f:(fun domain -> TArr (domain, TDatatype dt)))
       in
       Application
         ( Atom (Constant (tag, to_unification_typ ctor_typ))
         , to_unification_term' stdlib sigma gamma arg )
-  | EInt n -> Atom (Constant (string_of_int n, Elementary "Int"))
+  | EUnit -> Atom (Constant ("unit", to_unification_typ TUnit))
+  | EInt n -> Atom (Constant (string_of_int n, to_unification_typ TInt))
   | EHole (name, typ) -> Atom (Variable (name, to_unification_typ typ))
 
 let to_unification_term : Lang.typ_env -> Lang.exp -> Unification.term =

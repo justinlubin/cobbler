@@ -390,9 +390,7 @@ let rec search_and_grow : int -> matching_tree -> unification_result =
   then OutOfFuel
   else (
     match search m with
-    | Some sigma ->
-        print_endline ([%show: substitution] sigma);
-        Solved sigma
+    | Some sigma -> Solved sigma
     | None ->
         if saturated m then Impossible else search_and_grow (fuel - 1) (grow m))
 

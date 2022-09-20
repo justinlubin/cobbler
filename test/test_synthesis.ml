@@ -8,10 +8,10 @@ let test_library1 : env =
     [ ( "map"
       , EAbs
           ( "map_f"
-          , TArr (TPlaceholder "Peano", TPlaceholder "Peano")
+          , TArr (TDatatype "Peano", TDatatype "Peano")
           , EAbs
               ( "map_mx"
-              , TPlaceholder "MaybePeano"
+              , TDatatype "MaybePeano"
               , EMatch
                   ( EVar "map_mx"
                   , [ ("Nothing", ("map_n", ECtor ("Nothing", EVar "map_n")))
@@ -22,10 +22,10 @@ let test_library1 : env =
     ; ( "withDefault"
       , EAbs
           ( "default"
-          , TPlaceholder "Peano"
+          , TDatatype "Peano"
           , EAbs
               ( "wd_mx"
-              , TPlaceholder "MaybePeano"
+              , TDatatype "MaybePeano"
               , EMatch
                   ( EVar "wd_mx"
                   , [ ("Nothing", ("wd_n", EVar "default"))
@@ -39,26 +39,22 @@ let%test_unit "norm 1" =
        test_library1
        (EAbs
           ( "f"
-          , TArr (TPlaceholder "Peano", TPlaceholder "Peano")
+          , TArr (TDatatype "Peano", TDatatype "Peano")
           , EAbs
               ( "mx"
-              , TPlaceholder "MaybePeano"
+              , TDatatype "MaybePeano"
               , EApp
-                  ( EApp
-                      ( EVar "withDefault"
-                      , EAbs ("zero", TPlaceholder "Unit", EVar "zero") )
+                  ( EApp (EVar "withDefault", EAbs ("zero", TUnit, EVar "zero"))
                   , EApp (EApp (EVar "map", EVar "f"), EVar "mx") ) ) )))
     (EAbs
        ( "f"
-       , TArr (TPlaceholder "Peano", TPlaceholder "Peano")
+       , TArr (TDatatype "Peano", TDatatype "Peano")
        , EAbs
            ( "mx"
-           , TPlaceholder "MaybePeano"
+           , TDatatype "MaybePeano"
            , EMatch
                ( EVar "mx"
-               , [ ( "Nothing"
-                   , ("map_n", EAbs ("zero", TPlaceholder "Unit", EVar "zero"))
-                   )
+               , [ ("Nothing", ("map_n", EAbs ("zero", TUnit, EVar "zero")))
                  ; ("Just", ("map_x", EApp (EVar "f", EVar "map_x")))
                  ] ) ) ))
 

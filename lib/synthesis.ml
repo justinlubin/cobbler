@@ -55,7 +55,7 @@ let expand : grammar -> exp -> exp list =
               (EVar x)
               (List.map ~f:(fun typ -> EHole (Util.gensym "hole", typ)) typs))
           (Map.find grammar typ |> Option.value_or_thunk ~default:(fun _ -> []))
-    | EAbs _ | EMatch _ | ECtor _ | EInt _ ->
+    | EAbs _ | EMatch _ | ECtor _ | EUnit | EInt _ ->
         failwith "expanding something other than var, app, or hole"
   in
   expand' e

@@ -10,8 +10,8 @@ let%test_unit "unification 1" =
   let e0' = Parse.exp (sprintf "(a (a b))") in
   let stdlib =
     String.Map.of_alist_exn
-      [ ("a", TArr (TPlaceholder "Gamma", TPlaceholder "Gamma"))
-      ; ("b", TPlaceholder "Gamma")
+      [ ("a", TArr (TDatatype "Gamma", TDatatype "Gamma"))
+      ; ("b", TDatatype "Gamma")
       ]
   in
   match
@@ -23,4 +23,3 @@ let%test_unit "unification 1" =
   | Solved subs -> ()
   | Impossible -> failwith "shouldn't be impossible"
   | OutOfFuel -> failwith "shouldn't run out of fuel"
-(* [%test_result: exp] actual_solution ~expect:expected_solution *)

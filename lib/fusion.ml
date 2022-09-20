@@ -16,6 +16,7 @@ let rec pull_out_cases : exp -> exp = function
                 inner_branches )
       | outer_scrutinee' -> EMatch (outer_scrutinee', outer_branches'))
   | ECtor (ctor_name, arg) -> ECtor (ctor_name, pull_out_cases arg)
+  | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)
 
@@ -32,5 +33,6 @@ let rec case_normalize : exp -> exp = function
       EMatch
         (case_normalize scrutinee, Exp.map_branches ~f:case_normalize branches)
   | ECtor (ctor_name, arg) -> ECtor (ctor_name, case_normalize arg)
+  | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)

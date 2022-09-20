@@ -4,11 +4,16 @@ open Lang
 let is_constructor : string -> bool =
  fun s -> Char.is_uppercase (String.get s 0)
 
+let is_datatype : string -> bool = fun s -> Char.is_uppercase (String.get s 0)
+let is_variable : string -> bool = fun s -> Char.is_lowercase (String.get s 0)
+
 let rec typ_of_sexp : Sexp.t -> typ = function
+  | Sexp.Atom "Unit" -> TUnit
+  | Sexp.Atom "Int" -> TInt
   | Sexp.Atom x ->
-      if String.equal x "->"
-      then failwith "cannot use arrow (->) as type name"
-      else TPlaceholder x
+      if is_datatype x
+      then TDatatype x
+      else failwith (sprintf "unknown atom type '%s'" x)
   | Sexp.List [ domain; Sexp.Atom "->"; range ] ->
       TArr (typ_of_sexp domain, typ_of_sexp range)
   | Sexp.List _ ->
@@ -21,13 +26,12 @@ let rec branch_of_sexp : Sexp.t -> branch = function
 
 and exp_of_sexp : Sexp.t -> exp = function
   | Sexp.Atom x ->
-      if String.is_prefix ~prefix:"__" x
-      then failwith "cannot use name starting with double underscore"
-      else if String.equal x "->"
-      then failwith "cannot use arrow (->) as expression name"
-      else (
-        try EInt (Int.of_string x) with
-        | _ -> EVar x)
+      (try EInt (Int.of_string x) with
+      | _ ->
+          if is_variable x
+          then EVar x
+          else failwith (sprintf "unknown atom expression '%s'" x))
+  | Sexp.List [] -> EUnit
   | Sexp.List [ Sexp.Atom "??"; Sexp.Atom name; tau ] ->
       EHole (name, typ_of_sexp tau)
   | Sexp.List [ Sexp.Atom "lambda"; Sexp.Atom param; tau; body ] ->
@@ -39,7 +43,6 @@ and exp_of_sexp : Sexp.t -> exp = function
   | Sexp.List (head :: args) ->
       List.fold_left args ~init:(exp_of_sexp head) ~f:(fun acc arg ->
           EApp (acc, exp_of_sexp arg))
-  | _ -> failwith "malformed expression"
 
 let definitions : string -> typ_env * env =
  fun text ->

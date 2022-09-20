@@ -31,6 +31,7 @@ let rec show : exp -> string = function
                 sprintf "(%s %s -> %s)" ctor_name arg_name (show rhs))
               branches))
   | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show arg)
+  | EUnit -> "()"
   | EInt n -> string_of_int n
   | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
 
@@ -76,8 +77,7 @@ let rec free_variables : exp -> (id, String.comparator_witness) Set.t = function
                Set.remove (free_variables rhs) arg_name)
              branches)
   | ECtor (_, arg) -> free_variables arg
-  | EInt _ -> Set.empty (module String)
-  | EHole (_, _) -> Set.empty (module String)
+  | EUnit | EInt _ | EHole (_, _) -> Set.empty (module String)
 
 let replace : id * id -> exp -> exp =
  fun (lhs, rhs) e ->
@@ -96,6 +96,7 @@ let replace : id * id -> exp -> exp =
                 then (ctor_name, (rhs, replace' branch_rhs))
                 else (ctor_name, (arg_name, replace' branch_rhs))) )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, replace' arg)
+    | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
   in
@@ -134,6 +135,7 @@ let substitute : id * exp -> exp -> exp =
                     ) )))
               branches )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, substitute' arg)
+    | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
   in
@@ -156,6 +158,7 @@ let freshen_exp : (id -> id) -> exp -> exp =
                 , ( new_arg_name
                   , freshen_exp' (replace (arg_name, new_arg_name) rhs) ) )) )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, freshen_exp' arg)
+    | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
   in
@@ -184,5 +187,6 @@ let rec beta_normalize : exp -> exp = function
   | EMatch (scrutinee, branches) ->
       EMatch (beta_normalize scrutinee, map_branches ~f:beta_normalize branches)
   | ECtor (ctor_name, arg) -> ECtor (ctor_name, beta_normalize arg)
+  | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)

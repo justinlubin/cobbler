@@ -11,7 +11,9 @@ type id = string
 
 (** Types *)
 and typ =
-  | TPlaceholder of string
+  | TUnit
+  | TInt
+  | TDatatype of string
   | TArr of typ * typ
 [@@deriving sexp, ord, eq, compare]
 
@@ -32,6 +34,7 @@ and exp =
   | EAbs of id * typ * exp
   | EMatch of exp * branch list
   | ECtor of string * exp
+  | EUnit
   | EInt of int
   | EHole of string * typ
 [@@deriving sexp, ord, eq, compare]
@@ -42,7 +45,6 @@ type env = (id, exp, String.comparator_witness) Map.t
 (** TODO: temporary! *)
 let default_datatype_env : datatype_env =
   String.Map.of_alist_exn
-    [ ( "MaybePeano"
-      , [ ("Nothing", TPlaceholder "Unit"); ("Just", TPlaceholder "Peano") ] )
-    ; ("Gamma", [ ("B", TPlaceholder "Unit") ])
+    [ ("MaybePeano", [ ("Nothing", TUnit); ("Just", TDatatype "Peano") ])
+    ; ("Gamma", [ ("B", TUnit) ])
     ]

@@ -5,32 +5,32 @@ open Lang
 let expected_typ_env1 =
   Map.of_alist_exn
     (module String)
-    [ ("zero", TPlaceholder "Peano")
+    [ ("zero", TDatatype "Peano")
     ; ( "map"
       , TArr
-          ( TArr (TPlaceholder "Peano", TPlaceholder "Peano")
-          , TArr (TPlaceholder "MaybePeano", TPlaceholder "MaybePeano") ) )
+          ( TArr (TDatatype "Peano", TDatatype "Peano")
+          , TArr (TDatatype "MaybePeano", TDatatype "MaybePeano") ) )
     ; ( "withDefault"
       , TArr
-          ( TPlaceholder "Peano"
-          , TArr (TPlaceholder "MaybePeano", TPlaceholder "Peano") ) )
+          (TDatatype "Peano", TArr (TDatatype "MaybePeano", TDatatype "Peano"))
+      )
     ; ( "main"
       , TArr
-          ( TArr (TPlaceholder "Peano", TPlaceholder "Peano")
-          , TArr (TPlaceholder "MaybePeano", TPlaceholder "Peano") ) )
+          ( TArr (TDatatype "Peano", TDatatype "Peano")
+          , TArr (TDatatype "MaybePeano", TDatatype "Peano") ) )
     ]
 
 let expected_env1 =
   Map.of_alist_exn
     (module String)
-    [ ("zero", ECtor ("Zero", EAbs ("z", TPlaceholder "Unit", EVar "z")))
+    [ ("zero", ECtor ("Zero", EAbs ("z", TUnit, EVar "z")))
     ; ( "map"
       , EAbs
           ( "f"
-          , TArr (TPlaceholder "Peano", TPlaceholder "Peano")
+          , TArr (TDatatype "Peano", TDatatype "Peano")
           , EAbs
               ( "mx"
-              , TPlaceholder "MaybePeano"
+              , TDatatype "MaybePeano"
               , EMatch
                   ( EVar "mx"
                   , [ ("Nothing", ("n", ECtor ("Nothing", EVar "n")))
@@ -39,10 +39,10 @@ let expected_env1 =
     ; ( "withDefault"
       , EAbs
           ( "default"
-          , TPlaceholder "Peano"
+          , TDatatype "Peano"
           , EAbs
               ( "mx"
-              , TPlaceholder "MaybePeano"
+              , TDatatype "MaybePeano"
               , EMatch
                   ( EVar "mx"
                   , [ ("Nothing", ("n", EVar "default"))
@@ -51,10 +51,10 @@ let expected_env1 =
     ; ( "main"
       , EAbs
           ( "f"
-          , TArr (TPlaceholder "Peano", TPlaceholder "Peano")
+          , TArr (TDatatype "Peano", TDatatype "Peano")
           , EAbs
               ( "mx"
-              , TPlaceholder "MaybePeano"
+              , TDatatype "MaybePeano"
               , EApp
                   ( EApp (EVar "withDefault", EVar "zero")
                   , EApp (EApp (EVar "map", EVar "f"), EVar "mx") ) ) ) )
