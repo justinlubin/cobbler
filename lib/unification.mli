@@ -26,6 +26,14 @@ type term =
   | Application of term * term
   | Abstraction of string * typ * term
 
+(** [typ t] returns the type of [t]. *)
+val typ : term -> typ
+
+(** Assuming [t] is in normal form, [abbreviate t] returns the canonical
+    decomposition of [t] into its header, its head, and its arguments. This is
+    a useful helper function for dealing with {!val:term}s. *)
+val abbreviate : term -> (string * typ) list * atom * term list
+
 (** The result of the unification algorithm *)
 type unification_result =
   | Solved of (string * term) list

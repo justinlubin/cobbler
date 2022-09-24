@@ -17,8 +17,14 @@ let%test_unit "unification 1" =
   match
     Unification.unify
       100
-      (Unification_adapter.to_unification_term stdlib e0)
-      (Unification_adapter.to_unification_term stdlib e0')
+      (Unification_adapter.to_unification_term
+         Lang.default_datatype_env
+         stdlib
+         e0)
+      (Unification_adapter.to_unification_term
+         Lang.default_datatype_env
+         stdlib
+         e0')
   with
   | Solved subs -> ()
   | Impossible -> failwith "shouldn't be impossible"

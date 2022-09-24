@@ -36,3 +36,22 @@ let rec case_normalize : exp -> exp = function
   | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)
+
+let contains : string -> exp -> bool = fun s e -> failwith "TODO"
+let transform : exp -> exp -> exp = fun e1 e2 -> failwith "TODO"
+
+(* Assumes no mutual recursion? *)
+let extract_list_fold : recursive_name:string -> exp -> exp =
+ fun ~recursive_name -> function
+  | EMatch (scrutinee, branches) ->
+      let _, nil_rhs = List.Assoc.find_exn ~equal:String.equal branches "Nil" in
+      if contains recursive_name nil_rhs
+      then failwith "recursive nil case"
+      else (
+        let _, cons_rhs =
+          List.Assoc.find_exn ~equal:String.equal branches "Cons"
+        in
+        let rec_var = Util.gensym "rec" in
+        (* Exp.build_app (EVar "__list_fold") [ scrutinee; nil_rhs ; build_abs [();()] (transform cons_rhs)] *)
+        failwith "TODO: need pairs")
+  | _ -> failwith "TODO"

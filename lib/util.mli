@@ -8,6 +8,7 @@ val find_and_remove_first : 'a list -> f:('a -> bool) -> ('a * 'a list) option
 
 (** [gensym prefix] generates a string with the following properties:
     + Starts with two underscores
+    + Does not contain any dollar signs ($)
     + Guaranteed to be unique among all strings produced by [gensym] called with
       the argument [prefix] in the course of a program's execution *)
 val gensym : string -> string
