@@ -52,12 +52,7 @@ let rec typ : term -> typ = function
 
 (* Substitution function *)
 
-let suffix : int ref = ref (-1)
-
-let gensym : unit -> string =
- fun () ->
-  suffix := !suffix + 1;
-  sprintf "__var%i" !suffix
+let gensym_prefix : string = "atom_var"
 
 let rec free_variables : term -> String.Set.t = function
   | Atom (Variable (x, _)) -> String.Set.singleton x
@@ -97,7 +92,7 @@ let substitute : string * term -> term -> term =
         else if not (String.Set.mem rhs_fv param)
         then Abstraction (param, alpha, substitute' body)
         else (
-          let new_param = gensym () in
+          let new_param = Util.gensym gensym_prefix in
           Abstraction
             (new_param, alpha, substitute' (replace (param, new_param) body)))
   in
@@ -184,7 +179,7 @@ let abbreviate : term -> abbreviation =
   let domain, codomain = decompose_arr (atom_typ head) in
   let eta_ws =
     List.map
-      ~f:(fun alpha -> (gensym (), alpha))
+      ~f:(fun alpha -> (Util.gensym gensym_prefix, alpha))
       (List.drop domain (List.length argument_terms))
   in
   ( binding @ eta_ws
@@ -295,7 +290,9 @@ let matchh : term -> term -> substitution =
     | Constant _ -> true
     | Variable (_, _) -> false
   in
-  let ws = List.map ~f:(fun alpha -> (gensym (), alpha)) domain in
+  let ws =
+    List.map ~f:(fun alpha -> (Util.gensym gensym_prefix, alpha)) domain
+  in
   let imitation =
     if not should_imitate
     then []
@@ -306,7 +303,7 @@ let matchh : term -> term -> substitution =
             (build_applications
                (Atom head2)
                (List.map argument2 ~f:(fun arg ->
-                    let h = gensym () in
+                    let h = Util.gensym gensym_prefix in
                     build_applications
                       (Atom (Variable (h, build_arr domain (typ arg))))
                       (List.map
@@ -326,7 +323,7 @@ let matchh : term -> term -> substitution =
                 (build_applications
                    (Atom (Variable (w, w_typ)))
                    (List.map w_domain ~f:(fun w_arg_typ ->
-                        let h = gensym () in
+                        let h = Util.gensym gensym_prefix in
                         build_applications
                           (Atom (Variable (h, build_arr domain w_arg_typ)))
                           (List.map

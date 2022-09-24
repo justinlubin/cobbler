@@ -102,7 +102,7 @@ let replace : id * id -> exp -> exp =
   in
   replace' e
 
-let gensym_prefix : string = "__var"
+let gensym_prefix : string = "var"
 
 let substitute : id * exp -> exp -> exp =
  fun (lhs, rhs) e ->

@@ -16,3 +16,7 @@ val check : datatype_env -> typ_env -> exp -> typ -> unit
     well-typed in the datatype environment [sigma] and type environment
     [gamma] and throws the exception {!val:IllTyped} otherwise. *)
 val well_typed : datatype_env -> typ_env -> env -> unit
+
+(** [ctor_typ sigma tag] looks up the type of the constructor [tag] in
+    [sigma]. *)
+val ctor_typ : datatype_env -> string -> (string * typ) option

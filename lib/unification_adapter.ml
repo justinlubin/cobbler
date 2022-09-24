@@ -2,6 +2,8 @@ open Core
 open Lang
 open Unification
 
+(* Types *)
+
 let rec to_unification_typ : Lang.typ -> Unification.typ = function
   | TUnit -> Elementary "Unit"
   | TInt -> Elementary "Int"
@@ -16,18 +18,37 @@ let rec from_unification_typ : Unification.typ -> Lang.typ = function
   | Arrow (domain, codomain) ->
       TArr (from_unification_typ domain, from_unification_typ codomain)
 
-let rec to_unification_term'
-    :  Lang.datatype_env -> Lang.typ_env -> Lang.typ_env -> Lang.exp
+(* Terms *)
+
+let rec embed
+    :  Lang.datatype_env -> String.Set.t -> Lang.typ_env -> string -> Lang.typ
+    -> Lang.exp list -> Unification.term
+  =
+ fun sigma stdlib gamma prefix result_type arguments ->
+  let head = Util.gensym prefix in
+  to_unification_term'
+    sigma
+    (String.Set.add stdlib head)
+    (String.Map.add_exn
+       gamma
+       ~key:head
+       ~data:
+         (Typ.build_arr
+            (List.map ~f:(Type_system.infer sigma gamma) arguments)
+            result_type))
+    (Exp.build_app (EVar head) arguments)
+
+and to_unification_term'
+    :  Lang.datatype_env -> String.Set.t -> Lang.typ_env -> Lang.exp
     -> Unification.term
   =
  fun sigma stdlib gamma e ->
   match e with
-  | EVar id ->
-      (match String.Map.find stdlib id with
-      | Some typ -> Atom (Constant ("__stdlib$" ^ id, to_unification_typ typ))
-      | None ->
-          Atom
-            (Variable (id, to_unification_typ (String.Map.find_exn gamma id))))
+  | EVar x ->
+      let tau = to_unification_typ (String.Map.find_exn gamma x) in
+      if String.Set.mem stdlib x
+      then Atom (Constant (x, tau))
+      else Atom (Variable (x, tau))
   | EApp (e1, e2) ->
       Application
         ( to_unification_term' sigma stdlib gamma e1
@@ -38,39 +59,22 @@ let rec to_unification_term'
         , to_unification_typ tau
         , to_unification_term'
             sigma
-            stdlib
+            (String.Set.remove stdlib x)
             (String.Map.update gamma x ~f:(fun _ -> tau))
             body )
   | EMatch (scrutinee, branches) ->
-      let head = Util.gensym "match" in
-      let datatype =
-        match Type_system.infer sigma gamma scrutinee with
-        | TDatatype x -> x
-        | _ -> failwith "matching on non-datatype"
+      let result_type = Type_system.infer sigma gamma e in
+      let arguments =
+        List.map branches ~f:(fun (tag, (arg_name, rhs)) ->
+            EAbs
+              ( arg_name
+              , snd (Option.value_exn (Type_system.ctor_typ sigma tag))
+              , rhs ))
       in
-      let datatype_info =
-        List.sort
-          (String.Map.find_exn sigma datatype)
-          ~compare:(fun (tag1, _) (tag2, _) -> String.compare tag1 tag2)
-      in
-      let codomain = Type_system.infer sigma gamma e in
-      let domain =
-        TDatatype datatype
-        :: List.map datatype_info ~f:(fun (_, typ) -> TArr (typ, codomain))
-      in
-      to_unification_term'
-        sigma
-        stdlib
-        (Map.add_exn gamma ~key:head ~data:(Typ.build_arr domain codomain))
-        (Exp.build_app
-           (EApp (EVar head, scrutinee))
-           (List.map2_exn
-              datatype_info
-              (List.sort branches ~compare:(fun (tag1, _) (tag2, _) ->
-                   String.compare tag1 tag2))
-              ~f:(fun (_, typ) (_, (arg_name, body)) ->
-                EAbs (arg_name, typ, body))))
+      embed sigma stdlib gamma "match" result_type arguments
   | ECtor (tag, arg) ->
+      (* TODO: left off here! *)
+      (* let datatype, arg_type = Type_system.ctor_typ in
       let ctor_typ =
         List.find_map_exn (String.Map.to_alist sigma) ~f:(fun (dt, dt_info) ->
             Option.map
@@ -79,7 +83,8 @@ let rec to_unification_term'
       in
       Application
         ( Atom (Constant ("__ctor$" ^ tag, to_unification_typ ctor_typ))
-        , to_unification_term' sigma stdlib gamma arg )
+        , to_unification_term' sigma stdlib gamma arg ) *)
+      failwith "TODO"
   | EUnit -> Atom (Constant ("__unit$", to_unification_typ TUnit))
   | EInt n -> Atom (Constant (string_of_int n, to_unification_typ TInt))
   | EHole (name, typ) ->
@@ -88,7 +93,8 @@ let rec to_unification_term'
 let to_unification_term
     : Lang.datatype_env -> Lang.typ_env -> Lang.exp -> Unification.term
   =
- fun sigma stdlib e -> to_unification_term' sigma stdlib String.Map.empty e
+ fun sigma stdlib e ->
+  to_unification_term' sigma (String.Map.key_set stdlib) stdlib e
 
 let rec from_unification_term
     : Lang.datatype_env -> Unification.term -> Lang.exp
