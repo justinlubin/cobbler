@@ -1,4 +1,4 @@
-- higher-order unification
-- recursive function to fold extraction
-- fold fusion in normalization
-- TRIES FOR TREES!
+- add pair, fst, snd
+- finish "recursive function to fold" extraction
+- list and option fold fusion
+- perfect discrimination trees
