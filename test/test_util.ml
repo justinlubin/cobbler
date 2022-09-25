@@ -10,3 +10,8 @@ let%test_unit "find_and_remove_first 1" =
   [%test_result: (int * int list) option]
     (Util.find_and_remove_first ~f:(fun n -> Int.equal n 2) [ 0; 1; 2; 3; 2 ])
     ~expect:(Some (2, [ 0; 1; 3; 2 ]))
+
+let%test_unit "ungensym 1" =
+  [%test_result: string * string]
+    (Util.ungensym (Util.gensym "hello"), Util.ungensym (Util.gensym "hello"))
+    ~expect:("hello", "hello")
