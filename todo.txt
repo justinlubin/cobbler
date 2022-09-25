@@ -1,4 +1,3 @@
-- refactor unification_adapter
 - add pair, fst, snd
 - add ERScheme of rscheme
 - finish "recursive function to fold" extraction
