@@ -14,6 +14,8 @@ let rec typ_of_sexp : Sexp.t -> typ = function
       if is_datatype x
       then TDatatype x
       else failwith (sprintf "unknown atom type '%s'" x)
+  | Sexp.List [ domain; Sexp.Atom "*"; range ] ->
+      TProd (typ_of_sexp domain, typ_of_sexp range)
   | Sexp.List [ domain; Sexp.Atom "->"; range ] ->
       TArr (typ_of_sexp domain, typ_of_sexp range)
   | Sexp.List _ ->
@@ -34,6 +36,10 @@ and exp_of_sexp : Sexp.t -> exp = function
   | Sexp.List [] -> EUnit
   | Sexp.List [ Sexp.Atom "??"; Sexp.Atom name; tau ] ->
       EHole (name, typ_of_sexp tau)
+  | Sexp.List [ left; Sexp.Atom ","; right ] ->
+      EPair (exp_of_sexp left, exp_of_sexp right)
+  | Sexp.List [ Sexp.Atom "fst"; arg ] -> EFst (exp_of_sexp arg)
+  | Sexp.List [ Sexp.Atom "snd"; arg ] -> ESnd (exp_of_sexp arg)
   | Sexp.List [ Sexp.Atom "lambda"; Sexp.Atom param; tau; body ] ->
       EAbs (param, typ_of_sexp tau, exp_of_sexp body)
   | Sexp.List (Sexp.Atom "match" :: scrutinee :: branches) ->
@@ -41,8 +47,7 @@ and exp_of_sexp : Sexp.t -> exp = function
   | Sexp.List [ Sexp.Atom head; arg ] when is_constructor head ->
       ECtor (head, exp_of_sexp arg)
   | Sexp.List (head :: args) ->
-      List.fold_left args ~init:(exp_of_sexp head) ~f:(fun acc arg ->
-          EApp (acc, exp_of_sexp arg))
+      Exp.build_app (exp_of_sexp head) (List.map ~f:exp_of_sexp args)
 
 let variant_of_sexp : Sexp.t -> string * typ = function
   | Sexp.List [ Sexp.Atom tag; arg_typ ] -> (tag, typ_of_sexp arg_typ)

@@ -16,7 +16,7 @@ and typ =
   | TDatatype of string
   | TProd of typ * typ
   | TArr of typ * typ
-[@@deriving sexp, ord, eq, compare]
+[@@deriving sexp, ord, eq, compare, show]
 
 (** An environment of types (commonly called "gamma") *)
 type typ_env = (id, typ, String.comparator_witness) Map.t
@@ -41,7 +41,7 @@ and exp =
   | EUnit
   | EInt of int
   | EHole of string * typ
-[@@deriving sexp, ord, eq, compare]
+[@@deriving sexp, ord, eq, compare, show]
 
 (** An environment of expressions *)
 type env = (id, exp, String.comparator_witness) Map.t

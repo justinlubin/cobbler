@@ -2,14 +2,14 @@ open Core
 open Lib
 open Lang
 
-let parse_file : string -> typ_env * env =
+let parse_file : string -> datatype_env * typ_env * env =
  fun filename ->
   In_channel.with_file filename ~f:(fun file ->
       Parse.definitions (In_channel.input_all file))
 
 let problem =
-  Synthesis.problem_of_definitions
-    (parse_file "test/test_data/programs/classic.lisp")
+  let _, gamma, env = parse_file "test/test_data/programs/classic.lisp" in
+  Synthesis.problem_of_definitions (gamma, env)
 
 let () =
   print_endline "beginning synthesis...";

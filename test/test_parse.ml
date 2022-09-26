@@ -91,3 +91,5 @@ let%test_unit "parse with ints 2" =
   [%test_result: exp]
     (Parse.exp "(add 1 -3)")
     ~expect:(EApp (EApp (EVar "add", EInt 1), EInt (-3)))
+
+let%test_unit "list1 parses" = ignore (Common.parse_file "programs/list1.lisp")
