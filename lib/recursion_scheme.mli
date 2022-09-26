@@ -5,4 +5,4 @@
 
 open Lang
 
-val make_cata : datatype:string -> constructors:(string * typ) list -> exp
+val extract_list_fold : recursive_name:string -> exp -> exp

@@ -11,5 +11,3 @@ open Lang
     case expression. See "Deforestation: Transforming programs to eliminate
     trees" (Wadler 1988).*)
 val pull_out_cases : exp -> exp
-
-(* val extract_list_fold : recursive_name:string -> exp -> exp *)
