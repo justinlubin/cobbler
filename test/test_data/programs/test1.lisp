@@ -1,3 +1,11 @@
+(type Peano
+  (Zero Unit)
+  (Succ Peano))
+
+(type MaybePeano
+  (Nothing Unit)
+  (Just Peano))
+
 (define zero : Peano
   (Zero ()))
 

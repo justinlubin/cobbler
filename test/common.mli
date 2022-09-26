@@ -4,4 +4,4 @@ open Core
 open Lib
 open Lang
 
-val parse_file : string -> typ_env * env
+val parse_file : string -> datatype_env * typ_env * env

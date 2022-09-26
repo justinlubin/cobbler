@@ -45,11 +45,3 @@ and exp =
 
 (** An environment of expressions *)
 type env = (id, exp, String.comparator_witness) Map.t
-
-(** TODO: temporary! *)
-let default_datatype_env : datatype_env =
-  String.Map.of_alist_exn
-    [ ("Peano", [ ("Zero", TUnit) ])
-    ; ("MaybePeano", [ ("Nothing", TUnit); ("Just", TDatatype "Peano") ])
-    ; ("Gamma", [ ("B", TUnit) ])
-    ]

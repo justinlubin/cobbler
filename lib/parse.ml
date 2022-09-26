@@ -44,21 +44,35 @@ and exp_of_sexp : Sexp.t -> exp = function
       List.fold_left args ~init:(exp_of_sexp head) ~f:(fun acc arg ->
           EApp (acc, exp_of_sexp arg))
 
-let definitions : string -> typ_env * env =
+let variant_of_sexp : Sexp.t -> string * typ = function
+  | Sexp.List [ Sexp.Atom tag; arg_typ ] -> (tag, typ_of_sexp arg_typ)
+  | _ -> failwith "malformatted datatype variant"
+
+let definitions : string -> datatype_env * typ_env * env =
  fun text ->
-  let typ_env_list, env_all_list =
-    text
-    |> Parsexp.Many.parse_string_exn
-    |> List.map ~f:(fun sexp ->
-           match sexp with
-           | Sexp.List
-               [ Sexp.Atom "define"; Sexp.Atom lhs; Sexp.Atom ":"; typ; rhs ] ->
-               ((lhs, typ_of_sexp typ), (lhs, exp_of_sexp rhs))
-           | _ -> failwith "malformed top-level definition")
-    |> List.unzip
-  in
-  ( Map.of_alist_exn (module String) typ_env_list
-  , Map.of_alist_exn (module String) env_all_list )
+  text
+  |> Parsexp.Many.parse_string_exn
+  |> List.fold_left
+       ~init:(String.Map.empty, String.Map.empty, String.Map.empty)
+       ~f:(fun (sigma, gamma, env) sexp ->
+         match sexp with
+         | Sexp.List (Sexp.Atom "type" :: Sexp.Atom dt :: variants) ->
+             ( String.Map.add_exn
+                 sigma
+                 ~key:dt
+                 ~data:(List.map ~f:variant_of_sexp variants)
+             , gamma
+             , env )
+         | Sexp.List
+             [ Sexp.Atom "define"; Sexp.Atom lhs; Sexp.Atom ":"; typ; rhs ] ->
+             ( sigma
+             , String.Map.add_exn gamma ~key:lhs ~data:(typ_of_sexp typ)
+             , String.Map.add_exn env ~key:lhs ~data:(exp_of_sexp rhs) )
+         | _ ->
+             failwith
+               (sprintf
+                  "malformed top-level definition: %s"
+                  (Sexp.to_string sexp)))
 
 let exp : string -> exp =
  fun text -> text |> Parsexp.Single.parse_string_exn |> exp_of_sexp

@@ -3,6 +3,8 @@ open Lib
 open Lang
 open Unification
 
+let datatype_env1 = String.Map.of_alist_exn [ ("Gamma", [ ("B", TUnit) ]) ]
+
 let%test_unit "unification 1" =
   let f = "(?? f (Gamma -> Gamma))" in
   let x = "(?? x Gamma)" in
@@ -17,14 +19,8 @@ let%test_unit "unification 1" =
   match
     Unification.unify
       100
-      (Unification_adapter.to_unification_term
-         Lang.default_datatype_env
-         stdlib
-         e0)
-      (Unification_adapter.to_unification_term
-         Lang.default_datatype_env
-         stdlib
-         e0')
+      (Unification_adapter.to_unification_term datatype_env1 stdlib e0)
+      (Unification_adapter.to_unification_term datatype_env1 stdlib e0')
   with
   | Solved subs -> ()
   | Impossible -> failwith "shouldn't be impossible"

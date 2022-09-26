@@ -5,9 +5,9 @@
 
 open Lang
 
-(** [definitions s] parses a string [s] as a list of type and expression
-    definitions. *)
-val definitions : string -> typ_env * env
+(** [definitions s] parses a string [s] as a list of datatype, type, and
+    expression definitions. *)
+val definitions : string -> datatype_env * typ_env * env
 
 (** [exp s] parses a string [s] as an expression. *)
 val exp : string -> exp

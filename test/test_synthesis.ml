@@ -59,9 +59,8 @@ let%test_unit "norm 1" =
                  ] ) ) ))
 
 let%test_unit "classic synth 1" =
-  let problem =
-    Synthesis.problem_of_definitions (Common.parse_file "programs/classic.lisp")
-  in
+  let _, gamma, env = Common.parse_file "programs/classic.lisp" in
+  let problem = Synthesis.problem_of_definitions (gamma, env) in
   let expected_solution =
     EApp
       ( EApp (EVar "withDefault", EVar "zero")
