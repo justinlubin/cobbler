@@ -6,27 +6,33 @@
   (Zero Unit)
   (Succ Peano))
 
-(type PeanoList
+(type ListPeano
   (Nil Unit)
-  (Cons (Peano * PeanoList)))
+  (Cons (Peano * ListPeano)))
 
-(define map : ((Peano -> Peano) -> (PeanoList -> PeanoList))
-  (lambda f (Peano -> Peano) (lambda xs PeanoList
+(define map : ((Peano -> Peano) -> (ListPeano -> ListPeano))
+  (lambda f (Peano -> Peano) (lambda xs ListPeano
     (match xs
       (Nil n -> (Nil n))
       (Cons p -> (Cons ((f (fst p)) , (map f (snd p)))))))))
 
-(define filter : ((Peano -> Bool) -> (PeanoList -> PeanoList))
-  (lambda pred (Peano -> Bool) (lambda xs PeanoList
+(define filter : ((Peano -> Bool) -> (ListPeano -> ListPeano))
+  (lambda pred (Peano -> Bool) (lambda xs ListPeano
     (match xs
-      (Nil n -> (Nil n))
+      (Nil n ->
+        (Nil n))
       (Cons p ->
         (match (pred (fst p))
-          (False n -> (filter p (snd p)))
-          (True n -> (Cons ((fst p), (filter p (snd p)))))))))))
+          (False n -> (filter pred (snd p)))
+          (True n -> (Cons ((fst p) , (filter pred (snd p)))))))))))
 
-(define main : ((Peano -> Peano) -> (MaybePeano -> Peano))
-  (lambda f (Peano -> Peano) (lambda mx MaybePeano
-    (match mx
-      (Nothing n -> zero)
-      (Just x -> (f x))))))
+(define main :
+  ((Peano -> Bool) -> ((Peano -> Peano) -> (ListPeano -> ListPeano)))
+  (lambda pred (Peano -> Bool) (lambda f (Peano -> Peano) (lambda xs ListPeano
+    (match xs
+      (Nil n ->
+        (Nil n))
+      (Cons p ->
+        (match (pred (fst p))
+          (False n -> (main pred f (snd p)))
+          (True n -> (Cons ((f (fst p)) , (main pred f (snd p))))))))))))

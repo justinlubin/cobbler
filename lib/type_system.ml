@@ -60,8 +60,14 @@ let rec infer : datatype_env -> typ_env -> exp -> typ =
           TDatatype datatype
       | None -> raise (IllTyped e))
   | EPair (e1, e2) -> TProd (infer sigma gamma e1, infer sigma gamma e2)
-  | EFst arg -> infer sigma gamma arg
-  | ESnd arg -> infer sigma gamma arg
+  | EFst arg ->
+      (match infer sigma gamma arg with
+      | TProd (tau1, _) -> tau1
+      | _ -> raise (IllTyped e))
+  | ESnd arg ->
+      (match infer sigma gamma arg with
+      | TProd (_, tau2) -> tau2
+      | _ -> raise (IllTyped e))
   | EUnit -> TUnit
   | EInt _ -> TInt
   | EHole (_, tau) -> tau
