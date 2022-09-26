@@ -14,6 +14,7 @@ and typ =
   | TUnit
   | TInt
   | TDatatype of string
+  | TProd of typ * typ
   | TArr of typ * typ
 [@@deriving sexp, ord, eq, compare]
 
@@ -34,6 +35,9 @@ and exp =
   | EAbs of id * typ * exp
   | EMatch of exp * branch list
   | ECtor of string * exp
+  | EPair of exp * exp
+  | EFst of exp
+  | ESnd of exp
   | EUnit
   | EInt of int
   | EHole of string * typ

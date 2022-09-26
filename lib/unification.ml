@@ -4,34 +4,22 @@ open Core
 
 (* Terms *)
 
+(* TODO: Change from string to richer type *)
 type typ =
-  | Elementary of string
+  | Elementary of Lang.typ
   | Arrow of typ * typ
-[@@deriving show, eq, sexp, ord]
+[@@deriving eq, sexp, ord]
 
 type atom =
   | Variable of string * typ
   | Constant of string * typ
-[@@deriving show, eq, sexp, ord]
+[@@deriving eq, sexp, ord]
 
 type term =
   | Atom of atom
   | Application of term * term
   | Abstraction of string * typ * term
-[@@deriving show, eq, sexp, ord]
-
-let rec show_typ : typ -> string = function
-  | Elementary x -> x
-  | Arrow (t1, t2) -> sprintf "arr(%s, %s)" (show_typ t1) (show_typ t2)
-
-let show_atom : atom -> string = function
-  | Variable (x, _) -> sprintf "%s" x
-  | Constant (c, _) -> sprintf "%s" c
-
-let rec show_term : term -> string = function
-  | Atom atom -> show_atom atom
-  | Application (t1, t2) -> sprintf "(%s %s)" (show_term t1) (show_term t2)
-  | Abstraction (param, _, body) -> sprintf "(lam %s %s)" param (show_term body)
+[@@deriving eq, sexp, ord]
 
 (* Types *)
 
@@ -200,19 +188,19 @@ let rigid : term -> bool =
 
 (* Substitutions *)
 
-type substitution_pair = string * term [@@deriving show, eq, sexp, ord]
-type substitution = substitution_pair list [@@deriving show, eq, sexp, ord]
+type substitution_pair = string * term [@@deriving eq, sexp, ord]
+type substitution = substitution_pair list [@@deriving eq, sexp, ord]
 
 (* === The unification algorithm ===  *)
 
 (* Types *)
 
-type disagreement_set = (term * term) list [@@deriving show, eq, sexp, ord]
+type disagreement_set = (term * term) list [@@deriving eq, sexp, ord]
 
 type matching_tree =
   | Terminal of bool
   | Nonterminal of disagreement_set * (substitution_pair * matching_tree) list
-[@@deriving show, eq, sexp, ord]
+[@@deriving eq, sexp, ord]
 
 (* SIMPL procedure *)
 
@@ -282,7 +270,6 @@ let matchh : term -> term -> substitution =
   let n2 = List.length binding2 in
   assert (Int.equal n1 n2);
   let p1 = List.length argument1 in
-  (* let p2 = List.length argument2 in *)
   let domain, codomain = decompose_arr head1_typ in
   assert (Int.equal p1 (List.length domain));
   let should_imitate =
@@ -393,147 +380,3 @@ let rec search_and_grow : int -> matching_tree -> unification_result =
 
 let unify : int -> term -> term -> unification_result =
  fun fuel e0 e0' -> search_and_grow fuel (simpl [ (e0, e0') ])
-
-let unify' : int -> disagreement_set -> unification_result =
- fun fuel ds -> search_and_grow fuel (simpl ds)
-
-(* === Examples === *)
-
-let ds1 =
-  [ ( Application
-        ( Application
-            ( Atom
-                (Constant
-                   ( "A"
-                   , Arrow
-                       ( Arrow (Elementary "Bin2", Elementary "Bout")
-                       , Arrow (Elementary "Cout", Elementary "Aout") ) ))
-            , Abstraction
-                ( "u"
-                , Elementary "Bin2"
-                , Application
-                    ( Application
-                        ( Atom
-                            (Constant
-                               ( "B"
-                               , Arrow
-                                   ( Elementary "Bin1"
-                                   , Arrow (Elementary "Bin2", Elementary "Bout")
-                                   ) ))
-                        , Atom (Variable ("x", Elementary "Bin1")) )
-                    , Atom (Variable ("u", Elementary "Bin2")) ) ) )
-        , Atom (Constant ("C", Elementary "Cout")) )
-    , Application
-        ( Application
-            ( Atom
-                (Constant
-                   ( "A"
-                   , Arrow
-                       ( Arrow (Elementary "Bin2", Elementary "Bout")
-                       , Arrow (Elementary "Cout", Elementary "Aout") ) ))
-            , Abstraction
-                ( "v"
-                , Elementary "Bin2"
-                , Application
-                    ( Application
-                        ( Atom
-                            (Constant
-                               ( "B"
-                               , Arrow
-                                   ( Elementary "Bin1"
-                                   , Arrow (Elementary "Bin2", Elementary "Bout")
-                                   ) ))
-                        , Atom (Variable ("y", Elementary "Bin1")) )
-                    , Atom (Variable ("v", Elementary "Bin2")) ) ) )
-        , Application
-            ( Atom (Variable ("f", Arrow (Elementary "Cout", Elementary "Cout")))
-            , Atom (Constant ("C", Elementary "Cout")) ) ) )
-  ]
-
-(*
-let ds2 =
-  [ ( Application
-        ( Atom (Constant "A")
-        , Abstraction
-            ( "u"
-            , Application
-                ( Application (Atom (Constant "B"), Atom (Variable "x"))
-                , Atom (Variable "u") ) ) )
-    , Application
-        ( Atom (Constant "A")
-        , Abstraction
-            ( "v"
-            , Application
-                ( Application (Atom (Constant "B"), Atom (Variable "y"))
-                , Atom (Variable "v") ) ) ) )
-  ]
-
-let ds3 =
-  [ ( Abstraction
-        ( "u"
-        , Abstraction
-            ( "v"
-            , Application
-                ( Application (Atom (Constant "A"), Atom (Variable "u"))
-                , Abstraction ("w", Atom (Variable "v")) ) ) )
-    , Abstraction
-        ( "v"
-        , Abstraction
-            ( "w"
-            , Application
-                ( Application (Atom (Constant "A"), Atom (Variable "v"))
-                , Abstraction ("u", Atom (Variable "v")) ) ) ) )
-  ]
-*)
-let _ =
-  [%test_result: matching_tree]
-    (simpl ds1)
-    ~expect:
-      (Nonterminal
-         ( [ ( Abstraction
-                 ( "u"
-                 , Elementary "Bin2"
-                 , Atom (Variable ("x", Elementary "Bin1")) )
-             , Abstraction
-                 ( "v"
-                 , Elementary "Bin2"
-                 , Atom (Variable ("y", Elementary "Bin1")) ) )
-           ; ( Application
-                 ( Atom
-                     (Variable
-                        ("f", Arrow (Elementary "Cout", Elementary "Cout")))
-                 , Atom (Constant ("C", Elementary "Cout")) )
-             , Atom (Constant ("C", Elementary "Cout")) )
-           ]
-         , [] ))
-
-(*
-let _ = [%test_result: matching_tree] (simpl ds2) ~expect:(Terminal true)
-let _ = [%test_result: matching_tree] (simpl ds3) ~expect:(Terminal false)
-*)
-
-let ds4 =
-  let f =
-    Atom (Variable ("f", Arrow (Elementary "gamma", Elementary "gamma")))
-  in
-  let x = Atom (Variable ("x", Elementary "gamma")) in
-  let a =
-    Atom (Constant ("A", Arrow (Elementary "gamma", Elementary "gamma")))
-  in
-  let b = Atom (Constant ("B", Elementary "gamma")) in
-  [ (Application (f, Application (f, x)), Application (a, Application (a, b))) ]
-
-let ds5 =
-  let x = Atom (Variable ("x", Elementary "gamma")) in
-  let y =
-    Atom (Variable ("y", Arrow (Elementary "gamma", Elementary "gamma")))
-  in
-  let c =
-    Atom (Constant ("C", Arrow (Elementary "gamma", Elementary "gamma")))
-  in
-  [ ( Abstraction
-        ( "x"
-        , Elementary "gamma"
-        , Application (y, Application (c, Application (y, x))) )
-    , Abstraction ("x", Elementary "gamma", Application (c, x)) )
-  ]

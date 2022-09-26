@@ -19,6 +19,7 @@ let rec show : typ -> string = function
   | TUnit -> "Unit"
   | TInt -> "Int"
   | TDatatype x -> x
+  | TProd (tau1, tau2) -> sprintf "(%s * %s)" (show tau1) (show tau2)
   | TArr (domain, codomain) ->
       sprintf "(%s -> %s)" (show domain) (show codomain)
 
@@ -26,6 +27,7 @@ let rec decompose_arr : typ -> typ list * typ = function
   | TUnit -> ([], TUnit)
   | TInt -> ([], TInt)
   | TDatatype x -> ([], TDatatype x)
+  | TProd (tau1, tau2) -> ([], TProd (tau1, tau2))
   | TArr (domain, codomain) ->
       let domain', codomain' = decompose_arr codomain in
       (domain :: domain', codomain')

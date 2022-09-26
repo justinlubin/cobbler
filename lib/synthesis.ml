@@ -10,11 +10,7 @@ let inline : env -> exp -> exp =
 
 let norm : env -> exp -> exp =
  fun env e ->
-  e
-  |> inline env
-  |> Exp.beta_normalize
-  |> Fusion.pull_out_cases
-  |> Fusion.case_normalize
+  e |> inline env |> Exp.normalize |> Fusion.pull_out_cases |> Exp.normalize
 
 (* Grammars *)
 
@@ -55,8 +51,7 @@ let expand : grammar -> exp -> exp list =
               (EVar x)
               (List.map ~f:(fun typ -> EHole (Util.gensym "hole", typ)) typs))
           (Map.find grammar typ |> Option.value_or_thunk ~default:(fun _ -> []))
-    | EAbs _ | EMatch _ | ECtor _ | EUnit | EInt _ ->
-        failwith "expanding something other than var, app, or hole"
+    | _ -> failwith "expanding something other than var, app, or hole"
   in
   expand' e
 

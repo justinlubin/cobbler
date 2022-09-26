@@ -2,16 +2,6 @@ open Core
 open Lib
 open Lang
 
-let%test_unit "fully case reduce 1" =
-  [%test_eq: exp]
-    (Fusion.case_normalize
-       (EMatch
-          ( ECtor ("Just", EVar "x")
-          , [ ("Nothing", ("y", EVar "zero"))
-            ; ("Just", ("z", ECtor ("Ok", EVar "z")))
-            ] )))
-    (ECtor ("Ok", EVar "x"))
-
 let%test_unit "pull out cases 1" =
   [%test_eq: exp]
     (Fusion.pull_out_cases

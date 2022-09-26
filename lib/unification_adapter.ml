@@ -5,16 +5,15 @@ open Unification
 (* Types *)
 
 let rec to_unification_typ : Lang.typ -> Unification.typ = function
-  | TUnit -> Elementary "Unit"
-  | TInt -> Elementary "Int"
-  | TDatatype x -> Elementary x
+  | TUnit -> Elementary TUnit
+  | TInt -> Elementary TInt
+  | TDatatype x -> Elementary (TDatatype x)
+  | TProd (left, right) -> Elementary (TProd (left, right))
   | TArr (domain, codomain) ->
       Arrow (to_unification_typ domain, to_unification_typ codomain)
 
 let rec from_unification_typ : Unification.typ -> Lang.typ = function
-  | Elementary "Unit" -> TUnit
-  | Elementary "Int" -> TInt
-  | Elementary x -> TDatatype x
+  | Elementary tau -> tau
   | Arrow (domain, codomain) ->
       TArr (from_unification_typ domain, from_unification_typ codomain)
 
@@ -89,6 +88,20 @@ and to_unification_term'
   | ECtor (tag, arg) ->
       let dt, _ = Option.value_exn (Type_system.ctor_typ sigma tag) in
       embed sigma stdlib gamma "ctor" tag (TDatatype dt) [ arg ]
+  | EPair (e1, e2) ->
+      let tau1 = Type_system.infer sigma gamma e1 in
+      let tau2 = Type_system.infer sigma gamma e2 in
+      embed sigma stdlib gamma "pair" "" (TProd (tau1, tau2)) [ e1; e2 ]
+  | EFst arg ->
+      (match Type_system.infer sigma gamma arg with
+      | TProd (result_type, _) ->
+          embed sigma stdlib gamma "fst" "" result_type [ arg ]
+      | _ -> failwith "ill-typed fst")
+  | ESnd arg ->
+      (match Type_system.infer sigma gamma arg with
+      | TProd (_, result_type) ->
+          embed sigma stdlib gamma "snd" "" result_type [ arg ]
+      | _ -> failwith "ill-typed snd")
   | EUnit -> embed sigma stdlib gamma "unit" "" TUnit []
   | EInt n -> embed sigma stdlib gamma "int" (Int.to_string n) TInt []
   | EHole (name, typ) ->
@@ -140,6 +153,14 @@ let rec from_unification_term
                     | _ -> failwith "malformatted match") )
         | Some ("ctor", tag) ->
             ECtor (tag, from_unification_term sigma (List.hd_exn arguments))
+        | Some ("pair", "") ->
+            EPair
+              ( from_unification_term sigma (List.nth_exn arguments 0)
+              , from_unification_term sigma (List.nth_exn arguments 1) )
+        | Some ("fst", "") ->
+            EFst (from_unification_term sigma (List.hd_exn arguments))
+        | Some ("snd", "") ->
+            ESnd (from_unification_term sigma (List.hd_exn arguments))
         | Some ("unit", "") -> EUnit
         | Some ("int", n) -> EInt (Int.of_string n)
         | _ -> build_arguments (EVar x))

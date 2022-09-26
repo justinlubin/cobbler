@@ -31,6 +31,9 @@ let rec show : exp -> string = function
                 sprintf "(%s %s -> %s)" ctor_name arg_name (show rhs))
               branches))
   | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show arg)
+  | EPair (e1, e2) -> sprintf "(%s , %s)" (show e1) (show e2)
+  | EFst arg -> sprintf "(fst %s)" (show arg)
+  | ESnd arg -> sprintf "(snd %s)" (show arg)
   | EUnit -> "()"
   | EInt n -> string_of_int n
   | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
@@ -77,6 +80,9 @@ let rec free_variables : exp -> (id, String.comparator_witness) Set.t = function
                Set.remove (free_variables rhs) arg_name)
              branches)
   | ECtor (_, arg) -> free_variables arg
+  | EPair (e1, e2) -> Set.union (free_variables e1) (free_variables e2)
+  | EFst arg -> free_variables arg
+  | ESnd arg -> free_variables arg
   | EUnit | EInt _ | EHole (_, _) -> Set.empty (module String)
 
 let replace : id * id -> exp -> exp =
@@ -96,6 +102,9 @@ let replace : id * id -> exp -> exp =
                 then (ctor_name, (rhs, replace' branch_rhs))
                 else (ctor_name, (arg_name, replace' branch_rhs))) )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, replace' arg)
+    | EPair (e1, e2) -> EPair (replace' e1, replace' e2)
+    | EFst arg -> EFst (replace' arg)
+    | ESnd arg -> ESnd (replace' arg)
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
@@ -135,6 +144,9 @@ let substitute : id * exp -> exp -> exp =
                     ) )))
               branches )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, substitute' arg)
+    | EPair (e1, e2) -> EPair (substitute' e1, substitute' e2)
+    | EFst arg -> EFst (substitute' arg)
+    | ESnd arg -> ESnd (substitute' arg)
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
@@ -158,6 +170,9 @@ let freshen_exp : (id -> id) -> exp -> exp =
                 , ( new_arg_name
                   , freshen_exp' (replace (arg_name, new_arg_name) rhs) ) )) )
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, freshen_exp' arg)
+    | EPair (e1, e2) -> EPair (freshen_exp' e1, freshen_exp' e2)
+    | EFst arg -> EFst (freshen_exp' arg)
+    | ESnd arg -> ESnd (freshen_exp' arg)
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
@@ -176,17 +191,32 @@ let alpha_normalize : exp -> exp =
 let alpha_equivalent : exp -> exp -> bool =
  fun e1 e2 -> [%eq: exp] (alpha_normalize e1) (alpha_normalize e2)
 
-let rec beta_normalize : exp -> exp = function
+let rec normalize : exp -> exp = function
   | EVar id -> EVar id
   | EApp (head, arg) ->
-      let arg' = beta_normalize arg in
-      (match beta_normalize head with
+      let arg' = normalize arg in
+      (match normalize head with
       | EAbs (param, _, body) -> substitute (param, arg') body
       | head' -> EApp (head', arg'))
-  | EAbs (param, tau, body) -> EAbs (param, tau, beta_normalize body)
+  | EAbs (param, tau, body) -> EAbs (param, tau, normalize body)
   | EMatch (scrutinee, branches) ->
-      EMatch (beta_normalize scrutinee, map_branches ~f:beta_normalize branches)
-  | ECtor (ctor_name, arg) -> ECtor (ctor_name, beta_normalize arg)
+      (match normalize scrutinee with
+      | ECtor (ctor_name, arg) ->
+          let arg_name, rhs =
+            List.Assoc.find_exn ~equal:String.equal branches ctor_name
+          in
+          normalize (substitute (arg_name, arg) rhs)
+      | scrutinee' -> EMatch (scrutinee', map_branches ~f:normalize branches))
+  | ECtor (ctor_name, arg) -> ECtor (ctor_name, normalize arg)
+  | EPair (e1, e2) -> EPair (normalize e1, normalize e2)
+  | EFst arg ->
+      (match normalize arg with
+      | EPair (e1, _) -> e1
+      | arg' -> EFst arg')
+  | ESnd arg ->
+      (match normalize arg with
+      | EPair (_, e2) -> e2
+      | arg' -> EFst arg')
   | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)

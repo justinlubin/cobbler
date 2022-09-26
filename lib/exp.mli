@@ -54,6 +54,6 @@ val substitute : id * t -> t -> t
     alpha equivalent. *)
 val alpha_equivalent : t -> t -> bool
 
-(** [beta_normalize e] recursively reduces all beta redexes (pending function
-    applications) in [e]. *)
-val beta_normalize : t -> t
+(** [normalize e] recursively reduces all redexes in [e], including those under
+    a lambda abstraction. *)
+val normalize : t -> t

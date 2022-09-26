@@ -59,6 +59,9 @@ let rec infer : datatype_env -> typ_env -> exp -> typ =
           check sigma gamma arg domain;
           TDatatype datatype
       | None -> raise (IllTyped e))
+  | EPair (e1, e2) -> TProd (infer sigma gamma e1, infer sigma gamma e2)
+  | EFst arg -> infer sigma gamma arg
+  | ESnd arg -> infer sigma gamma arg
   | EUnit -> TUnit
   | EInt _ -> TInt
   | EHole (_, tau) -> tau

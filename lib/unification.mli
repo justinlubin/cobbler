@@ -12,7 +12,7 @@ open Core
 
 (** Types in the language supported for unification *)
 type typ =
-  | Elementary of string
+  | Elementary of Lang.typ
   | Arrow of typ * typ
 
 (** Atoms in the language supported for unification *)

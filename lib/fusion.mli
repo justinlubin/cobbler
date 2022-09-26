@@ -12,8 +12,4 @@ open Lang
     trees" (Wadler 1988).*)
 val pull_out_cases : exp -> exp
 
-(** [case_normalize e] recursively reduces all case redexes (case expressions
-    whose scrutinees are constructor literals) in [e]. *)
-val case_normalize : exp -> exp
-
 (* val extract_list_fold : recursive_name:string -> exp -> exp *)

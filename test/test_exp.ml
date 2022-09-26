@@ -25,3 +25,13 @@ let%test_unit "alpha equivalent 1" =
     ~equal:Exp.alpha_equivalent
     (EAbs ("x", TInt, EVar "x"))
     ~expect:(EAbs ("y", TInt, EVar "y"))
+
+let%test_unit "normalizes cases 1" =
+  [%test_eq: exp]
+    (Exp.normalize
+       (EMatch
+          ( ECtor ("Just", EVar "x")
+          , [ ("Nothing", ("y", EVar "zero"))
+            ; ("Just", ("z", ECtor ("Ok", EVar "z")))
+            ] )))
+    (ECtor ("Ok", EVar "x"))

@@ -1,4 +1,3 @@
-- add pair, fst, snd
 - add ERScheme of rscheme
 - finish "recursive function to fold" extraction
 - list and option fold fusion
