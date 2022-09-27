@@ -4,7 +4,6 @@ open Core
 
 (* Terms *)
 
-(* TODO: Change from string to richer type *)
 type typ =
   | Elementary of Lang.typ
   | Arrow of typ * typ
