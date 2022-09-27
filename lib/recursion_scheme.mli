@@ -5,4 +5,4 @@
 
 open Lang
 
-val extract_list_fold : recursive_name:string -> exp -> exp
+val extract_list_foldr : datatype_env -> typ_env -> env -> string -> exp

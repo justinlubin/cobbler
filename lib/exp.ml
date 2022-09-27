@@ -19,7 +19,7 @@ let rec show : exp -> string = function
   | EVar id -> id
   | EApp (head, arg) -> sprintf "(%s %s)" (show head) (show arg)
   | EAbs (param, tau, body) ->
-      sprintf "(lambda %s : %s -> %s)" param (Typ.show tau) (show body)
+      sprintf "(lambda %s %s %s)" param (Typ.show tau) (show body)
   | EMatch (scrutinee, branches) ->
       sprintf
         "(match %s %s)"

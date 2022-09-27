@@ -50,6 +50,10 @@ val free_variables : t -> (id, String.comparator_witness) Set.t
     as necessary. *)
 val substitute : id * t -> t -> t
 
+(** [alpha_normalize e] returns a canonical expression among those
+    alpha-equivalent to [e]. *)
+val alpha_normalize : exp -> exp
+
 (** [alpha_equivalent e1 e2] returns [true] if and only if [e1] and [e2] are
     alpha equivalent. *)
 val alpha_equivalent : t -> t -> bool
