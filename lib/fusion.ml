@@ -25,3 +25,5 @@ let rec pull_out_cases : exp -> exp = function
   | ERScheme (RListFoldr (b, f), arg) ->
       ERScheme
         (RListFoldr (pull_out_cases b, pull_out_cases f), pull_out_cases arg)
+
+let fuse : exp -> exp = fun e -> failwith "TODO"
