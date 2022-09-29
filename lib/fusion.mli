@@ -11,3 +11,8 @@ open Lang
     case expression. See "Deforestation: Transforming programs to eliminate
     trees" (Wadler 1988).*)
 val pull_out_cases : exp -> exp
+
+(** [fuse_list_foldrs e] performs list foldr fusion in all applicable
+    subexpressions of [e]. The list foldr fusion law is:
+      TODO *)
+val fuse_list_foldrs : exp -> exp
