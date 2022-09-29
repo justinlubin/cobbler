@@ -15,4 +15,4 @@ val pull_out_cases : exp -> exp
 (** [fuse_list_foldrs e] performs list foldr fusion in all applicable
     subexpressions of [e]. The list foldr fusion law is:
       TODO *)
-val fuse_list_foldrs : exp -> exp
+(* val fuse_list_foldrs : exp -> exp *)

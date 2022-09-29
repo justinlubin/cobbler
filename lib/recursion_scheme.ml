@@ -18,6 +18,10 @@ let replace_subexp : old_subexp:exp -> new_subexp:exp -> exp -> exp =
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
+    | ERScheme (RListFoldr (b, f), arg) ->
+        ERScheme
+          ( RListFoldr (check_and_replace b, check_and_replace f)
+          , check_and_replace arg )
   and check_and_replace e =
     if [%eq: exp] e old_subexp then new_subexp else recurse e
   in
@@ -28,17 +32,24 @@ let extract_list_foldr : datatype_env -> typ_env -> env -> string -> exp =
  fun sigma gamma env definition ->
   match Exp.decompose_abs (String.Map.find_exn env definition) with
   | params, EMatch (scrutinee, branches) ->
-      let nil_arg, nil_rhs =
+      let nil_param, nil_rhs =
         List.Assoc.find_exn ~equal:String.equal branches "Nil"
       in
       if String.Set.mem (Exp.free_variables nil_rhs) definition
       then failwith "recursive nil case"
       else (
-        let cons_arg, cons_rhs =
+        let cons_param, cons_rhs =
           List.Assoc.find_exn ~equal:String.equal branches "Cons"
         in
-        let fold_var = "__list_foldr" in
-        let parameterized_rec_var = Util.gensym "rec" in
+        let elem_type =
+          match Type_system.ctor_typ sigma "Cons" with
+          | Some (_, TProd (tau, _)) -> tau
+          | _ -> failwith "non-prod Cons arg type"
+        in
+        let return_type =
+          snd (Typ.decompose_arr (String.Map.find_exn gamma definition))
+        in
+        let new_nil_rhs = Exp.substitute (nil_param, EUnit) nil_rhs in
         (* TODO: Only supports exact same arguments except for recursive call on
                  final argument *)
         let new_cons_rhs =
@@ -47,8 +58,8 @@ let extract_list_foldr : datatype_env -> typ_env -> env -> string -> exp =
               (Exp.build_app
                  (EVar definition)
                  (List.drop_last_exn (List.map ~f:(fun (x, _) -> EVar x) params)
-                 @ [ ESnd (EVar cons_arg) ]))
-            ~new_subexp:(EVar parameterized_rec_var)
+                 @ [ ESnd (EVar cons_param) ]))
+            ~new_subexp:(ESnd (EVar cons_param))
             cons_rhs
         in
         if String.Set.mem (Exp.free_variables new_cons_rhs) definition
@@ -56,25 +67,11 @@ let extract_list_foldr : datatype_env -> typ_env -> env -> string -> exp =
         else
           Exp.build_abs
             params
-            (Exp.build_app
-               (EVar fold_var)
-               [ scrutinee
-               ; Exp.build_abs
-                   [ ( nil_arg
-                     , snd (Option.value_exn (Type_system.ctor_typ sigma "Nil"))
-                     )
-                   ]
-                   nil_rhs
-               ; Exp.build_abs
-                   [ ( cons_arg
-                     , snd
-                         (Option.value_exn (Type_system.ctor_typ sigma "Cons"))
-                     )
-                   ; ( parameterized_rec_var
-                     , snd
-                         (Typ.decompose_arr
-                            (String.Map.find_exn gamma definition)) )
-                   ]
-                   new_cons_rhs
-               ]))
+            (ERScheme
+               ( RListFoldr
+                   ( new_nil_rhs
+                   , EAbs
+                       (cons_param, TProd (elem_type, return_type), new_cons_rhs)
+                   )
+               , scrutinee )))
   | _ -> failwith "non-match under top-level abstractions"

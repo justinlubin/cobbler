@@ -37,6 +37,8 @@ let rec show : exp -> string = function
   | EUnit -> "()"
   | EInt n -> string_of_int n
   | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
+  | ERScheme (RListFoldr (b, f), arg) ->
+      sprintf "(list_foldr %s %s %s)" (show b) (show f) (show arg)
 
 let map_branches : branch list -> f:(exp -> exp) -> branch list =
  fun branches ~f ->
@@ -67,23 +69,25 @@ let build_app : exp -> exp list -> exp =
  fun head args ->
   List.fold_left args ~init:head ~f:(fun acc arg -> EApp (acc, arg))
 
-let rec free_variables : exp -> (id, String.comparator_witness) Set.t = function
-  | EVar x -> Set.singleton (module String) x
+let rec free_variables : exp -> String.Set.t = function
+  | EVar x -> String.Set.singleton x
   | EApp (head, arg) -> Set.union (free_variables head) (free_variables arg)
   | EAbs (param, _, body) -> Set.remove (free_variables body) param
   | EMatch (scrutinee, branches) ->
-      Set.union_list
-        (module String)
+      String.Set.union_list
         (free_variables scrutinee
         :: List.map
              ~f:(fun (_, (arg_name, rhs)) ->
                Set.remove (free_variables rhs) arg_name)
              branches)
   | ECtor (_, arg) -> free_variables arg
-  | EPair (e1, e2) -> Set.union (free_variables e1) (free_variables e2)
+  | EPair (e1, e2) -> String.Set.union (free_variables e1) (free_variables e2)
   | EFst arg -> free_variables arg
   | ESnd arg -> free_variables arg
-  | EUnit | EInt _ | EHole (_, _) -> Set.empty (module String)
+  | ERScheme (RListFoldr (b, f), arg) ->
+      String.Set.union_list
+        [ free_variables b; free_variables f; free_variables arg ]
+  | EUnit | EInt _ | EHole (_, _) -> String.Set.empty
 
 let replace : id * id -> exp -> exp =
  fun (lhs, rhs) e ->
@@ -108,6 +112,8 @@ let replace : id * id -> exp -> exp =
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
+    | ERScheme (RListFoldr (b, f), arg) ->
+        ERScheme (RListFoldr (replace' b, replace' f), replace' arg)
   in
   replace' e
 
@@ -150,6 +156,8 @@ let substitute : id * exp -> exp -> exp =
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
+    | ERScheme (RListFoldr (b, f), arg) ->
+        ERScheme (RListFoldr (substitute' b, substitute' f), substitute' arg)
   in
   substitute' e
 
@@ -176,6 +184,8 @@ let freshen_exp : (id -> id) -> exp -> exp =
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
+    | ERScheme (RListFoldr (b, f), arg) ->
+        ERScheme (RListFoldr (freshen_exp' b, freshen_exp' f), freshen_exp' arg)
   in
   freshen_exp' e
 
@@ -220,3 +230,9 @@ let rec normalize : exp -> exp = function
   | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)
+  | ERScheme (RListFoldr (b, f), arg) ->
+      (match normalize arg with
+      | ECtor ("Nil", EUnit) -> normalize b
+      | ECtor ("Cons", EPair (hd, tl)) ->
+          normalize (EApp (f, EPair (hd, ERScheme (RListFoldr (b, f), tl))))
+      | arg' -> ERScheme (RListFoldr (b, f), arg'))

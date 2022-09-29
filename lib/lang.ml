@@ -28,6 +28,9 @@ type datatype_env =
 (** Case branches *)
 type branch = string * (id * exp)
 
+(** Recursion schemes *)
+and rscheme = RListFoldr of exp * exp
+
 (** Expressions *)
 and exp =
   | EVar of id
@@ -41,6 +44,7 @@ and exp =
   | EUnit
   | EInt of int
   | EHole of string * typ
+  | ERScheme of rscheme * exp
 [@@deriving sexp, ord, eq, compare, show]
 
 (** An environment of expressions *)

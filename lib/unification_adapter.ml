@@ -56,12 +56,15 @@ and to_unification_term'
     -> Unification.term
   =
  fun sigma stdlib gamma e ->
+  let result_type = Type_system.infer sigma gamma e in
+  let embed' prefix metadata arguments =
+    embed sigma stdlib gamma prefix metadata result_type arguments
+  in
   match e with
   | EVar x ->
-      let tau = to_unification_typ (String.Map.find_exn gamma x) in
       if String.Set.mem stdlib x
-      then Atom (Constant (x, tau))
-      else Atom (Variable (x, tau))
+      then Atom (Constant (x, to_unification_typ result_type))
+      else Atom (Variable (x, to_unification_typ result_type))
   | EApp (e1, e2) ->
       Application
         ( to_unification_term' sigma stdlib gamma e1
@@ -76,7 +79,6 @@ and to_unification_term'
             (String.Map.update gamma x ~f:(fun _ -> tau))
             body )
   | EMatch (scrutinee, branches) ->
-      let result_type = Type_system.infer sigma gamma e in
       let arguments =
         List.map (sort_tags branches) ~f:(fun (tag, (arg_name, rhs)) ->
             EAbs
@@ -84,28 +86,16 @@ and to_unification_term'
               , snd (Option.value_exn (Type_system.ctor_typ sigma tag))
               , rhs ))
       in
-      embed sigma stdlib gamma "match" "" result_type arguments
-  | ECtor (tag, arg) ->
-      let dt, _ = Option.value_exn (Type_system.ctor_typ sigma tag) in
-      embed sigma stdlib gamma "ctor" tag (TDatatype dt) [ arg ]
-  | EPair (e1, e2) ->
-      let tau1 = Type_system.infer sigma gamma e1 in
-      let tau2 = Type_system.infer sigma gamma e2 in
-      embed sigma stdlib gamma "pair" "" (TProd (tau1, tau2)) [ e1; e2 ]
-  | EFst arg ->
-      (match Type_system.infer sigma gamma arg with
-      | TProd (result_type, _) ->
-          embed sigma stdlib gamma "fst" "" result_type [ arg ]
-      | _ -> failwith "ill-typed fst")
-  | ESnd arg ->
-      (match Type_system.infer sigma gamma arg with
-      | TProd (_, result_type) ->
-          embed sigma stdlib gamma "snd" "" result_type [ arg ]
-      | _ -> failwith "ill-typed snd")
-  | EUnit -> embed sigma stdlib gamma "unit" "" TUnit []
-  | EInt n -> embed sigma stdlib gamma "int" (Int.to_string n) TInt []
+      embed' "match" "" arguments
+  | ECtor (tag, arg) -> embed' "ctor" tag [ arg ]
+  | EPair (e1, e2) -> embed' "pair" "" [ e1; e2 ]
+  | EFst arg -> embed' "fst" "" [ arg ]
+  | ESnd arg -> embed' "snd" "" [ arg ]
+  | EUnit -> embed' "unit" "" []
+  | EInt n -> embed' "int" (Int.to_string n) []
   | EHole (name, typ) ->
       Atom (Variable (embed_name "??" name, to_unification_typ typ))
+  | ERScheme (RListFoldr (b, f), arg) -> embed' "list_foldr" "" [ b; f; arg ]
 
 let to_unification_term
     : Lang.datatype_env -> Lang.typ_env -> Lang.exp -> Unification.term
@@ -163,6 +153,12 @@ let rec from_unification_term
             ESnd (from_unification_term sigma (List.hd_exn arguments))
         | Some ("unit", "") -> EUnit
         | Some ("int", n) -> EInt (Int.of_string n)
+        | Some ("list_foldr", "") ->
+            ERScheme
+              ( RListFoldr
+                  ( from_unification_term sigma (List.nth_exn arguments 0)
+                  , from_unification_term sigma (List.nth_exn arguments 1) )
+              , from_unification_term sigma (List.nth_exn arguments 2) )
         | _ -> build_arguments (EVar x))
   in
   Exp.build_abs
