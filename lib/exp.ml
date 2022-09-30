@@ -1,8 +1,6 @@
 open Core
 open Lang
 
-(* Comparator stuff *)
-
 module T = struct
   type t = exp
 
@@ -13,32 +11,73 @@ end
 include T
 include Comparator.Make (T)
 
-(* Normal stuff *)
-
-let rec show : exp -> string = function
+let rec show_single : exp -> string =
+ fun e ->
+  match e with
   | EVar id -> id
-  | EApp (head, arg) -> sprintf "(%s %s)" (show head) (show arg)
+  | EApp (head, arg) -> sprintf "(%s %s)" (show_single head) (show_single arg)
   | EAbs (param, tau, body) ->
-      sprintf "(lambda %s %s %s)" param (Typ.show tau) (show body)
+      sprintf "(lambda %s %s %s)" param (Typ.show tau) (show_single body)
   | EMatch (scrutinee, branches) ->
       sprintf
         "(match %s %s)"
-        (show scrutinee)
+        (show_single scrutinee)
         (String.concat
            ~sep:" "
            (List.map
               ~f:(fun (ctor_name, (arg_name, rhs)) ->
-                sprintf "(%s %s -> %s)" ctor_name arg_name (show rhs))
+                sprintf "(%s %s -> %s)" ctor_name arg_name (show_single rhs))
               branches))
-  | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show arg)
-  | EPair (e1, e2) -> sprintf "(%s , %s)" (show e1) (show e2)
-  | EFst arg -> sprintf "(fst %s)" (show arg)
-  | ESnd arg -> sprintf "(snd %s)" (show arg)
+  | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show_single arg)
+  | EPair (e1, e2) -> sprintf "(%s , %s)" (show_single e1) (show_single e2)
+  | EFst arg -> sprintf "(fst %s)" (show_single arg)
+  | ESnd arg -> sprintf "(snd %s)" (show_single arg)
   | EUnit -> "()"
   | EInt n -> string_of_int n
   | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
   | ERScheme (RListFoldr (b, f)) ->
-      sprintf "(list_foldr %s %s)" (show b) (show f)
+      sprintf "(list_foldr %s %s)" (show_single b) (show_single f)
+
+let rec show_multi : int -> exp -> string =
+ fun depth e ->
+  let single_indent = "  " in
+  let indent = String.concat (List.init depth ~f:(fun _ -> single_indent)) in
+  indent
+  ^
+  match e with
+  | EVar id -> id
+  | EApp (head, arg) -> sprintf "(%s %s)" (show_single head) (show_single arg)
+  | EAbs (param, tau, body) ->
+      sprintf
+        "(lambda %s %s\n%s)"
+        param
+        (Typ.show tau)
+        (show_multi (depth + 1) body)
+  | EMatch (scrutinee, branches) ->
+      sprintf
+        "(match %s\n%s)"
+        (show_single scrutinee)
+        (String.concat
+           ~sep:"\n"
+           (List.map
+              ~f:(fun (ctor_name, (arg_name, rhs)) ->
+                sprintf
+                  "%s%s(%s %s ->\n%s)"
+                  indent
+                  single_indent
+                  ctor_name
+                  arg_name
+                  (show_multi (depth + 2) rhs))
+              branches))
+  | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show_single arg)
+  | EPair (e1, e2) -> sprintf "(%s , %s)" (show_single e1) (show_single e2)
+  | EFst arg -> sprintf "(fst %s)" (show_single arg)
+  | ESnd arg -> sprintf "(snd %s)" (show_single arg)
+  | EUnit -> "()"
+  | EInt n -> string_of_int n
+  | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
+  | ERScheme (RListFoldr (b, f)) ->
+      sprintf "(list_foldr %s %s)" (show_single b) (show_single f)
 
 let map_branches : branch list -> f:(exp -> exp) -> branch list =
  fun branches ~f ->

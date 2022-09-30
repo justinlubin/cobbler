@@ -12,10 +12,10 @@ val infer : datatype_env -> typ_env -> exp -> typ
     exception {!val:IllTyped} otherwise. *)
 val check : datatype_env -> typ_env -> exp -> typ -> unit
 
-(** [well_typed sigma gamma env] returns [()] if and only if [env] is
+(** [well_typed (sigma, gamma, env)] returns [()] if and only if [env] is
     well-typed in the datatype environment [sigma] and type environment
     [gamma] and throws the exception {!val:IllTyped} otherwise. *)
-val well_typed : datatype_env -> typ_env -> env -> unit
+val well_typed : datatype_env * typ_env * env -> unit
 
 (** [ctor_typ sigma tag] looks up the type of the constructor [tag] in
     [sigma]. *)

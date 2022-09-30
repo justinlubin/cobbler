@@ -99,8 +99,8 @@ and check : datatype_env -> typ_env -> exp -> typ -> unit =
  fun sigma gamma e tau ->
   if [%eq: typ] (infer sigma gamma e) tau then () else raise (IllTyped e)
 
-let well_typed : datatype_env -> typ_env -> env -> unit =
- fun sigma gamma env ->
+let well_typed : datatype_env * typ_env * env -> unit =
+ fun (sigma, gamma, env) ->
   String.Map.iteri env ~f:(fun ~key:name ~data:body ->
       check
         sigma

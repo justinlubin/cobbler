@@ -1,8 +1,6 @@
 open Core
 open Lang
 
-(* Comparator stuff *)
-
 module T = struct
   type t = typ
 
@@ -12,8 +10,6 @@ end
 
 include T
 include Comparator.Make (T)
-
-(* Normal stuff *)
 
 let rec show : typ -> string = function
   | TUnit -> "Unit"

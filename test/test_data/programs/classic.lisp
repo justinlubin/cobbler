@@ -6,6 +6,10 @@
   (Nothing Unit)
   (Just Peano))
 
+(type ListPeano
+  (Nil Unit)
+  (Cons (Peano * ListPeano)))
+
 (define zero : Peano
   (Zero ()))
 

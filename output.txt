@@ -1,0 +1,12 @@
+dune exec bin/main.exe
+operating on file 'test/test_data/programs/list2.lisp'
+parsing...
+parsed! type checking...
+type checked! synthesizing...
+>>>>>>>>>(lambda pred (Peano -> Bool) (lambda f (Peano -> Peano) (lambda xs ListPeano ((list_foldr (Nil ()) (lambda p (Peano * ListPeano) (match (pred (fst p)) (False n -> (snd p)) (True n -> (Cons ((f (fst p)) , (snd p))))))) xs))))
+(lambda __var#0 (Peano -> Bool) (lambda __var#1 (Peano -> Peano) (lambda __var#2 ListPeano ((list_foldr (Nil ()) (lambda __var#3 (Peano * ListPeano) (match (__var#0 (fst __var#3)) (False __var#4 -> (snd __var#3)) (True __var#5 -> (Cons ((__var#1 (fst __var#3)) , (snd __var#3))))))) __var#2))))
+(lambda __var#1 (Peano -> Peano) (lambda __var#2 ListPeano ((list_foldr (Nil ()) (lambda __var#3 (Peano * ListPeano) (match (__var#0 (fst __var#3)) (False __var#4 -> (snd __var#3)) (True __var#5 -> (Cons ((__var#1 (fst __var#3)) , (snd __var#3))))))) __var#2)))
+(lambda __var#2 ListPeano ((list_foldr (Nil ()) (lambda __var#3 (Peano * ListPeano) (match (__var#0 (fst __var#3)) (False __var#4 -> (snd __var#3)) (True __var#5 -> (Cons ((__var#1 (fst __var#3)) , (snd __var#3))))))) __var#2))
+((list_foldr (Nil ()) (lambda __var#3 (Peano * ListPeano) (match (__var#0 (fst __var#3)) (False __var#4 -> (snd __var#3)) (True __var#5 -> (Cons ((__var#1 (fst __var#3)) , (snd __var#3))))))) __var#2)
+__var#2
+(list_foldr (Nil ()) (lambda __var#3 (Peano * ListPeano) (match (__var#0 (fst __var#3)) (False __var#4 -> (snd __var#3)) (True __var#5 -> (Cons ((__var#1 (fst __var#3)) , (snd __var#3)))))))

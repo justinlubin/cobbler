@@ -14,8 +14,12 @@ type comparator_witness
 (** Comparator  *)
 val comparator : (t, comparator_witness) Base.Comparator.t
 
-(** [show e] pretty-prints the expression [e]. *)
-val show : t -> string
+(** [show_single e] pretty-prints the expression [e] on a single line. *)
+val show_single : t -> string
+
+(** [show depth e] pretty-prints the expression [e] on multiple lines starting
+    at indentation depth [depth]. *)
+val show_multi : int -> t -> string
 
 (** [map_branches branches ~f] applies [f] to the right-hand sides of each
     branch in [branches]. *)

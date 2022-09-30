@@ -32,7 +32,7 @@ let rec fuse' : datatype_env -> typ_env -> exp -> exp =
   (* List foldr fusion *)
   | EApp (head, EApp (ERScheme (RListFoldr (b1, f1)), arg)) ->
       (match Typ.decompose_arr (Type_system.infer sigma gamma f1) with
-      | [ elem_type ], _ ->
+      | [ TProd (elem_type, _) ], _ ->
           let return_type = Type_system.infer sigma gamma e in
           let u y = Exp.normalize (EApp (head, y)) in
           let f y = Exp.normalize (EApp (f1, y)) in
@@ -98,7 +98,13 @@ and compute_list_foldr_h
       (Exp.replace_subexp
          ~old_subexp:(u (EVar acc))
          ~new_subexp:(ESnd (EVar p))
-         (fuse_normalize sigma gamma (u (f (EPair (EVar x, EVar acc))))))
+         (fuse_normalize
+            sigma
+            (String.Map.add_exn
+               (String.Map.add_exn gamma ~key:x ~data:elem_type)
+               ~key:acc
+               ~data:return_type)
+            (u (f (EPair (EVar x, EVar acc))))))
   in
   if String.Set.mem (Exp.free_variables h_rhs) acc
   then None

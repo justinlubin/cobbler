@@ -8,9 +8,14 @@ let inline : env -> exp -> exp =
   Map.fold env ~init:e ~f:(fun ~key:lhs ~data:rhs acc ->
       Exp.substitute (lhs, rhs) acc)
 
-let norm : env -> exp -> exp =
- fun env e ->
-  e |> inline env |> Exp.normalize |> Fusion.pull_out_cases |> Exp.normalize
+let norm : datatype_env -> typ_env -> env -> exp -> exp =
+ fun sigma gamma env e ->
+  e
+  |> inline env
+  |> Exp.normalize
+  |> Fusion.fuse sigma gamma
+  |> Fusion.pull_out_cases
+  |> Exp.normalize
 
 (* Grammars *)
 
@@ -35,8 +40,8 @@ let make_grammar : typ_env -> env -> (id * typ) list -> grammar =
 
 (* Expansion *)
 
-let expand : grammar -> exp -> exp list =
- fun grammar e ->
+let expand : grammar -> int -> exp -> exp list =
+ fun grammar _ e ->
   let open List.Let_syntax in
   let rec expand' = function
     | EVar x -> []
@@ -55,47 +60,62 @@ let expand : grammar -> exp -> exp list =
   in
   expand' e
 
-let debug_expand : grammar -> exp -> exp list =
- fun grammar e ->
-  print_endline ("{ Expanding: " ^ Exp.show e);
-  let expansion = expand grammar e in
-  List.iter ~f:(fun e' -> print_endline ("  " ^ Exp.show e')) expansion;
+let debug_expand : grammar -> int -> exp -> exp list =
+ fun grammar depth e ->
+  print_endline (sprintf "{ Expanding (depth %d): %s" depth (Exp.show_single e));
+  let expansion = expand grammar depth e in
+  List.iter ~f:(fun e' -> print_endline ("  " ^ Exp.show_single e')) expansion;
   print_endline "}";
   expansion
 
 (* Problems *)
 
 type problem =
-  { gamma : typ_env
+  { sigma : datatype_env
+  ; gamma : typ_env
   ; env : env
-  ; free_vars : (id * typ) list
-  ; goal_typ : typ
-  ; reference : exp
+  ; name : string
   }
 
-let problem_of_definitions : typ_env * env -> problem =
- fun (gamma, env) ->
-  let main_typ = Map.find_exn gamma "main" in
-  let main_exp = Map.find_exn env "main" in
-  let _, main_codomain = Typ.decompose_arr main_typ in
-  let main_params, main_body = Exp.decompose_abs main_exp in
-  { gamma = Map.remove gamma "main"
-  ; env = Map.remove env "main"
-  ; free_vars = main_params
-  ; goal_typ = main_codomain
-  ; reference = main_body
+let problem_of_definitions : datatype_env * typ_env * env -> problem =
+ fun (sigma, gamma, env) ->
+  { sigma
+  ; gamma
+  ; env =
+      String.Map.mapi env ~f:(fun ~key:name ~data:old_rhs ->
+          match Recursion_scheme.extract_list_foldr sigma gamma env name with
+          | Some new_rhs -> new_rhs
+          | None -> old_rhs)
+  ; name = "main"
   }
 
 (* Synthesis *)
 
-let solve : problem -> exp option =
- fun { gamma; env; free_vars; goal_typ; reference } ->
-  let normalized_reference = norm env reference in
-  let grammar = make_grammar gamma env free_vars in
-  Enumerative_search.top_down
-    ~max_iterations:5
-    ~start:(EHole (Util.gensym "start", goal_typ))
-    ~expand:(expand grammar)
-    ~correct:(fun e ->
-      let result = Exp.alpha_equivalent (norm env e) normalized_reference in
-      result)
+let solve : depth:int -> problem -> exp option =
+ fun ~depth { sigma; gamma; env; name } ->
+  let reference = String.Map.find_exn env "main" in
+  let normalized_reference = norm sigma gamma env reference in
+  let reference_params, reference_body = Exp.decompose_abs reference in
+  let _, reference_codomain =
+    Typ.decompose_arr (String.Map.find_exn gamma "main")
+  in
+  let grammar =
+    make_grammar
+      (String.Map.remove gamma "main")
+      (String.Map.remove env "main")
+      reference_params
+  in
+  Option.map
+    ~f:(Exp.build_abs reference_params)
+    (Enumerative_search.top_down
+       ~max_iterations:depth
+       ~start:(EHole (Util.gensym "start", reference_codomain))
+       ~expand:(expand grammar)
+       ~correct:(fun candidate_body ->
+         let candidate = Exp.build_abs reference_params candidate_body in
+         let result =
+           Exp.alpha_equivalent
+             (norm sigma gamma env candidate)
+             normalized_reference
+         in
+         result))
