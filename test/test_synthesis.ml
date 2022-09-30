@@ -13,7 +13,9 @@ let%test_unit "classic synth 1" =
       , EApp (EApp (EVar "map", EVar "f"), EVar "mx") )
   in
   let _, actual_solution =
-    Synthesis.solve ~depth:5 problem |> Option.value_exn |> Exp.decompose_abs
+    Synthesis.solve ~use_unification:true ~depth:5 problem
+    |> Option.value_exn
+    |> Exp.decompose_abs
   in
   [%test_result: exp] actual_solution ~expect:expected_solution
 
@@ -25,6 +27,8 @@ let%test_unit "list2 mapfilter" =
       , EApp (EApp (EVar "filter", EVar "pred"), EVar "xs") )
   in
   let _, actual_solution =
-    Synthesis.solve ~depth:5 problem |> Option.value_exn |> Exp.decompose_abs
+    Synthesis.solve ~use_unification:true ~depth:5 problem
+    |> Option.value_exn
+    |> Exp.decompose_abs
   in
   [%test_result: exp] actual_solution ~expect:expected_solution

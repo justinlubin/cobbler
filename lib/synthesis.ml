@@ -91,9 +91,10 @@ let problem_of_definitions : datatype_env * typ_env * env -> problem =
 
 (* Synthesis *)
 
-let solve : depth:int -> problem -> exp option =
- fun ~depth { sigma; gamma; env; name } ->
+let solve : use_unification:bool -> depth:int -> problem -> exp option =
+ fun ~use_unification ~depth { sigma; gamma; env; name } ->
   let reference = String.Map.find_exn env "main" in
+  let reference_params, _ = Exp.decompose_abs reference in
   let normalized_reference = norm sigma gamma env reference in
   let normalized_reference_params, normalized_reference_body =
     Exp.decompose_abs normalized_reference
@@ -117,38 +118,50 @@ let solve : depth:int -> problem -> exp option =
     make_grammar
       (String.Map.remove gamma "main")
       (String.Map.remove env "main")
-      []
+      (if use_unification then [] else reference_params)
   in
   Option.map
     (Enumerative_search.top_down
        ~max_iterations:depth
        ~start:(EHole (Util.gensym "start", reference_codomain))
        ~expand:(expand grammar)
-       ~correct:(fun candidate_body ->
-         let normalized_candidate_body = norm sigma gamma env candidate_body in
-         let normalized_candidate_body_uniterm =
-           Unification_adapter.to_unification_term
-             sigma
-             stdlib
-             normalized_candidate_body
-         in
-         match
-           Unification.unify
-             1000
-             normalized_candidate_body_uniterm
-             normalized_reference_body_uniterm
-         with
-         | Unification.Solved subs ->
-             Some
-               (Exp.build_abs
-                  normalized_reference_params
-                  (Exp.fill_holes
-                     (Unification_adapter.simplify_solution sigma subs)
-                     candidate_body))
-         | Unification.Impossible -> None
-         | Unification.OutOfFuel -> None))
+       ~correct:
+         (if use_unification
+         then
+           fun candidate_body ->
+           let normalized_candidate_body =
+             norm sigma gamma env candidate_body
+           in
+           let normalized_candidate_body_uniterm =
+             Unification_adapter.to_unification_term
+               sigma
+               stdlib
+               normalized_candidate_body
+           in
+           match
+             Unification.unify
+               1000
+               normalized_candidate_body_uniterm
+               normalized_reference_body_uniterm
+           with
+           | Unification.Solved subs ->
+               Some
+                 (Exp.build_abs
+                    normalized_reference_params
+                    (Exp.fill_holes
+                       (Unification_adapter.simplify_solution sigma subs)
+                       candidate_body))
+           | Unification.Impossible -> None
+           | Unification.OutOfFuel -> None
+         else
+           fun candidate_body ->
+           let candidate = Exp.build_abs reference_params candidate_body in
+           if Exp.alpha_equivalent
+                (norm sigma gamma env candidate)
+                normalized_reference
+           then Some candidate
+           else None))
     ~f:(fun messy_solution ->
-      let reference_params, _ = Exp.decompose_abs reference in
       Exp.normalize
         (Exp.build_abs
            reference_params
