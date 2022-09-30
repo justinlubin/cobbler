@@ -1,6 +1,9 @@
 open Core
 open Lib
 open Lang
+open Expect_test_common.Expectation
+open Expect_test_common.Expectation.Body
+open Expect_test_common.File.Location
 
 let%test_unit "pull out cases 1" =
   [%test_result: exp]
@@ -32,10 +35,19 @@ let%test_unit "pull out cases 1" =
            ] ))
 
 let sigma_list2, gamma_list2, env_list2 =
-  Common.parse_file "programs/list1.lisp"
+  Common.parse_file "programs/list2.lisp"
 
-let%test_unit "list2 map map fusion" =
+let%expect_test "list2 mapmap fusion" =
   let map_foldr =
     Recursion_scheme.extract_list_foldr sigma_list2 gamma_list2 env_list2 "map"
   in
-  failwith "TODO"
+  let mapmap =
+    "mapmap"
+    |> String.Map.find_exn env_list2
+    |> Exp.substitute ("map", map_foldr)
+    |> Exp.normalize
+  in
+  let fused_mapmap = Fusion.fuse sigma_list2 gamma_list2 mapmap in
+  print_endline (Exp.show (Exp.alpha_normalize fused_mapmap));
+  [%expect
+    {| (lambda var0 (Peano -> Peano) (lambda var1 (Peano -> Peano) (lambda var2 ListPeano (list_foldr (Nil ()) (lambda var3 ((Peano * ListPeano) * ListPeano) (Cons ((var0 (var1 (fst var3))) , (snd var3)))) var2)))) |}]

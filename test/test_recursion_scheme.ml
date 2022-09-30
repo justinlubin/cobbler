@@ -45,4 +45,4 @@ let%expect_test "list2 main" =
              env_list2
              "main")));
   [%expect
-    {| (lambda var0 (Peano -> Bool) (lambda var1 (Peano -> Peano) (lambda var2 ListPeano (list_foldr (Nil ()) (lambda var3 (Peano * ListPeano) (Cons ((var0 ((var1 fst) var3)) , (snd var3)))) var2)))) |}]
+    {| (lambda var0 (Peano -> Bool) (lambda var1 (Peano -> Peano) (lambda var2 ListPeano (list_foldr (Nil ()) (lambda var3 (Peano * ListPeano) (Cons ((var0 (var1 (fst var3))) , (snd var3)))) var2)))) |}]

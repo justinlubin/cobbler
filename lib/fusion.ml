@@ -44,10 +44,15 @@ let rec fuse : datatype_env -> typ_env -> exp -> exp =
               ~u
               ~f:(fun y -> EApp (f, y))
           in
+          (* TODO recursively fuse? *)
           ERScheme (RListFoldr (u b, h), arg)
       | _ -> failwith "impossible list foldr type")
   | EApp (head, arg) -> EApp (fuse sigma gamma head, fuse sigma gamma arg)
-  | EAbs (param, tau, body) -> EAbs (param, tau, fuse sigma gamma body)
+  | EAbs (param, tau, body) ->
+      EAbs
+        ( param
+        , tau
+        , fuse sigma (String.Map.update gamma param ~f:(fun _ -> tau)) body )
   | EMatch (outer_scrutinee, outer_branches) -> failwith "TODO"
   | ECtor (ctor_name, arg) -> ECtor (ctor_name, fuse sigma gamma arg)
   | EPair (e1, e2) -> EPair (fuse sigma gamma e1, fuse sigma gamma e2)
@@ -60,7 +65,7 @@ let rec fuse : datatype_env -> typ_env -> exp -> exp =
       (match Typ.decompose_arr (Type_system.infer sigma gamma f1) with
       | [ elem_type ], _ ->
           let return_type = Type_system.infer sigma gamma e in
-          let u y = ERScheme (RListFoldr (b2, f2), y) in
+          let u y = Exp.normalize (ERScheme (RListFoldr (b2, f2), y)) in
           let h =
             compute_list_foldr_h
               sigma
@@ -70,7 +75,8 @@ let rec fuse : datatype_env -> typ_env -> exp -> exp =
               ~u
               ~f:(fun y -> EApp (f1, y))
           in
-          ERScheme (RListFoldr (u b1, h), arg)
+          (* TODO recursively fuse? *)
+          ERScheme (RListFoldr (Exp.normalize (u b1), h), arg)
       | _ -> failwith "impossible list foldr type")
   | ERScheme (RListFoldr (b, f), arg) ->
       ERScheme
