@@ -226,7 +226,7 @@ let rec normalize : exp -> exp = function
   | ESnd arg ->
       (match normalize arg with
       | EPair (_, e2) -> e2
-      | arg' -> EFst arg')
+      | arg' -> ESnd arg')
   | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)
