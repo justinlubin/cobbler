@@ -30,3 +30,12 @@ let%test_unit "pull out cases 1" =
                      ; ("Just", ("y", EVar "y"))
                      ] ) ) )
            ] ))
+
+let sigma_list2, gamma_list2, env_list2 =
+  Common.parse_file "programs/list1.lisp"
+
+let%test_unit "list2 map map fusion" =
+  let map_foldr =
+    Recursion_scheme.extract_list_foldr sigma_list2 gamma_list2 env_list2 "map"
+  in
+  failwith "TODO"

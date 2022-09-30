@@ -61,3 +61,7 @@ val alpha_equivalent : t -> t -> bool
 (** [normalize e] recursively reduces all redexes in [e], including those under
     a lambda abstraction. *)
 val normalize : t -> t
+
+(** [replace_subexp ~old_subexp ~new_subexp e] replaces all occurrences of the
+    expression [old_subexp] with [new_subexp] in [e]. *)
+val replace_subexp : old_subexp:exp -> new_subexp:exp -> exp -> exp
