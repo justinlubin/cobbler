@@ -160,38 +160,40 @@ let substitute : id * exp -> exp -> exp =
   in
   substitute' e
 
-let freshen_exp : (id -> id) -> exp -> exp =
+let freshen_with : (id -> id) -> exp -> exp =
  fun renamer e ->
-  let rec freshen_exp' = function
+  let rec freshen_with' = function
     | EVar x -> EVar x
-    | EApp (head, arg) -> EApp (freshen_exp' head, freshen_exp' arg)
+    | EApp (head, arg) -> EApp (freshen_with' head, freshen_with' arg)
     | EAbs (param, tau, body) ->
         let new_param = renamer param in
-        EAbs (new_param, tau, freshen_exp' (replace (param, new_param) body))
+        EAbs (new_param, tau, freshen_with' (replace (param, new_param) body))
     | EMatch (scrutinee, branches) ->
         EMatch
-          ( freshen_exp' scrutinee
+          ( freshen_with' scrutinee
           , List.map branches ~f:(fun (ctor_name, (arg_name, rhs)) ->
                 let new_arg_name = renamer arg_name in
                 ( ctor_name
                 , ( new_arg_name
-                  , freshen_exp' (replace (arg_name, new_arg_name) rhs) ) )) )
-    | ECtor (ctor_name, arg) -> ECtor (ctor_name, freshen_exp' arg)
-    | EPair (e1, e2) -> EPair (freshen_exp' e1, freshen_exp' e2)
-    | EFst arg -> EFst (freshen_exp' arg)
-    | ESnd arg -> ESnd (freshen_exp' arg)
+                  , freshen_with' (replace (arg_name, new_arg_name) rhs) ) )) )
+    | ECtor (ctor_name, arg) -> ECtor (ctor_name, freshen_with' arg)
+    | EPair (e1, e2) -> EPair (freshen_with' e1, freshen_with' e2)
+    | EFst arg -> EFst (freshen_with' arg)
+    | ESnd arg -> ESnd (freshen_with' arg)
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
     | ERScheme (RListFoldr (b, f)) ->
-        ERScheme (RListFoldr (freshen_exp' b, freshen_exp' f))
+        ERScheme (RListFoldr (freshen_with' b, freshen_with' f))
   in
-  freshen_exp' e
+  freshen_with' e
+
+let freshen : exp -> exp = freshen_with (fun _ -> Util.gensym gensym_prefix)
 
 let alpha_normalize : exp -> exp =
  fun e ->
   let suffix = ref (-1) in
-  freshen_exp
+  freshen_with
     (fun _ ->
       suffix := !suffix + 1;
       gensym_prefix ^ Int.to_string !suffix)
