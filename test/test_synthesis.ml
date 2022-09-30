@@ -9,13 +9,15 @@ let%test_unit "classic synth 1" =
   let problem = Synthesis.problem_of_definitions classic in
   let expected_solution =
     EApp
-      ( EApp (EVar "withDefault", EVar "zero")
+      ( EApp (EVar "withDefault", ECtor ("Zero", EUnit))
       , EApp (EApp (EVar "map", EVar "f"), EVar "mx") )
   in
-  let _, actual_solution =
+  let actual_solution =
     Synthesis.solve ~use_unification:true ~depth:5 problem
     |> Option.value_exn
     |> Exp.decompose_abs
+    |> snd
+    |> Exp.clean
   in
   [%test_result: exp] actual_solution ~expect:expected_solution
 
@@ -26,9 +28,11 @@ let%test_unit "list2 mapfilter" =
       ( EApp (EVar "map", EVar "f")
       , EApp (EApp (EVar "filter", EVar "pred"), EVar "xs") )
   in
-  let _, actual_solution =
+  let actual_solution =
     Synthesis.solve ~use_unification:true ~depth:5 problem
     |> Option.value_exn
     |> Exp.decompose_abs
+    |> snd
+    |> Exp.clean
   in
   [%test_result: exp] actual_solution ~expect:expected_solution
