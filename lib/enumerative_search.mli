@@ -20,10 +20,11 @@ val bottom_up
 (** [top_down ~max_iterations ~start ~expand ~correct] repeatedly applies
     [expand] to [start] at most [max_iterations] times searching for any
     value that satisfies the [correct] predicate. The first argument of
-    [expand] is the current iteration depth. *)
+    [expand] is the current iteration depth, and the output of [correct]
+    maps candidate programs to final programs. *)
 val top_down
   :  max_iterations:int
   -> start:'e
   -> expand:(int -> 'e -> 'e list)
-  -> correct:('e -> bool)
+  -> correct:('e -> 'e option)
   -> 'e option

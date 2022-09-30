@@ -105,17 +105,14 @@ let solve : depth:int -> problem -> exp option =
       (String.Map.remove env "main")
       reference_params
   in
-  Option.map
-    ~f:(Exp.build_abs reference_params)
-    (Enumerative_search.top_down
-       ~max_iterations:depth
-       ~start:(EHole (Util.gensym "start", reference_codomain))
-       ~expand:(expand grammar)
-       ~correct:(fun candidate_body ->
-         let candidate = Exp.build_abs reference_params candidate_body in
-         let result =
-           Exp.alpha_equivalent
-             (norm sigma gamma env candidate)
-             normalized_reference
-         in
-         result))
+  Enumerative_search.top_down
+    ~max_iterations:depth
+    ~start:(EHole (Util.gensym "start", reference_codomain))
+    ~expand:(expand grammar)
+    ~correct:(fun candidate_body ->
+      let candidate = Exp.build_abs reference_params candidate_body in
+      if Exp.alpha_equivalent
+           (norm sigma gamma env candidate)
+           normalized_reference
+      then Some candidate
+      else None)

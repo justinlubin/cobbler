@@ -25,7 +25,7 @@ let top_down :
       max_iterations:int
       -> start:'e
       -> expand:(int -> 'e -> 'e list)
-      -> correct:('e -> bool)
+      -> correct:('e -> 'e option)
       -> 'e option
   =
  fun ~max_iterations ~start ~expand ~correct ->
@@ -34,7 +34,7 @@ let top_down :
     then None
     else (
       let new_candidates = List.concat_map ~f:(expand iterations) candidates in
-      match List.find ~f:correct new_candidates with
+      match List.find_map ~f:correct new_candidates with
       | Some e -> Some e
       | None -> top_down' (iterations + 1) new_candidates)
   in
