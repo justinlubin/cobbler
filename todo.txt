@@ -1,2 +1,4 @@
-- list and option fold fusion
+- make list_foldr work on datatypes other than "Cons"/"Nil"
+- option fold fusion
+- match fold fusion
 - perfect discrimination trees
