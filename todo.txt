@@ -1,3 +1,4 @@
 - make list_foldr work on datatypes other than "Cons"/"Nil"
+- hook up synthesis
 - figure out how to incorporate pull_out_cases
 - perfect discrimination trees
