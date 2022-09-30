@@ -95,7 +95,7 @@ and to_unification_term'
   | EInt n -> embed' "int" (Int.to_string n) []
   | EHole (name, typ) ->
       Atom (Variable (embed_name "??" name, to_unification_typ typ))
-  | ERScheme (RListFoldr (b, f), arg) -> embed' "list_foldr" "" [ b; f; arg ]
+  | ERScheme (RListFoldr (b, f)) -> embed' "list_foldr" "" [ b; f ]
 
 let to_unification_term
     : Lang.datatype_env -> Lang.typ_env -> Lang.exp -> Unification.term
@@ -108,16 +108,18 @@ let rec from_unification_term
   =
  fun sigma t ->
   let heading, head, arguments = Unification.abbreviate t in
-  let build_arguments x =
-    Exp.build_app x (List.map ~f:(from_unification_term sigma) arguments)
+  let build_arguments n x =
+    Exp.build_app
+      x
+      (List.map ~f:(from_unification_term sigma) (List.drop arguments n))
   in
   let body =
     match head with
     | Variable (x, tau) ->
         (match unembed_name x with
         | Some ("??", name) ->
-            build_arguments (EHole (name, from_unification_typ tau))
-        | _ -> build_arguments (EVar x))
+            build_arguments 0 (EHole (name, from_unification_typ tau))
+        | _ -> build_arguments 0 (EVar x))
     | Constant (x, _) ->
         (match unembed_name x with
         | Some ("match", "") ->
@@ -154,12 +156,13 @@ let rec from_unification_term
         | Some ("unit", "") -> EUnit
         | Some ("int", n) -> EInt (Int.of_string n)
         | Some ("list_foldr", "") ->
-            ERScheme
-              ( RListFoldr
-                  ( from_unification_term sigma (List.nth_exn arguments 0)
-                  , from_unification_term sigma (List.nth_exn arguments 1) )
-              , from_unification_term sigma (List.nth_exn arguments 2) )
-        | _ -> build_arguments (EVar x))
+            build_arguments
+              2
+              (ERScheme
+                 (RListFoldr
+                    ( from_unification_term sigma (List.nth_exn arguments 0)
+                    , from_unification_term sigma (List.nth_exn arguments 1) )))
+        | _ -> build_arguments 0 (EVar x))
   in
   Exp.build_abs
     (List.map ~f:(fun (x, tau) -> (x, from_unification_typ tau)) heading)

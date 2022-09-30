@@ -17,6 +17,28 @@ let rec infer : datatype_env -> typ_env -> exp -> typ =
       (match String.Map.find gamma x with
       | None -> raise (IllTyped e)
       | Some tau -> tau)
+  | EApp (ERScheme (RListFoldr (b, f)), arg) ->
+      let return_type = infer sigma gamma b in
+      (match infer sigma gamma arg with
+      | TDatatype dt ->
+          (match String.Map.find sigma dt with
+          | Some variants ->
+              (match
+                 List.sort
+                   ~compare:(fun (x1, _) (x2, _) -> String.compare x1 x2)
+                   variants
+               with
+              | [ ("Cons", TProd (elem_type, TDatatype dt')); ("Nil", TUnit) ]
+                when String.equal dt dt' ->
+                  check
+                    sigma
+                    gamma
+                    f
+                    (TArr (TProd (elem_type, return_type), return_type));
+                  return_type
+              | _ -> raise (IllTyped e))
+          | _ -> raise (IllTyped e))
+      | _ -> raise (IllTyped e))
   | EApp (e1, e2) ->
       (match infer sigma gamma e1 with
       | TArr (domain, codomain) ->
@@ -71,28 +93,7 @@ let rec infer : datatype_env -> typ_env -> exp -> typ =
   | EUnit -> TUnit
   | EInt _ -> TInt
   | EHole (_, tau) -> tau
-  | ERScheme (RListFoldr (b, f), arg) ->
-      let return_type = infer sigma gamma b in
-      (match infer sigma gamma arg with
-      | TDatatype dt ->
-          (match String.Map.find sigma dt with
-          | Some variants ->
-              (match
-                 List.sort
-                   ~compare:(fun (x1, _) (x2, _) -> String.compare x1 x2)
-                   variants
-               with
-              | [ ("Cons", TProd (elem_type, TDatatype dt')); ("Nil", TUnit) ]
-                when String.equal dt dt' ->
-                  check
-                    sigma
-                    gamma
-                    f
-                    (TArr (TProd (elem_type, return_type), return_type));
-                  return_type
-              | _ -> raise (IllTyped e))
-          | _ -> raise (IllTyped e))
-      | _ -> raise (IllTyped e))
+  | ERScheme _ -> raise (IllTyped e)
 
 and check : datatype_env -> typ_env -> exp -> typ -> unit =
  fun sigma gamma e tau ->

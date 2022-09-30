@@ -44,7 +44,7 @@ and exp =
   | EUnit
   | EInt of int
   | EHole of string * typ
-  | ERScheme of rscheme * exp
+  | ERScheme of rscheme
 [@@deriving sexp, ord, eq, compare, show]
 
 (** An environment of expressions *)

@@ -22,30 +22,23 @@ let rec pull_out_cases : exp -> exp = function
   | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)
-  | ERScheme (RListFoldr (b, f), arg) ->
-      ERScheme
-        (RListFoldr (pull_out_cases b, pull_out_cases f), pull_out_cases arg)
+  | ERScheme (RListFoldr (b, f)) ->
+      ERScheme (RListFoldr (pull_out_cases b, pull_out_cases f))
 
 let rec fuse : datatype_env -> typ_env -> exp -> exp =
  fun sigma gamma e ->
   match e with
   | EVar x -> EVar x
-  | EApp (head, ERScheme (RListFoldr (b, f), arg)) ->
+  | EApp (head, EApp (ERScheme (RListFoldr (b, f)), arg)) ->
       (match Typ.decompose_arr (Type_system.infer sigma gamma f) with
       | [ elem_type ], _ ->
           let return_type = Type_system.infer sigma gamma e in
-          let u y = EApp (head, y) in
+          let u y = Exp.normalize (EApp (head, y)) in
+          let f y = Exp.normalize (EApp (f, y)) in
           let h =
-            compute_list_foldr_h
-              sigma
-              gamma
-              ~elem_type
-              ~return_type
-              ~u
-              ~f:(fun y -> EApp (f, y))
+            compute_list_foldr_h sigma gamma ~elem_type ~return_type ~u ~f
           in
-          (* TODO recursively fuse? *)
-          ERScheme (RListFoldr (u b, h), arg)
+          fuse sigma gamma (EApp (ERScheme (RListFoldr (u b, h)), arg))
       | _ -> failwith "impossible list foldr type")
   | EApp (head, arg) -> EApp (fuse sigma gamma head, fuse sigma gamma arg)
   | EAbs (param, tau, body) ->
@@ -61,27 +54,8 @@ let rec fuse : datatype_env -> typ_env -> exp -> exp =
   | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)
-  | ERScheme (RListFoldr (b2, f2), ERScheme (RListFoldr (b1, f1), arg)) ->
-      (match Typ.decompose_arr (Type_system.infer sigma gamma f1) with
-      | [ elem_type ], _ ->
-          let return_type = Type_system.infer sigma gamma e in
-          let u y = Exp.normalize (ERScheme (RListFoldr (b2, f2), y)) in
-          let h =
-            compute_list_foldr_h
-              sigma
-              gamma
-              ~elem_type
-              ~return_type
-              ~u
-              ~f:(fun y -> EApp (f1, y))
-          in
-          (* TODO recursively fuse? *)
-          ERScheme (RListFoldr (Exp.normalize (u b1), h), arg)
-      | _ -> failwith "impossible list foldr type")
-  | ERScheme (RListFoldr (b, f), arg) ->
-      ERScheme
-        ( RListFoldr (fuse sigma gamma b, fuse sigma gamma f)
-        , fuse sigma gamma arg )
+  | ERScheme (RListFoldr (b, f)) ->
+      ERScheme (RListFoldr (fuse sigma gamma b, fuse sigma gamma f))
 
 and fuse_normalize : datatype_env -> typ_env -> exp -> exp =
  fun sigma gamma e ->

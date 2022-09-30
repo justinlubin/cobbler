@@ -37,8 +37,8 @@ let rec show : exp -> string = function
   | EUnit -> "()"
   | EInt n -> string_of_int n
   | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
-  | ERScheme (RListFoldr (b, f), arg) ->
-      sprintf "(list_foldr %s %s %s)" (show b) (show f) (show arg)
+  | ERScheme (RListFoldr (b, f)) ->
+      sprintf "(list_foldr %s %s)" (show b) (show f)
 
 let map_branches : branch list -> f:(exp -> exp) -> branch list =
  fun branches ~f ->
@@ -84,9 +84,8 @@ let rec free_variables : exp -> String.Set.t = function
   | EPair (e1, e2) -> String.Set.union (free_variables e1) (free_variables e2)
   | EFst arg -> free_variables arg
   | ESnd arg -> free_variables arg
-  | ERScheme (RListFoldr (b, f), arg) ->
-      String.Set.union_list
-        [ free_variables b; free_variables f; free_variables arg ]
+  | ERScheme (RListFoldr (b, f)) ->
+      String.Set.union (free_variables b) (free_variables f)
   | EUnit | EInt _ | EHole (_, _) -> String.Set.empty
 
 let replace : id * id -> exp -> exp =
@@ -112,8 +111,8 @@ let replace : id * id -> exp -> exp =
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
-    | ERScheme (RListFoldr (b, f), arg) ->
-        ERScheme (RListFoldr (replace' b, replace' f), replace' arg)
+    | ERScheme (RListFoldr (b, f)) ->
+        ERScheme (RListFoldr (replace' b, replace' f))
   in
   replace' e
 
@@ -156,8 +155,8 @@ let substitute : id * exp -> exp -> exp =
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
-    | ERScheme (RListFoldr (b, f), arg) ->
-        ERScheme (RListFoldr (substitute' b, substitute' f), substitute' arg)
+    | ERScheme (RListFoldr (b, f)) ->
+        ERScheme (RListFoldr (substitute' b, substitute' f))
   in
   substitute' e
 
@@ -184,8 +183,8 @@ let freshen_exp : (id -> id) -> exp -> exp =
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
-    | ERScheme (RListFoldr (b, f), arg) ->
-        ERScheme (RListFoldr (freshen_exp' b, freshen_exp' f), freshen_exp' arg)
+    | ERScheme (RListFoldr (b, f)) ->
+        ERScheme (RListFoldr (freshen_exp' b, freshen_exp' f))
   in
   freshen_exp' e
 
@@ -204,10 +203,13 @@ let alpha_equivalent : exp -> exp -> bool =
 let rec normalize : exp -> exp = function
   | EVar id -> EVar id
   | EApp (head, arg) ->
-      let arg' = normalize arg in
-      (match normalize head with
-      | EAbs (param, _, body) -> substitute (param, arg') body
-      | head' -> EApp (head', arg'))
+      (match (normalize head, normalize arg) with
+      | EAbs (param, _, body), arg' -> substitute (param, arg') body
+      | ERScheme (RListFoldr (b, f)), ECtor ("Nil", EUnit) -> b
+      | ERScheme (RListFoldr (b, f)), ECtor ("Cons", EPair (hd, tl)) ->
+          normalize
+            (EApp (f, EPair (hd, EApp (ERScheme (RListFoldr (b, f)), tl))))
+      | head', arg' -> EApp (head', arg'))
   | EAbs (param, tau, body) -> EAbs (param, tau, normalize body)
   | EMatch (scrutinee, branches) ->
       (match normalize scrutinee with
@@ -230,12 +232,8 @@ let rec normalize : exp -> exp = function
   | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)
-  | ERScheme (RListFoldr (b, f), arg) ->
-      (match normalize arg with
-      | ECtor ("Nil", EUnit) -> normalize b
-      | ECtor ("Cons", EPair (hd, tl)) ->
-          normalize (EApp (f, EPair (hd, ERScheme (RListFoldr (b, f), tl))))
-      | arg' -> ERScheme (RListFoldr (b, f), arg'))
+  | ERScheme (RListFoldr (b, f)) ->
+      ERScheme (RListFoldr (normalize b, normalize f))
 
 let replace_subexp : old_subexp:exp -> new_subexp:exp -> exp -> exp =
  fun ~old_subexp ~new_subexp e ->
@@ -254,10 +252,8 @@ let replace_subexp : old_subexp:exp -> new_subexp:exp -> exp -> exp =
     | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
-    | ERScheme (RListFoldr (b, f), arg) ->
-        ERScheme
-          ( RListFoldr (check_and_replace b, check_and_replace f)
-          , check_and_replace arg )
+    | ERScheme (RListFoldr (b, f)) ->
+        ERScheme (RListFoldr (check_and_replace b, check_and_replace f))
   and check_and_replace e =
     if [%eq: exp] e old_subexp then new_subexp else recurse e
   in

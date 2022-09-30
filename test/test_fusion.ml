@@ -50,4 +50,4 @@ let%expect_test "list2 mapmap fusion" =
   let fused_mapmap = Fusion.fuse sigma_list2 gamma_list2 mapmap in
   print_endline (Exp.show (Exp.alpha_normalize fused_mapmap));
   [%expect
-    {| (lambda var0 (Peano -> Peano) (lambda var1 (Peano -> Peano) (lambda var2 ListPeano (list_foldr (Nil ()) (lambda var3 ((Peano * ListPeano) * ListPeano) (Cons ((var0 (var1 (fst var3))) , (snd var3)))) var2)))) |}]
+    {| (lambda var0 (Peano -> Peano) (lambda var1 (Peano -> Peano) (lambda var2 ListPeano ((list_foldr (Nil ()) (lambda var3 ((Peano * ListPeano) * ListPeano) (Cons ((var0 (var1 (fst var3))) , (snd var3))))) var2)))) |}]

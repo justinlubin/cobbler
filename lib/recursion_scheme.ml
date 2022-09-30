@@ -41,11 +41,13 @@ let extract_list_foldr : datatype_env -> typ_env -> env -> string -> exp =
         else
           Exp.build_abs
             params
-            (ERScheme
-               ( RListFoldr
-                   ( new_nil_rhs
-                   , EAbs
-                       (cons_param, TProd (elem_type, return_type), new_cons_rhs)
-                   )
+            (EApp
+               ( ERScheme
+                   (RListFoldr
+                      ( new_nil_rhs
+                      , EAbs
+                          ( cons_param
+                          , TProd (elem_type, return_type)
+                          , new_cons_rhs ) ))
                , scrutinee )))
   | _ -> failwith "non-match under top-level abstractions"
