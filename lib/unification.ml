@@ -39,7 +39,7 @@ let rec typ : term -> typ = function
 
 (* Substitution function *)
 
-let gensym_prefix : string = "atom_var"
+let gensym_prefix : string = "univar"
 
 let rec free_variables : term -> String.Set.t = function
   | Atom (Variable (x, _)) -> String.Set.singleton x
@@ -65,25 +65,34 @@ let replace : string * string -> term -> term =
   in
   replace' e
 
-let substitute : string * term -> term -> term =
- fun (lhs, rhs) e ->
-  let rhs_fv = free_variables e in
-  let rec substitute' = function
-    | Atom (Variable (x, alpha)) ->
-        if String.equal lhs x then rhs else Atom (Variable (x, alpha))
-    | Atom (Constant (c, alpha)) -> Atom (Constant (c, alpha))
-    | Application (t1, t2) -> Application (substitute' t1, substitute' t2)
-    | Abstraction (param, alpha, body) ->
-        if String.equal lhs param
-        then Abstraction (param, alpha, body)
-        else if not (String.Set.mem rhs_fv param)
-        then Abstraction (param, alpha, substitute' body)
-        else (
-          let new_param = Util.gensym gensym_prefix in
-          Abstraction
-            (new_param, alpha, substitute' (replace (param, new_param) body)))
+let substitute_recursively : (string * term) list -> term -> term =
+ fun bindings e ->
+  let fvs =
+    List.fold_left bindings ~init:String.Set.empty ~f:(fun acc (_, rhs) ->
+        free_variables rhs)
   in
-  substitute' e
+  let rec recurse = function
+    | Atom (Variable (x, alpha)) ->
+        (match List.Assoc.find ~equal:String.equal bindings x with
+        | Some rhs -> recurse rhs
+        | None -> Atom (Variable (x, alpha)))
+    | Atom (Constant (c, alpha)) -> Atom (Constant (c, alpha))
+    | Application (t1, t2) -> Application (recurse t1, recurse t2)
+    | Abstraction (param, alpha, body) ->
+        (match List.Assoc.find ~equal:String.equal bindings param with
+        | Some _ -> Abstraction (param, alpha, body)
+        | None ->
+            if not (String.Set.mem fvs param)
+            then Abstraction (param, alpha, recurse body)
+            else (
+              let new_param = Util.gensym gensym_prefix in
+              Abstraction
+                (new_param, alpha, recurse (replace (param, new_param) body))))
+  in
+  recurse e
+
+let substitute : string * term -> term -> term =
+ fun binding e -> substitute_recursively [ binding ] e
 
 (* Lambda conversion *)
 
@@ -208,14 +217,24 @@ let headings_equal
   =
  fun (binding1, head1) (binding2, head2) ->
   Int.equal (List.length binding1) (List.length binding2)
-  && [%eq: term]
-       (Atom head1)
-       (normalize
-          (build_applications
-             (build_abstractions binding2 (Atom head2))
-             (List.map
-                ~f:(fun (x, alpha) -> Atom (Variable (x, alpha)))
-                binding1)))
+  &&
+  match
+    ( head1
+    , normalize
+        (build_applications
+           (build_abstractions binding2 (Atom head2))
+           (List.map ~f:(fun (x, alpha) -> Atom (Variable (x, alpha))) binding1))
+    )
+  with
+  | Variable (x1, _), Atom (Variable (x2, _)) -> String.equal x1 x2
+  | Constant (x1, _), Atom (Constant (x2, _)) ->
+      String.equal x1 x2
+      ||
+      (match (Util.unembed_name x1, Util.unembed_name x2) with
+      | Some (prefix1, metadata1), Some (prefix2, metadata2) ->
+          String.equal prefix1 prefix2 && String.equal metadata1 metadata2
+      | _ -> false)
+  | Variable _, _ | Constant _, _ -> false
 
 let rec simpl_step1 : disagreement_set -> disagreement_set option =
  fun ds ->

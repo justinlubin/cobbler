@@ -13,3 +13,10 @@ val to_unification_term
     the unification term [t] to an equivalent language expression under the
     datatype environment [sigma]. *)
 val from_unification_term : Lang.datatype_env -> Unification.term -> Lang.exp
+
+(** [simplify_solution sigma subs] turns a unification solution into a list of
+    hole bindings for expressions. *)
+val simplify_solution
+  :  Lang.datatype_env
+  -> (string * Unification.term) list
+  -> (string * Lang.exp) list

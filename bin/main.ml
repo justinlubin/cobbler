@@ -30,5 +30,7 @@ let () =
   printf "synthesizing... %!";
   (match Synthesis.solve ~depth:5 problem with
   | None -> print_endline "no solution found"
-  | Some e -> printf "solution found:\n\n%s\n\n" (Exp.show_multi 1 e));
+  | Some e ->
+      printf "solution found:\n\n%s\n\n" (Exp.show_multi 1 (Exp.clean e));
+      printf "of type: %s\n\n" (Typ.show (Type_system.infer sigma gamma e)));
   print_endline "have a nice day!"

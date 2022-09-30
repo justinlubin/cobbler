@@ -299,3 +299,47 @@ let replace_subexp : old_subexp:exp -> new_subexp:exp -> exp -> exp =
     if [%eq: exp] e old_subexp then new_subexp else recurse e
   in
   check_and_replace e
+
+let fill_holes : (string * exp) list -> exp -> exp =
+ fun bindings e ->
+  let rec recurse = function
+    (* Main case*)
+    | EHole (name, typ) ->
+        (match List.Assoc.find ~equal:String.equal bindings name with
+        | Some rhs -> recurse rhs
+        | None -> EHole (name, typ))
+    (* Other cases *)
+    | EVar x -> EVar x
+    | EApp (head, arg) -> EApp (recurse head, recurse arg)
+    | EAbs (param, tau, body) -> EAbs (param, tau, recurse body)
+    | EMatch (scrutinee, branches) ->
+        EMatch (recurse scrutinee, map_branches ~f:recurse branches)
+    | ECtor (ctor_name, arg) -> ECtor (ctor_name, recurse arg)
+    | EPair (e1, e2) -> EPair (recurse e1, recurse e2)
+    | EFst arg -> EFst (recurse arg)
+    | ESnd arg -> ESnd (recurse arg)
+    | EUnit -> EUnit
+    | EInt n -> EInt n
+    | ERScheme (RListFoldr (b, f)) ->
+        ERScheme (RListFoldr (recurse b, recurse f))
+  in
+  recurse e
+
+let rec clean : exp -> exp = function
+  (* Main cases *)
+  (* Eta-equivalence *)
+  | EAbs (param, _, EApp (EVar f, EVar x)) when String.equal x param -> EVar f
+  (* Other cases *)
+  | EVar x -> EVar x
+  | EApp (head, arg) -> EApp (clean head, clean arg)
+  | EAbs (param, tau, body) -> EAbs (param, tau, clean body)
+  | EMatch (scrutinee, branches) ->
+      EMatch (clean scrutinee, map_branches ~f:clean branches)
+  | ECtor (ctor_name, arg) -> ECtor (ctor_name, clean arg)
+  | EPair (e1, e2) -> EPair (clean e1, clean e2)
+  | EFst arg -> EFst (clean arg)
+  | ESnd arg -> ESnd (clean arg)
+  | EUnit -> EUnit
+  | EInt n -> EInt n
+  | EHole (name, typ) -> EHole (name, typ)
+  | ERScheme (RListFoldr (b, f)) -> ERScheme (RListFoldr (clean b, clean f))

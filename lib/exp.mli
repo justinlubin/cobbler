@@ -73,3 +73,11 @@ val normalize : t -> t
 (** [replace_subexp ~old_subexp ~new_subexp e] replaces all occurrences of the
     expression [old_subexp] with [new_subexp] in [e]. *)
 val replace_subexp : old_subexp:exp -> new_subexp:exp -> exp -> exp
+
+(** [fill_holes bindings e] fills any hole in [e] whose name matches a binding
+    in [bindings]. TODO: recursively? *)
+val fill_holes : (string * exp) list -> exp -> exp
+
+(** [clean e] tidies [e] up in a semantics-preserving way (e.g. via
+    eta-reduction). *)
+val clean : exp -> exp

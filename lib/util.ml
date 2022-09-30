@@ -33,3 +33,12 @@ let ungensym : string -> string =
   String.take_while
     ~f:(fun c -> not (Char.equal c '#'))
     (String.drop_prefix s 2)
+
+let embed_name : string -> string -> string =
+ fun prefix metadata -> gensym prefix ^ "$" ^ metadata
+
+let unembed_name : string -> (string * string) option =
+ fun name ->
+  match String.split ~on:'$' name with
+  | [ gensymed_prefix; metadata ] -> Some (ungensym gensymed_prefix, metadata)
+  | _ -> None

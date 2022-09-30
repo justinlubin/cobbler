@@ -23,22 +23,12 @@ let sort_tags : 'a. (string * 'a) list -> (string * 'a) list =
  fun bs ->
   List.sort ~compare:(fun (tag1, _) (tag2, _) -> String.compare tag1 tag2) bs
 
-let embed_name : string -> string -> string =
- fun prefix metadata -> Util.gensym prefix ^ "$" ^ metadata
-
-let unembed_name : string -> (string * string) option =
- fun name ->
-  match String.split ~on:'$' name with
-  | [ gensymed_prefix; metadata ] ->
-      Some (Util.ungensym gensymed_prefix, metadata)
-  | _ -> None
-
 let rec embed
     :  Lang.datatype_env -> String.Set.t -> Lang.typ_env -> string -> string
     -> Lang.typ -> Lang.exp list -> Unification.term
   =
  fun sigma stdlib gamma prefix metadata result_type arguments ->
-  let head = embed_name prefix metadata in
+  let head = Util.embed_name prefix metadata in
   to_unification_term'
     sigma
     (String.Set.add stdlib head)
@@ -65,6 +55,8 @@ and to_unification_term'
       if String.Set.mem stdlib x
       then Atom (Constant (x, to_unification_typ result_type))
       else Atom (Variable (x, to_unification_typ result_type))
+  | EApp (ERScheme (RListFoldr (b, f)), arg) ->
+      embed' "list_foldr" "" [ b; f; arg ]
   | EApp (e1, e2) ->
       Application
         ( to_unification_term' sigma stdlib gamma e1
@@ -86,16 +78,15 @@ and to_unification_term'
               , snd (Option.value_exn (Type_system.ctor_typ sigma tag))
               , rhs ))
       in
-      embed' "match" "" arguments
+      embed' "match" "" (scrutinee :: arguments)
   | ECtor (tag, arg) -> embed' "ctor" tag [ arg ]
   | EPair (e1, e2) -> embed' "pair" "" [ e1; e2 ]
   | EFst arg -> embed' "fst" "" [ arg ]
   | ESnd arg -> embed' "snd" "" [ arg ]
   | EUnit -> embed' "unit" "" []
   | EInt n -> embed' "int" (Int.to_string n) []
-  | EHole (name, typ) ->
-      Atom (Variable (embed_name "??" name, to_unification_typ typ))
-  | ERScheme (RListFoldr (b, f)) -> embed' "list_foldr" "" [ b; f ]
+  | EHole (name, typ) -> Atom (Variable (name, to_unification_typ typ))
+  | ERScheme _ -> failwith "cannot embed unapplied recursion scheme"
 
 let to_unification_term
     : Lang.datatype_env -> Lang.typ_env -> Lang.exp -> Unification.term
@@ -108,20 +99,16 @@ let rec from_unification_term
   =
  fun sigma t ->
   let heading, head, arguments = Unification.abbreviate t in
-  let build_arguments n x =
-    Exp.build_app
-      x
-      (List.map ~f:(from_unification_term sigma) (List.drop arguments n))
+  let build_arguments x =
+    Exp.build_app x (List.map ~f:(from_unification_term sigma) arguments)
   in
   let body =
     match head with
-    | Variable (x, tau) ->
-        (match unembed_name x with
-        | Some ("??", name) ->
-            build_arguments 0 (EHole (name, from_unification_typ tau))
-        | _ -> build_arguments 0 (EVar x))
+    | Variable (x, tau) when String.is_prefix ~prefix:"__hole" x ->
+        build_arguments (EHole (x, from_unification_typ tau))
+    | Variable (x, _) -> build_arguments (EVar x)
     | Constant (x, _) ->
-        (match unembed_name x with
+        (match Util.unembed_name x with
         | Some ("match", "") ->
             let scrutinee_term = List.hd_exn arguments in
             let branch_terms = List.tl_exn arguments in
@@ -156,14 +143,30 @@ let rec from_unification_term
         | Some ("unit", "") -> EUnit
         | Some ("int", n) -> EInt (Int.of_string n)
         | Some ("list_foldr", "") ->
-            build_arguments
-              2
-              (ERScheme
-                 (RListFoldr
-                    ( from_unification_term sigma (List.nth_exn arguments 0)
-                    , from_unification_term sigma (List.nth_exn arguments 1) )))
-        | _ -> build_arguments 0 (EVar x))
+            EApp
+              ( ERScheme
+                  (RListFoldr
+                     ( from_unification_term sigma (List.nth_exn arguments 0)
+                     , from_unification_term sigma (List.nth_exn arguments 1) ))
+              , from_unification_term sigma (List.nth_exn arguments 2) )
+        | _ -> build_arguments (EVar x))
   in
   Exp.build_abs
     (List.map ~f:(fun (x, tau) -> (x, from_unification_typ tau)) heading)
     body
+
+let simplify_solution
+    :  datatype_env -> (string * Unification.term) list
+    -> (string * Lang.exp) list
+  =
+ fun sigma subs ->
+  List.filter_map subs ~f:(fun (lhs, rhs) ->
+      if String.is_prefix ~prefix:"__hole" lhs
+      then
+        Some
+          ( lhs
+          , from_unification_term
+              sigma
+              (Unification.normalize
+                 (Unification.substitute_recursively subs rhs)) )
+      else None)

@@ -14,20 +14,34 @@ open Core
 type typ =
   | Elementary of Lang.typ
   | Arrow of typ * typ
+[@@deriving eq, sexp, ord]
 
 (** Atoms in the language supported for unification *)
 type atom =
   | Variable of string * typ
   | Constant of string * typ
+[@@deriving eq, sexp, ord]
 
 (** Terms in the language supported for unification *)
 type term =
   | Atom of atom
   | Application of term * term
   | Abstraction of string * typ * term
+[@@deriving eq, sexp, ord]
 
 (** [typ t] returns the type of [t]. *)
 val typ : term -> typ
+
+(** [substitute_recursively bindings t] recursively substitutes [bindings]
+    in [t], alpha-renaming where necessary to avoid variable capture. *)
+val substitute_recursively : (string * term) list -> term -> term
+
+(** [normalize t] recursively reduces all beta redexes in [t]. *)
+val normalize : term -> term
+
+(** [build_abstractions bindings t] does the same thing to terms as
+    {!val:Exp.build_abs} does to language expressions. *)
+val build_abstractions : (string * typ) list -> term -> term
 
 (** Assuming [t] is in normal form, [abbreviate t] returns the canonical
     decomposition of [t] into its header, its head, and its arguments. This is

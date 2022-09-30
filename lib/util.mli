@@ -15,3 +15,11 @@ val gensym : string -> string
 
 (** [ungensym (gensym prefix)] returns [prefix]. *)
 val ungensym : string -> string
+
+(** [embed_name prefix metadata] encodes prefix and metadata in a gensymmed
+    string using a dollar sign ($). *)
+val embed_name : string -> string -> string
+
+(** [unembed_name (embed_name prefix metadata)] returns
+    [Some (prefix, metadata)]. *)
+val unembed_name : string -> (string * string) option
