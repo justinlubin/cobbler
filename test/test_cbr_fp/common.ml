@@ -1,5 +1,5 @@
 open Core
-open Lib
+open Cbr_fp
 open Lang
 
 let parse_file : string -> datatype_env * typ_env * env =

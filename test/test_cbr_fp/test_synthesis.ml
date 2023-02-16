@@ -1,5 +1,5 @@
 open Core
-open Lib
+open Cbr_fp
 open Lang
 
 let classic = Common.parse_file "programs/classic.lisp"

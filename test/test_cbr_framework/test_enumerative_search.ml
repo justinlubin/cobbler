@@ -1,5 +1,5 @@
 open Core
-open Lib
+open Cbr_framework
 
 module Calc = struct
   type t =
@@ -27,7 +27,7 @@ module Calc = struct
     List.for_all ~f:(fun i -> eval i e1 = eval i e2) inputs
 
   let prune_obs_eq (inputs : int list) (es : t list) : t list =
-    Lib.Util.dedup_by ~f:(obs_eq inputs) es
+    Util.dedup_by ~f:(obs_eq inputs) es
 
   let grow (inputs : int list) (space : t list) : t list =
     let open List.Let_syntax in
@@ -52,7 +52,7 @@ module Calc = struct
     List.for_all ~f:(fun (input, output) -> eval input e = output) examples
 
   let enumerate (examples : (int * int) list) : t option =
-    Lib.Enumerative_search.bottom_up
+    Enumerative_search.bottom_up
       ~max_iterations:2
       ~initial_candidates:
         (prune_obs_eq (List.map ~f:fst examples) [ Zero; One; In ])

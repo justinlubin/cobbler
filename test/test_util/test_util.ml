@@ -1,5 +1,4 @@
 open Core
-open Lib
 
 let%test_unit "dedup_by 1" =
   [%test_result: int list]

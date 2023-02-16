@@ -1,5 +1,5 @@
 (library
- (name lib)
- (libraries core)
+ (name cbr_framework)
+ (libraries util core)
  (preprocess
   (pps ppx_jane ppx_deriving.ord ppx_deriving.eq ppx_deriving.show)))

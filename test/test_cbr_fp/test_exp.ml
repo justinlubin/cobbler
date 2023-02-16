@@ -1,5 +1,5 @@
 open Core
-open Lib
+open Cbr_fp
 open Lang
 
 let%test_unit "substitute 1" =

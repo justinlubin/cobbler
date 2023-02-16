@@ -1,5 +1,5 @@
 open Core
-open Lib
+open Cbr_fp
 open Lang
 
 let expected_datatype_env1 =

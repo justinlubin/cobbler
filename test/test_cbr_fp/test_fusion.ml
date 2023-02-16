@@ -1,5 +1,5 @@
 open Core
-open Lib
+open Cbr_fp
 open Lang
 open Expect_test_common.Expectation
 open Expect_test_common.Expectation.Body

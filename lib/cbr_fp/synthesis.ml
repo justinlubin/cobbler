@@ -121,7 +121,7 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
       (if use_unification then [] else reference_params)
   in
   Option.map
-    (Enumerative_search.top_down
+    (Cbr_framework.Enumerative_search.top_down
        ~max_iterations:depth
        ~start:(EHole (Util.gensym "start", reference_codomain))
        ~expand:(expand grammar)
