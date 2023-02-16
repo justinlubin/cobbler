@@ -31,6 +31,9 @@ jobs:
       - name: Install OCaml dependencies
         run: make deps
 
+      - name: Update shell environment for opam
+        run: eval $(opam env)
+
       - name: Run autoformatter
         run: make fmt
 
