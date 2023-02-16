@@ -5,7 +5,7 @@
 (generate_opam_files true)
 
 (source
- (github justinlubin/cbr))
+ (github justinlubin/component-based-refactoring))
 
 (authors "Justin Lubin")
 
