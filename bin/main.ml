@@ -1,5 +1,5 @@
 open Core
-open Lib
+open Cbr_fp
 open Lang
 
 let () =
@@ -13,7 +13,7 @@ let parse_file : string -> datatype_env * typ_env * env =
   In_channel.with_file filename ~f:(fun file ->
       Parse.definitions (In_channel.input_all file))
 
-let file = "test/test_data/programs/list2.lisp"
+let file = "test/test_cbr_fp/test_data/programs/list2.lisp"
 
 let () =
   print_endline (sprintf "operating on file '%s'" file);

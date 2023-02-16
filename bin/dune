@@ -1,4 +1,4 @@
 (executable
  (public_name component_based_refactoring)
  (name main)
- (libraries lib))
+ (libraries cbr_fp))
