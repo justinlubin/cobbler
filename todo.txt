@@ -1,3 +1,0 @@
-- make list_foldr work on datatypes other than "Cons"/"Nil"
-- figure out how to incorporate pull_out_cases more rigorously
-- perfect discrimination trees
