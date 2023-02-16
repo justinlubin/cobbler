@@ -28,6 +28,9 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
+      - name: Install OCaml dev dependencies
+        run: make dev-deps
+
       - name: Install OCaml dependencies
         run: make deps
 
