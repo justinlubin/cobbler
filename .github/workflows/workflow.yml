@@ -1,0 +1,44 @@
+# Adapted from https://github.com/avsm/hello-world-action-ocaml
+
+name: Main workflow
+
+on:
+  - pull_request
+  - push
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+        ocaml-compiler:
+          - 4.10.0
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+
+      - name: Install OCaml dependencies
+        run: make deps
+
+      - name: Run autoformatter
+        run: make fmt
+
+      - name: Ensure autoformatter didn't change anything
+        run: git diff --quiet
+
+      - name: Build main executable
+        run: make exec
+
+      - name: Run tests
+        run: make test
