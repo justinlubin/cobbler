@@ -35,13 +35,13 @@ jobs:
         run: eval $(opam env)
 
       - name: Run autoformatter
-        run: make fmt
+        run: opam exec -- make fmt
 
       - name: Ensure autoformatter didn't change anything
         run: git diff --quiet
 
       - name: Build main executable
-        run: make exec
+        run: opam exec -- make exec
 
       - name: Run tests
-        run: make test
+        run: opam exec -- make test
