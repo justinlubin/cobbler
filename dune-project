@@ -21,4 +21,5 @@
    (>= 4.14.0))
   dune
   core
-  ppx_jane))
+  ppx_jane
+  ppx_deriving))
