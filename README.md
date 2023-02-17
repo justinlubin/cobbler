@@ -1,5 +1,7 @@
 # Component-based refactoring
 
+[![Tests](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml/badge.svg)](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml)
+
 ## Installation instructions
 
 1. [Install OCaml and opam](https://ocaml.org/docs/up-and-running)
