@@ -31,6 +31,9 @@ jobs:
       - name: Install OCaml dev dependencies
         run: make dev-deps
 
+      - name: Pin OCaml autoformatter
+        run: opam pin ocamlformat 0.22.4
+
       - name: Install OCaml dependencies
         run: make deps
 
