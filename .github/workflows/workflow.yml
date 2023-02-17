@@ -1,6 +1,6 @@
 # Adapted from https://github.com/avsm/hello-world-action-ocaml
 
-name: Main workflow
+name: Tests
 
 on:
   - pull_request
