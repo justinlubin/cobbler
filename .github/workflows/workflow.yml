@@ -4,7 +4,7 @@ name: Main workflow
 
 on:
   - pull_request
-  - push
+  # - push
 
 jobs:
   build:
@@ -31,9 +31,6 @@ jobs:
       - name: Install OCaml dev dependencies
         run: make dev-deps
 
-      - name: Pin OCaml autoformatter
-        run: opam pin ocamlformat 0.22.4
-
       - name: Install OCaml dependencies
         run: make deps
 
@@ -46,7 +43,7 @@ jobs:
       - name: Ensure autoformatter didn't change anything
         run: git diff --quiet
 
-      - name: Build main executable
+      - name: Run main executable
         run: opam exec -- make exec
 
       - name: Run tests
