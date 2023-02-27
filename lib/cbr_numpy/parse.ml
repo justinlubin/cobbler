@@ -1,5 +1,5 @@
 open PyreAst
-open Sexplib0__
+open Sexplib0
 
 type py_ast = Concrete.Module.t
 
@@ -17,7 +17,8 @@ let parse_py : string -> py_ast =
   	| Result.Ok ast -> ast
   )
 
-let str_of_ast : Concrete.Module.t -> string = 
+
+let str_of_ast : py_ast -> string = 
   fun ast ->
     Concrete.Module.sexp_of_t ast |> Sexp.to_string  
 
