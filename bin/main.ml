@@ -46,5 +46,5 @@ let () =
   print_endline "have a nice day!";
   print_endline "Starting NumPy execution:";
   print_endline "Parsing ... %!";
-  parse_file_np file_py |> Cbr_numpy.Parse.str_of_ast |> print_endline;
+  parse_file_np file_py |> Cbr_numpy.Parse.pprint_ast;
   print_endline "\ndone!";
