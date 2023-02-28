@@ -15,13 +15,11 @@ let parse_file_fp : string -> datatype_env * typ_env * env =
       Cbr_fp.Parse.definitions (In_channel.input_all file))
 
 let parse_file_np : string -> Cbr_numpy.Parse.py_ast =
-  fun filename ->
-   In_channel.with_file filename ~f:(fun file ->
+ fun filename ->
+  In_channel.with_file filename ~f:(fun file ->
       Cbr_numpy.Parse.parse_py (In_channel.input_all file))
 
-
 let file = "test/test_cbr_fp/test_data/programs/list2.lisp"
-
 let file_py = "test/test_cbr_numpy/test_data/programs/test1.py"
 
 let () =
@@ -47,4 +45,4 @@ let () =
   print_endline "Starting NumPy execution:";
   print_endline "Parsing ... %!";
   parse_file_np file_py |> Cbr_numpy.Parse.pprint_ast;
-  print_endline "\ndone!";
+  print_endline "\ndone!"
