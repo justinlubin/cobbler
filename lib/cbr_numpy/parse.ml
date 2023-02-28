@@ -28,12 +28,11 @@ let rec remove_location : Sexp.t -> Sexp.t =
       | s :: Sexp.List l :: rest ->
           let replacement =
             match l with
-            | Atom "location" :: _ -> []
+            | Sexp.Atom "location" :: _ -> []
             | _ -> List.map remove_location l
           in
-          Sexp.List [ remove_location s ]
-          @ replacement
-          @ List.map remove_location rest
+          Sexp.List
+            ([ remove_location s ] @ replacement @ List.map remove_location rest)
       | _ -> Sexp.List (List.map remove_location l))
 
 let str_of_ast : py_ast -> string =
