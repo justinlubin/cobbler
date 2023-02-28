@@ -1,4 +1,4 @@
 (executable
  (public_name component_based_refactoring)
  (name main)
- (libraries cbr_fp))
+ (libraries cbr_fp cbr_numpy))
