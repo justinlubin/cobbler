@@ -1,7 +1,8 @@
 open Core
 open Cbr_fp
 open Cbr_numpy
-open Lang
+open Cbr_fp.Lang
+open Cbr_numpy.Lang
 
 let () =
   Core.Caml.Printexc.register_printer (function
@@ -9,12 +10,12 @@ let () =
           Some (Printf.sprintf "IllTyped(%s)" (Exp.show_multi 0 e))
       | _ -> None)
 
-let parse_file_fp : string -> datatype_env * typ_env * env =
+let parse_file_fp : string -> datatype_env * typ_env * Cbr_fp.Lang.env =
  fun filename ->
   In_channel.with_file filename ~f:(fun file ->
       Cbr_fp.Parse.definitions (In_channel.input_all file))
 
-let parse_file_np : string -> Cbr_numpy.Parse.py_ast =
+let parse_file_np : string -> Cbr_numpy.Lang.env =
  fun filename ->
   In_channel.with_file filename ~f:(fun file ->
       Cbr_numpy.Parse.parse_py (In_channel.input_all file))
@@ -44,5 +45,5 @@ let () =
   print_endline "have a nice day!";
   print_endline "Starting NumPy execution:";
   print_endline "Parsing ... %!";
-  parse_file_np file_py |> Cbr_numpy.Parse.pprint_ast;
+  parse_file_np file_py |> Cbr_numpy.Parse.pprint_env;
   print_endline "\ndone!"

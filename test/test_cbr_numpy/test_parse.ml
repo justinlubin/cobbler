@@ -26,8 +26,8 @@ let expected_test2 =
    1)(column 9)))))(value(Integer \
    5))(kind())))))(type_comment()))))(type_ignores()))"
 
-let parsed_test1 : string = parse_py input_test1 |> str_of_ast
-let parsed_test2 : string = parse_py input_test2 |> str_of_ast
+let parsed_test1 : string = parse_py input_test1 |> str_of_env
+let parsed_test2 : string = parse_py input_test2 |> str_of_env
 
 let%test_unit "parse program 1" =
   [%test_result: string] parsed_test1 ~expect:expected_test1
