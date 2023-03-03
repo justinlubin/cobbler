@@ -2,14 +2,14 @@ open Sexplib0
 open Lang
 
 
-let parse_py : string -> env = 
+let parse_py : string -> ast = 
   fun p -> 
     failwith "TODO"
 
-let str_of_env : env -> string = 
-  fun e ->
+let str_of_ast : ast -> string = 
+  fun ast ->
   failwith "TODO"
 
-let pprint_env : ?channel:out_channel -> env -> unit =
-  fun ?(channel = stdout) e ->
+let pprint_ast : ?channel:out_channel -> ast -> unit =
+  fun ?(channel = stdout) ast ->
   failwith "TODO"

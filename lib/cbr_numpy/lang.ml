@@ -6,3 +6,4 @@ type expr = BinOp of op * expr * expr | Num of int | Index of id * expr | Call o
 type stmt = Assign of expr * expr | For of expr * expr * block | Return of expr
 and block = stmt list
 type env = (id * id list, block, String.comparator_witness) Map.t
+type ast = env list
