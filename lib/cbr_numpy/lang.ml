@@ -9,13 +9,13 @@ type expr =
   | Str of string
   | Name of id
 
-type pat =
+type lhs =
   | Name of id
-  | Index of pat * expr
+  | Index of lhs * expr
 
 type stmt =
-  | Assign of pat * expr
-  | For of pat * expr * block
+  | Assign of lhs * expr
+  | For of id * expr * block
   | Return of expr
 
 and block = stmt list
