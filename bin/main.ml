@@ -1,7 +1,6 @@
 open Core
 open Cbr_fp
 open Cbr_numpy
-
 open Cbr_fp.Lang
 open Cbr_numpy.Lang
 
@@ -17,7 +16,6 @@ let parse_file_fp : string -> datatype_env * typ_env * Cbr_fp.Lang.env =
       Cbr_fp.Parse.definitions (In_channel.input_all file))
 
 let parse_file_np : string -> Cbr_numpy.Lang.ast =
-
  fun filename ->
   In_channel.with_file filename ~f:(fun file ->
       Cbr_numpy.Parse.parse_py (In_channel.input_all file))
