@@ -42,8 +42,8 @@ let () =
   | Some e ->
       printf "solution found:\n\n%s\n\n" (Exp.show_multi 1 (Exp.clean e));
       printf "of type: %s\n\n" (Typ.show (Type_system.infer sigma gamma e)));
-  print_endline "have a nice day!";
-  (*print_endline "Starting NumPy execution:";
+  print_endline "have a nice day!"
+(*print_endline "Starting NumPy execution:";
   print_endline "Parsing ... %!";
   parse_file_np file_py |> Cbr_numpy.Parse.pprint_ast;
   print_endline "\ndone!"*)
