@@ -20,5 +20,6 @@ type stmt =
 
 and block = stmt list
 
-type env = (id, id list * block, String.comparator_witness) Map.t
+type defn = id list * block
+type env = (id, defn, String.comparator_witness) Map.t
 type program = env * block
