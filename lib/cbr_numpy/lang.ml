@@ -2,13 +2,9 @@ open Core
 
 type id = string
 
-type op =
-  | Add
-  | Mul
-  | Sub
-  | Div
-  | Or
-  | And
+type pat =
+  | Name of id
+  | Index of pat * expr
 
 type expr =
   | Num of int
@@ -18,11 +14,11 @@ type expr =
   | Name of id
 
 type stmt =
-  | Assign of id * expr
-  | For of id * expr * block
+  | Assign of pat * expr
+  | For of pat * expr * block
   | Return of expr
 
 and block = stmt list
 
-type env = (id * id list, block, String.comparator_witness) Map.t
-type ast = env list
+type env = (id, id list * block, String.comparator_witness) Map.t
+type program = env * block
