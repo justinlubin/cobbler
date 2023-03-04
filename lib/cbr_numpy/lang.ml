@@ -2,16 +2,16 @@ open Core
 
 type id = string
 
-type pat =
-  | Name of id
-  | Index of pat * expr
-
 type expr =
   | Num of int
   | Index of expr * expr
   | Call of expr * expr list
   | Str of string
   | Name of id
+
+type pat =
+  | Name of id
+  | Index of pat * expr
 
 type stmt =
   | Assign of pat * expr

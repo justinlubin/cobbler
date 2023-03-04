@@ -15,7 +15,7 @@ let parse_file_fp : string -> datatype_env * typ_env * Cbr_fp.Lang.env =
   In_channel.with_file filename ~f:(fun file ->
       Cbr_fp.Parse.definitions (In_channel.input_all file))
 
-let parse_file_np : string -> Cbr_numpy.Lang.ast =
+let parse_file_np : string -> Cbr_numpy.Lang.program =
  fun filename ->
   In_channel.with_file filename ~f:(fun file ->
       Cbr_numpy.Parse.parse_py (In_channel.input_all file))
@@ -45,5 +45,5 @@ let () =
   print_endline "have a nice day!"
 (*print_endline "Starting NumPy execution:";
   print_endline "Parsing ... %!";
-  parse_file_np file_py |> Cbr_numpy.Parse.pprint_ast;
+  parse_file_np file_py |> Cbr_numpy.Parse.pprint_program;
   print_endline "\ndone!"*)
