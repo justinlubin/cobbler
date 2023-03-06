@@ -17,8 +17,8 @@ let sexp_str2 =
   "(((dot (x y) \n\
   \         ((Assign out (Call zeros (Call len x))) \n\
   \         (For i (Call range (Call len x)) \n\
-  \                ((Assign (Index out i) (Call add (Index out i) (Call mul (Index x i) (Index y \
-   i))))\n\
+  \                ((Assign (Index out i) (Call add (Index out i) (Call mul \
+   (Index x i) (Index y i))))\n\
   \        ))))\n\
   \       (sum (x) \n\
   \         ((Assign out (Num 0))\n\
@@ -44,15 +44,17 @@ let expected_env2 =
   String.Map.of_alist_exn
     [ ( "dot"
       , ( [ "x"; "y" ]
-        , [ Assign (Name "out", Call (Name "zeros", [ Call (Name "len", [ Name "x"])]))
+        , [ Assign
+              ( Name "out"
+              , Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]) )
           ; For
               ( Name "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
-                    ( (Index (Name "out", Name "i"))
+                    ( Index (Name "out", Name "i")
                     , Call
                         ( Name "add"
-                        , [ (Index (Name "out", Name "i"))
+                        , [ Index (Name "out", Name "i")
                           ; Call
                               ( Name "mul"
                               , [ Index (Name "x", Name "i")
@@ -70,10 +72,8 @@ let expected_env2 =
               , [ Assign
                     ( Name "out"
                     , Call
-                        ( Name "add"
-                        , [ Name "out"
-                          ; Index (Name "x", Name "i")
-                          ] ) )
+                        (Name "add", [ Name "out"; Index (Name "x", Name "i") ])
+                    )
                 ] )
           ] ) )
     ; ( "mul"
@@ -107,5 +107,6 @@ let%test_unit "parse program 1" =
     ~expect:(str_of_program (expected_env1, expected_block1))
 
 let%test_unit "parse program 2" =
-  [%test_result: string] (str_of_program parsed_test2_prog)
+  [%test_result: string]
+    (str_of_program parsed_test2_prog)
     ~expect:(str_of_program (expected_env2, expected_block2))

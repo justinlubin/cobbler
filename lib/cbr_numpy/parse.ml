@@ -5,7 +5,7 @@ let rec parse_pat : Sexp.t -> pat =
  fun sexp ->
   match sexp with
   | Sexp.Atom name -> Name name
-  | Sexp.List [ Sexp.Atom "Index";p; e ] -> Index (parse_pat p, parse_expr e)
+  | Sexp.List [ Sexp.Atom "Index"; p; e ] -> Index (parse_pat p, parse_expr e)
   | _ -> failwith ("Invalid pattern: " ^ Sexp.to_string sexp)
 
 and parse_expr : Sexp.t -> expr =
@@ -64,34 +64,51 @@ let parse_py : string -> program =
       (parse_env env_sexp, parse_block block_sexp)
   | _ -> failwith ("Invalid program: " ^ Sexp.to_string s)
 
-let rec sexp_of_pat : pat -> Sexp.t = fun p -> 
-  match p with 
+let rec sexp_of_pat : pat -> Sexp.t =
+ fun p ->
+  match p with
   | Name name -> Sexp.Atom name
-  | Index (iter, index) -> Sexp.List [Sexp.Atom "Index"; sexp_of_pat iter; sexp_of_expr index]
+  | Index (iter, index) ->
+      Sexp.List [ Sexp.Atom "Index"; sexp_of_pat iter; sexp_of_expr index ]
 
-and sexp_of_expr : expr -> Sexp.t = fun e -> 
+and sexp_of_expr : expr -> Sexp.t =
+ fun e ->
   match e with
-  | Num n -> Sexp.List [Sexp.Atom "Num"; Sexp.Atom (string_of_int n)]
-  | Index (iter, index) -> Sexp.List [Sexp.Atom "Index"; sexp_of_expr iter; sexp_of_expr index]
-  | Call (name, args) -> Sexp.List ([Sexp.Atom "Call"; sexp_of_expr name] @ List.map args ~f:sexp_of_expr)
-  | Str str -> Sexp.List [Sexp.Atom "Str"; Sexp.Atom str]
+  | Num n -> Sexp.List [ Sexp.Atom "Num"; Sexp.Atom (string_of_int n) ]
+  | Index (iter, index) ->
+      Sexp.List [ Sexp.Atom "Index"; sexp_of_expr iter; sexp_of_expr index ]
+  | Call (name, args) ->
+      Sexp.List
+        ([ Sexp.Atom "Call"; sexp_of_expr name ] @ List.map args ~f:sexp_of_expr)
+  | Str str -> Sexp.List [ Sexp.Atom "Str"; Sexp.Atom str ]
   | Name name -> Sexp.Atom name
 
-                  
-
-let rec sexp_of_stmt : stmt -> Sexp.t = fun s -> 
-  match s with 
-  | Assign (left, right) -> Sexp.List [Sexp.Atom "Assign"; sexp_of_pat left; sexp_of_expr right]
-  | For (index, iter, body) -> Sexp.List [Sexp.Atom "For"; sexp_of_pat index; sexp_of_expr iter; sexp_of_block body]
-  | Return e -> Sexp.List [Sexp.Atom "Return"; sexp_of_expr e]
+let rec sexp_of_stmt : stmt -> Sexp.t =
+ fun s ->
+  match s with
+  | Assign (left, right) ->
+      Sexp.List [ Sexp.Atom "Assign"; sexp_of_pat left; sexp_of_expr right ]
+  | For (index, iter, body) ->
+      Sexp.List
+        [ Sexp.Atom "For"
+        ; sexp_of_pat index
+        ; sexp_of_expr iter
+        ; sexp_of_block body
+        ]
+  | Return e -> Sexp.List [ Sexp.Atom "Return"; sexp_of_expr e ]
 
 and sexp_of_block : block -> Sexp.t =
  fun b -> Sexp.List (List.map b ~f:sexp_of_stmt)
 
-let sexp_of_param: id -> Sexp.t = fun param -> Sexp.Atom param
+let sexp_of_param : id -> Sexp.t = fun param -> Sexp.Atom param
 
-let sexp_of_defn : id * defn -> Sexp.t = fun (name, (params, body)) ->
-  Sexp.List [Sexp.Atom name; Sexp.List (List.map params ~f:sexp_of_param); sexp_of_block body]
+let sexp_of_defn : id * defn -> Sexp.t =
+ fun (name, (params, body)) ->
+  Sexp.List
+    [ Sexp.Atom name
+    ; Sexp.List (List.map params ~f:sexp_of_param)
+    ; sexp_of_block body
+    ]
 
 let sexp_of_env : env -> Sexp.t =
  fun e -> Sexp.List (String.Map.to_alist e |> List.map ~f:sexp_of_defn)
