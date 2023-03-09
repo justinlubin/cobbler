@@ -1,7 +1,6 @@
 open Core
 
-type id = string
-[@@deriving sexp, compare]
+type id = string [@@deriving sexp, compare]
 
 type expr =
   | Num of int
@@ -21,12 +20,8 @@ type stmt =
   | For of id * expr * block
   | Return of expr
 
-and block = stmt list
-[@@deriving sexp, compare]
+and block = stmt list [@@deriving sexp, compare]
 
-type defn = id list * block
-[@@deriving sexp, compare]
-type env = defn Map.M(String).t
-[@@deriving sexp, compare]
-type program = env * block
-[@@deriving sexp, compare]
+type defn = id list * block [@@deriving sexp, compare]
+type env = defn Map.M(String).t [@@deriving sexp, compare]
+type program = env * block [@@deriving sexp, compare]
