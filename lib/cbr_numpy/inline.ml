@@ -41,7 +41,7 @@ let rec inline_expr : env -> expr -> block * expr =
         | Name fn -> 
           ( match find env fn with
             | Some (params, body) -> substitute args params body
-            | None -> [], e
+            | None -> [], Call (e, args)
           )
         | _ -> [], e)
     | _ -> [], e

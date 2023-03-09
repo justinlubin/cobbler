@@ -1,6 +1,7 @@
 open Core
 
 type id = string
+[@@deriving sexp, compare]
 
 type expr =
   | Num of int
@@ -8,10 +9,12 @@ type expr =
   | Call of expr * expr list
   | Str of string
   | Name of id
+[@@deriving sexp, compare]
 
 type lhs =
   | Name of id
   | Index of lhs * expr
+[@@deriving sexp, compare]
 
 type stmt =
   | Assign of lhs * expr
@@ -19,7 +22,11 @@ type stmt =
   | Return of expr
 
 and block = stmt list
+[@@deriving sexp, compare]
 
 type defn = id list * block
-type env = (id, defn, String.comparator_witness) Map.t
+[@@deriving sexp, compare]
+type env = defn Map.M(String).t
+[@@deriving sexp, compare]
 type program = env * block
+[@@deriving sexp, compare]
