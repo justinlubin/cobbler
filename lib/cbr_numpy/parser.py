@@ -120,7 +120,6 @@ class IRParser(ast.NodeVisitor):
         name = self.getClassName(node)
         raise UnsupportedNodeException(name)
 
-
 class SList():
     def __init__(self, l):
         self.l = l
