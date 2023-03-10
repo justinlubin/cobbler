@@ -3,7 +3,6 @@ open Parse
 open Core
 open Lang
 
-
 let program_dir = "test_data/programs/"
 let expected_env1 = String.Map.of_alist_exn []
 
@@ -148,7 +147,6 @@ let parsed_progs : program list =
       |> In_channel.with_file ~f:(fun file ->
              program_of_str (In_channel.input_all file)))
 
-
 let%test_unit "parse program 1" =
   [%test_result: program]
     (List.nth_exn parsed_progs 0)
@@ -163,4 +161,3 @@ let%test_unit "parse program 3" =
   [%test_result: program]
     (List.nth_exn parsed_progs 2)
     ~expect:(List.nth_exn expected_progs 2)
-
