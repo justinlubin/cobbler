@@ -119,17 +119,25 @@ let expected_env3 =
           ] ) )
     ]
 
-let expected_block3 = [
-     Assign (Name "x", (Call (Name "np_zeros", [Num 2;Num 2])))
-    ;Assign (Name "y", (Call (Name "np_zeros", [Num 2;Num 2])))
-    ;Assign (Name "i", Num 1)
-    ;Assign (Index (Index (Name "x", Num 0), Num 0), Num 3)
-    ;Assign (Index (Index (Name "y", Num 1), Num 0), Num 5)
-    ;Assign (Index (Index (Name "x", Call (Name "-", [Name "i"; Num 1])), (Call (Name "*", [Name "i"; Num 1]))), Num 4)
-    ;Assign (Name "z", (Call (Name "matmul", [Name "x"; Name "y"]))) 
-]
+let expected_block3 =
+  [ Assign (Name "x", Call (Name "np_zeros", [ Num 2; Num 2 ]))
+  ; Assign (Name "y", Call (Name "np_zeros", [ Num 2; Num 2 ]))
+  ; Assign (Name "i", Num 1)
+  ; Assign (Index (Index (Name "x", Num 0), Num 0), Num 3)
+  ; Assign (Index (Index (Name "y", Num 1), Num 0), Num 5)
+  ; Assign
+      ( Index
+          ( Index (Name "x", Call (Name "-", [ Name "i"; Num 1 ]))
+          , Call (Name "*", [ Name "i"; Num 1 ]) )
+      , Num 4 )
+  ; Assign (Name "z", Call (Name "matmul", [ Name "x"; Name "y" ]))
+  ]
+
 let expected_progs : program list =
-  [ (expected_env1, expected_block1); (expected_env2, expected_block2); (expected_env3, expected_block3) ]
+  [ (expected_env1, expected_block1)
+  ; (expected_env2, expected_block2)
+  ; (expected_env3, expected_block3)
+  ]
 
 let test_fnames = [ "test1.sexp"; "test2.sexp"; "test3.sexp" ]
 
