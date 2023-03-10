@@ -1,13 +1,13 @@
 import numpy as np
 
 def dot(x,y):
-    out = 0.0
+    out = 0
     for i in range(len(x)):
         out += x[i] * y[i]
     return out
 
 def sum(x):
-    out = 0.0
+    out = 0
     for i in range(len(x)):
         out += x[i]
     return out

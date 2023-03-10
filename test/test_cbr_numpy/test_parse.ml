@@ -9,7 +9,7 @@ let expected_env1 = String.Map.of_alist_exn []
 let expected_block1 =
   [ Assign (Name "x", Call (Name "+", [ Num 3; Num 5 ]))
   ; Assign
-      (Name "y", Call (Name "+", [ Num 1; Call (Name "-", [ Num 2; Num 3 ]) ]))
+      (Name "y", Call (Name "-", [  Call (Name "+", [ Num 1; Num 2 ]); Num 3 ]))
   ; Assign (Name "z", Call (Name "*", [ Name "y"; Name "x" ]))
   ]
 
@@ -19,15 +19,15 @@ let expected_env2 =
       , ( [ "x"; "y" ]
         , [ Assign
               ( Name "out"
-              , Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]) )
+              , Num 0 )
           ; For
               ( Name "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
-                    ( Index (Name "out", Name "i")
+                    ( Name "out"
                     , Call
                         ( Name "+"
-                        , [ Index (Name "out", Name "i")
+                        , [ Name "out"
                           ; Call
                               ( Name "*"
                               , [ Index (Name "x", Name "i")
@@ -54,7 +54,7 @@ let expected_env2 =
       , ( [ "x"; "y" ]
         , [ Assign
               ( Name "out"
-              , Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]) )
+              , Call (Name "np_zeros", [ Call (Name "len", [ Name "x" ]) ]) )
           ; For
               ( Name "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
