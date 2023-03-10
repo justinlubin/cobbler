@@ -23,5 +23,5 @@ type stmt =
 and block = stmt list [@@deriving sexp, compare]
 
 type defn = id list * block [@@deriving sexp, compare]
-type env = defn Map.M(String).t [@@deriving sexp, compare]
+type env = defn String.Map.t [@@deriving sexp, compare]
 type program = env * block [@@deriving sexp, compare]

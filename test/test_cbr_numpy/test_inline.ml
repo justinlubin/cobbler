@@ -26,7 +26,7 @@ let p1 =
     ] )
 
 let p2 =
-  ( Map.empty (module String)
+  ( String.Map.empty
   , [ Return (Call (Name "sum", [ Call (Name "add", [ Name "x"; Name "y" ]) ]))
     ] )
 
