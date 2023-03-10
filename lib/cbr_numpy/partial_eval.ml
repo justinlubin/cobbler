@@ -3,6 +3,9 @@ open Lang
 let rec partial_eval_expr : expr -> expr =
  fun e ->
   match e with
+  | Num n -> Num n
+  | Str s -> Str s
+  | Name id -> Name id
   | Call (fn, args) ->
       let fn = partial_eval_expr fn in
       (match fn with
@@ -19,7 +22,6 @@ let rec partial_eval_expr : expr -> expr =
       | Call (Name "mul", [ x; y ]), Num i ->
           Call (Name "mul", [ Index (x, Num i); Index (y, Num i) ])
       | _ -> Index (e1, e2))
-  | e -> e
 
 and partial_eval_lhs : lhs -> lhs =
  fun lhs ->

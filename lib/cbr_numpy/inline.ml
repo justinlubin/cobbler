@@ -4,11 +4,14 @@ open Lang
 let rec substitute_expr : (id * expr) list -> expr -> expr =
  fun binds e ->
   match e with
+  | Num n -> Num n
+  | Str s -> Str s
   | Index (e1, e2) -> Index (substitute_expr binds e1, substitute_expr binds e2)
   | Call (e, e_list) ->
       Call (substitute_expr binds e, List.map (substitute_expr binds) e_list)
   | Name id when List.mem_assoc id binds -> List.assoc id binds
-  | _ -> e
+  | Name id -> Name id
+
 
 and substitute_lhs : (id * expr) list -> lhs -> lhs =
  fun binds lhs ->
