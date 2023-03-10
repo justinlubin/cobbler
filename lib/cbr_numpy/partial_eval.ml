@@ -20,7 +20,7 @@ let rec partial_eval_expr : expr -> expr =
       let e2 = partial_eval_expr e2 in
       (match (e1, e2) with
       | Call (Name "mul", [ x; y ]), Num i ->
-          Call (Name "mul", [ Index (x, Num i); Index (y, Num i) ])
+          Call (Name "*", [ Index (x, Num i); Index (y, Num i) ])
       | _ -> Index (e1, e2))
 
 and partial_eval_lhs : lhs -> lhs =

@@ -16,9 +16,7 @@ let f_defn = ([ "x" ], [ Assign (Name "x", Str "cat"); Return (Name "x") ])
 let id_defn = ([ "x" ], [ Return (Name "x") ])
 
 let env : env =
-  Map.of_alist_exn
-    (module String)
-    [ ("sum", sum_defn); ("f", f_defn); ("id", id_defn) ]
+  String.Map.of_alist_exn [ ("sum", sum_defn); ("f", f_defn); ("id", id_defn) ]
 
 let p1 =
   ( env

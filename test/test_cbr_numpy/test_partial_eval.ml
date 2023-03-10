@@ -23,7 +23,7 @@ let expect2 =
   ( env
   , [ Assign
         ( Index (Name "a", Num 1)
-        , Call (Name "mul", [ Index (Name "x", Num 0); Index (Name "y", Num 0) ])
+        , Call (Name "*", [ Index (Name "x", Num 0); Index (Name "y", Num 0) ])
         )
     ; Return (Name "a")
     ] )
