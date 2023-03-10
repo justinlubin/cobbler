@@ -54,11 +54,15 @@ class IRParser(ast.NodeVisitor):
     def visit_Add(self,node):
         return SAtom("+")
 
+    def visit_Sub(self,node):
+        return SAtom("-")
+
     def visit_Subscript(self,node):
-        return SList([SAtom("Index"),self.visit(node.slice),self.visit(node.value)])
+        return SList([SAtom("Index"),self.visit(node.value),self.visit(node.slice)])
 
     def visit_AugAssign(self,node):
-        return SList([SAtom("Assign"),self.visit(node.target),SList([SAtom("Call"),self.visit(node.op),self.visit(node.value)])])
+        target = self.visit(node.target)
+        return SList([SAtom("Assign"),target,SList([SAtom("Call"),self.visit(node.op),target,self.visit(node.value)])])
 
     def visit_For(self,node):
         if node.orelse:
@@ -66,23 +70,36 @@ class IRParser(ast.NodeVisitor):
         return SList([SAtom("For"),self.visit(node.target),self.visit(node.iter),SList([self.visit(stmt) for stmt in node.body])])
 
     def visit_Module(self,node):
-        return SList([self.visit(stmt) for stmt in node.body])
+        block = []
+        env = []
+        for stmt in node.body:
+            child = self.visit(stmt)
+            if child:
+                match self.getClassName(stmt):
+                    case "FunctionDef":
+                        env.append(child) 
+                    case other:
+                        block.append(child)
+        return SList([SList(env),SList(block)])
 
-    def visit_Num(self,node):
+    def visit_Constant(self,node):
         return SList([SAtom("Num"), SAtom(str(node.n))])
 
     def visit_Call(self,node):
-        return SList([SAtom("Call"),self.visit(node.func),SList([self.visit(arg) for arg in node.args])])
+        return SList([SAtom("Call"),self.visit(node.func)] + [self.visit(arg) for arg in node.args])
 
     def visit_Operator(self,node):
         return SAtom(self.getClassName(node))
 
     def visit_BinOp(self,node):
-        return SList([SAtom("Call"),self.visit(node.op),SList([self.visit(node.left),self.visit(node.right)])])
+        return SList([SAtom("Call"),self.visit(node.op),self.visit(node.left),self.visit(node.right)])
 
     def visit_Arg(self,node):
         print(node.arg)
         return SAtom(node.arg)
+
+    def visit_Return(self,node):
+        return SList([SAtom("Return"),self.visit(node.value)])
 
     def generic_visit(self,node):
         name = self.getClassName(node)

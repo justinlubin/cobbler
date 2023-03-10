@@ -1,7 +1,6 @@
 open Lang
 open Core
 
-
 let rec parse_pat : Sexp.t -> pat =
  fun sexp ->
   match sexp with
@@ -57,16 +56,15 @@ let parse_env : Sexp.t -> env =
       failwith ("Invalid environment s-expression: " ^ Sexp.to_string sexp)
   | Sexp.List l -> List.map l ~f:parse_defn |> String.Map.of_alist_exn
 
-let program_of_sexp: Sexp.t -> program = 
-  fun sexp->
+let program_of_sexp : Sexp.t -> program =
+ fun sexp ->
   match sexp with
   | Sexp.List [ env_sexp; block_sexp ] ->
       (parse_env env_sexp, parse_block block_sexp)
-  | _ -> failwith ("Invalid program: " ^ Sexp.to_string s)
+  | _ -> failwith ("Invalid program: " ^ Sexp.to_string sexp)
 
 let parse_py : string -> program =
- fun str ->
-  Sexp.of_string str |> program_of_sexp
+ fun str -> Sexp.of_string str |> program_of_sexp
 
 let rec sexp_of_pat : pat -> Sexp.t =
  fun p ->
@@ -120,6 +118,8 @@ let sexp_of_env : env -> Sexp.t =
 let sexp_of_program : program -> Sexp.t =
  fun (env, block) -> Sexp.List [ sexp_of_env env; sexp_of_block block ]
 
+let program_of_str : string -> program =
+ fun str -> Sexp.of_string str |> program_of_sexp
 
 let str_of_program : program -> string =
  fun p -> sexp_of_program p |> Sexp.to_string

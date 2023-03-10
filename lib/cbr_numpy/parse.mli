@@ -14,3 +14,6 @@ val str_of_program : program -> string
 
 (** [sexp_of_program] translates a program back into an s-expression **)
 val sexp_of_program : program -> Sexp.t
+
+(** [program_of_str] translates an s-expression string into a program. **)
+val program_of_str : string -> program

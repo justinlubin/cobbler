@@ -4,17 +4,13 @@ open Core
 open Lang
 
 let program_dir = "test_data/programs/"
-let test1_fname = "test1.py"
-let test2_fname = "test2.py"
-
 let expected_env1 = String.Map.of_alist_exn []
 
 let expected_block1 =
-  [ Assign (Name "x", Call (Name "add", [ Num 3; Num 5 ]))
+  [ Assign (Name "x", Call (Name "+", [ Num 3; Num 5 ]))
   ; Assign
-      ( Name "y"
-      , Call (Name "add", [ Num 1; Call (Name "sub", [ Num 2; Num 3 ]) ]) )
-  ; Assign (Name "z", Call (Name "mul", [ Name "y"; Name "x" ]))
+      (Name "y", Call (Name "+", [ Num 1; Call (Name "-", [ Num 2; Num 3 ]) ]))
+  ; Assign (Name "z", Call (Name "*", [ Name "y"; Name "x" ]))
   ]
 
 let expected_env2 =
@@ -30,15 +26,16 @@ let expected_env2 =
               , [ Assign
                     ( Index (Name "out", Name "i")
                     , Call
-                        ( Name "add"
+                        ( Name "+"
                         , [ Index (Name "out", Name "i")
                           ; Call
-                              ( Name "mul"
+                              ( Name "*"
                               , [ Index (Name "x", Name "i")
                                 ; Index (Name "y", Name "i")
                                 ] )
                           ] ) )
                 ] )
+          ; Return (Name "out")
           ] ) )
     ; ( "sum"
       , ( [ "x" ]
@@ -48,10 +45,10 @@ let expected_env2 =
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
                     ( Name "out"
-                    , Call
-                        (Name "add", [ Name "out"; Index (Name "x", Name "i") ])
+                    , Call (Name "+", [ Name "out"; Index (Name "x", Name "i") ])
                     )
                 ] )
+          ; Return (Name "out")
           ] ) )
     ; ( "mul"
       , ( [ "x"; "y" ]
@@ -64,28 +61,34 @@ let expected_env2 =
               , [ Assign
                     ( Index (Name "out", Name "i")
                     , Call
-                        ( Name "mul"
+                        ( Name "*"
                         , [ Index (Name "x", Name "i")
                           ; Index (Name "y", Name "i")
                           ] ) )
                 ] )
+          ; Return (Name "out")
           ] ) )
     ]
 
 let expected_block2 = []
 
-let parsed_test1_prog : program = parse_py sexp_str1
-let parsed_test2_prog : program = parse_py sexp_str2
+let expected_progs : program list =
+  [ (expected_env1, expected_block1); (expected_env2, expected_block2) ]
 
-let expected_test1_prog : program = expected_env1, expected_block1
-let expected_test2_prog : program = expected_env2, expected_block2
+let test_fnames = [ "test1.sexp"; "test2.sexp" ]
+
+let parsed_progs : program list =
+  List.map test_fnames ~f:(fun fname ->
+      program_dir ^ fname
+      |> In_channel.with_file ~f:(fun file ->
+             program_of_str (In_channel.input_all file)))
 
 let%test_unit "parse program 1" =
   [%test_result: program]
-    parsed_test1_prog
-    ~expect:expected_test1_prog
+    (List.nth_exn parsed_progs 0)
+    ~expect:(List.nth_exn expected_progs 0)
 
 let%test_unit "parse program 2" =
   [%test_result: program]
-    parsed_test2_prog
-    ~expect:expected_test2_prog
+    (List.nth_exn parsed_progs 1)
+    ~expect:(List.nth_exn expected_progs 1)
