@@ -6,14 +6,15 @@
 open Lang
 open Core
 
-(** [parse_py] parses an s-expression string into a program.*)
-val parse_py : string -> program
 
 (** [str_of_program] translates a program back into an s-expression, and then to a string. *)
 val str_of_program : program -> string
 
 (** [sexp_of_program] translates a program back into an s-expression **)
 val sexp_of_program : program -> Sexp.t
+
+(** [program_of_sexp] translates an s-expression into a program**)
+val program_of_sexp : Sexp.t -> program
 
 (** [program_of_str] translates an s-expression string into a program. **)
 val program_of_str : string -> program

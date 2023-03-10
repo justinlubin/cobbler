@@ -1,55 +1,49 @@
 open Lang
 open Core
 
-let rec parse_pat : Sexp.t -> pat =
+let rec pat_of_sexp : Sexp.t -> pat =
  fun sexp ->
   match sexp with
   | Sexp.Atom name -> Name name
-  | Sexp.List [ Sexp.Atom "Index"; p; e ] -> Index (parse_pat p, parse_expr e)
+  | Sexp.List [ Sexp.Atom "Index"; p; e ] -> Index (pat_of_sexp p, expr_of_sexp e)
   | _ -> failwith ("Invalid pattern: " ^ Sexp.to_string sexp)
 
-and parse_expr : Sexp.t -> expr =
+and expr_of_sexp : Sexp.t -> expr =
  fun sexp ->
   match sexp with
   | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] -> Num (int_of_string n)
   | Sexp.List [ Sexp.Atom "Index"; iter; index ] ->
-      Index (parse_expr iter, parse_expr index)
+      Index (expr_of_sexp iter, expr_of_sexp index)
   | Sexp.List (Sexp.Atom "Call" :: name :: args) ->
-      Call (parse_expr name, List.map args ~f:parse_expr)
+      Call (expr_of_sexp name, List.map args ~f:expr_of_sexp)
   | Sexp.List [ Sexp.Atom "Str"; Sexp.Atom str ] -> Str str
   | Sexp.Atom name -> Name name
   | _ -> failwith ("Invalid expression: " ^ Sexp.to_string sexp)
 
-let rec parse_stmt : Sexp.t -> stmt =
+let rec stmt_of_sexp : Sexp.t -> stmt =
  fun sexp ->
   match sexp with
   | Sexp.List [ Sexp.Atom "Assign"; left; right ] ->
-      Assign (parse_pat left, parse_expr right)
+      Assign (pat_of_sexp left, expr_of_sexp right)
   | Sexp.List [ Sexp.Atom "For"; i; iter; body ] ->
-      For (parse_pat i, parse_expr iter, parse_block body)
-  | Sexp.List [ Sexp.Atom "Return"; e ] -> Return (parse_expr e)
+      For (pat_of_sexp i, expr_of_sexp iter, block_of_sexp body)
+  | Sexp.List [ Sexp.Atom "Return"; e ] -> Return (expr_of_sexp e)
   | _ -> failwith ("Invalid statement: " ^ Sexp.to_string sexp)
 
-and parse_block : Sexp.t -> block =
+and block_of_sexp : Sexp.t -> block =
  fun sexp ->
   match sexp with
   | Sexp.Atom _ -> failwith ("Invalid block: " ^ Sexp.to_string sexp)
-  | Sexp.List l -> List.map l ~f:parse_stmt
-
-let parse_param : Sexp.t -> id =
- fun sexp ->
-  match sexp with
-  | Sexp.Atom name -> name
-  | _ -> failwith ("Invalid parameter: " ^ Sexp.to_string sexp)
+  | Sexp.List l -> List.map l ~f:stmt_of_sexp
 
 let parse_defn : Sexp.t -> id * defn =
  fun sexp ->
   match sexp with
   | Sexp.List [ Sexp.Atom name; Sexp.List params; body ] ->
-      (name, (List.map params ~f:parse_param, parse_block body))
+      (name, (List.map params ~f:id_of_sexp, block_of_sexp body))
   | _ -> failwith ("Invalid function definition: " ^ Sexp.to_string sexp)
 
-let parse_env : Sexp.t -> env =
+let env_of_sexp : Sexp.t -> env =
  fun sexp ->
   match sexp with
   | Sexp.Atom _ ->
@@ -60,10 +54,10 @@ let program_of_sexp : Sexp.t -> program =
  fun sexp ->
   match sexp with
   | Sexp.List [ env_sexp; block_sexp ] ->
-      (parse_env env_sexp, parse_block block_sexp)
+      (env_of_sexp env_sexp, block_of_sexp block_sexp)
   | _ -> failwith ("Invalid program: " ^ Sexp.to_string sexp)
 
-let parse_py : string -> program =
+let program_of_str : string -> program =
  fun str -> Sexp.of_string str |> program_of_sexp
 
 let rec sexp_of_pat : pat -> Sexp.t =
@@ -102,13 +96,12 @@ let rec sexp_of_stmt : stmt -> Sexp.t =
 and sexp_of_block : block -> Sexp.t =
  fun b -> Sexp.List (List.map b ~f:sexp_of_stmt)
 
-let sexp_of_param : id -> Sexp.t = fun param -> Sexp.Atom param
 
 let sexp_of_defn : id * defn -> Sexp.t =
  fun (name, (params, body)) ->
   Sexp.List
     [ Sexp.Atom name
-    ; Sexp.List (List.map params ~f:sexp_of_param)
+    ; Sexp.List (List.map params ~f:sexp_of_id)
     ; sexp_of_block body
     ]
 
@@ -118,11 +111,8 @@ let sexp_of_env : env -> Sexp.t =
 let sexp_of_program : program -> Sexp.t =
  fun (env, block) -> Sexp.List [ sexp_of_env env; sexp_of_block block ]
 
-let program_of_str : string -> program =
- fun str -> Sexp.of_string str |> program_of_sexp
 
 let str_of_program : program -> string =
  fun p -> sexp_of_program p |> Sexp.to_string
 
-let pprint_program : ?channel:Out_channel.t -> program -> unit =
- fun ?(channel = stdout) p -> failwith "TODO"
+
