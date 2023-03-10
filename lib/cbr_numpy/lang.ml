@@ -1,6 +1,6 @@
 open Core
 
-type id = string [@@deriving compare,sexp]
+type id = string [@@deriving compare, sexp]
 
 type expr =
   | Num of int

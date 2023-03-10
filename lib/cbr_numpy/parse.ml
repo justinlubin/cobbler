@@ -5,7 +5,8 @@ let rec pat_of_sexp : Sexp.t -> pat =
  fun sexp ->
   match sexp with
   | Sexp.Atom name -> Name name
-  | Sexp.List [ Sexp.Atom "Index"; p; e ] -> Index (pat_of_sexp p, expr_of_sexp e)
+  | Sexp.List [ Sexp.Atom "Index"; p; e ] ->
+      Index (pat_of_sexp p, expr_of_sexp e)
   | _ -> failwith ("Invalid pattern: " ^ Sexp.to_string sexp)
 
 and expr_of_sexp : Sexp.t -> expr =
@@ -96,7 +97,6 @@ let rec sexp_of_stmt : stmt -> Sexp.t =
 and sexp_of_block : block -> Sexp.t =
  fun b -> Sexp.List (List.map b ~f:sexp_of_stmt)
 
-
 let sexp_of_defn : id * defn -> Sexp.t =
  fun (name, (params, body)) ->
   Sexp.List
@@ -111,8 +111,5 @@ let sexp_of_env : env -> Sexp.t =
 let sexp_of_program : program -> Sexp.t =
  fun (env, block) -> Sexp.List [ sexp_of_env env; sexp_of_block block ]
 
-
 let str_of_program : program -> string =
  fun p -> sexp_of_program p |> Sexp.to_string
-
-

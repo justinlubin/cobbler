@@ -4,10 +4,10 @@ def matmul(x,y):
     out = np.zeros(len(x),len(y[0]))
     for i in range(len(x)):
         for j in range(len(y[0])):
-            out = 0
+            dot = 0
             for k in range(len(y)):
-                out += x[i][k] * y[k][j]
-            out[i][j] = out
+                dot += x[i][k] * y[k][j]
+            out[i][j] = dot
     return out
 
 x = np.zeros(2,2)

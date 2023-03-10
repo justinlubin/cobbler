@@ -2,12 +2,12 @@
     (Assign out (Call np_zeros (Call len x) (Call len (Index y (Num 0)))))
     (For i (Call range (Call len x)) (
         (For j (Call range (Call len (Index y (Num 0))))(
-            (Assign out (Num 0))
+            (Assign dot (Num 0))
             (For k (Call range (Call len y)) (
-                (Assign out (Call + out (Call * (Index (Index x i) k) (Index (Index y k) j))))
+                (Assign dot (Call + dot (Call * (Index (Index x i) k) (Index (Index y k) j))))
 
             ))
-            (Assign (Index (Index out i) j) out))
+            (Assign (Index (Index out i) j) dot))
         )))
     (Return out))
 ))
