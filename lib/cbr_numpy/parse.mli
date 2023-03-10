@@ -17,3 +17,6 @@ val program_of_sexp : Sexp.t -> program
 
 (** [program_of_str] translates an s-expression string into a program. **)
 val program_of_str : string -> program
+
+(** [pprint_program] pretty-prints a program **)
+val pprint_program : ?channel:Out_channel.t -> program -> unit
