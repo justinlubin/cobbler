@@ -1,5 +1,7 @@
-open Cbr_numpy.Lang
-open Cbr_numpy.Inline
+open Cbr_numpy
+open Lang
+open Inline
+open Parse
 open Core
 
 let sum_body =

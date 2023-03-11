@@ -5,6 +5,7 @@ build:
 .PHONY: test
 test:
 	dune runtest
+	python -m unittest discover
 
 .PHONY: exec
 exec:

@@ -8,20 +8,21 @@ type expr =
   | Call of expr * expr list
   | Str of string
   | Name of id
-[@@deriving sexp, compare]
+[@@deriving compare]
 
 type lhs =
   | Name of id
   | Index of lhs * expr
-[@@deriving sexp, compare]
+[@@deriving compare]
 
 type stmt =
   | Assign of lhs * expr
   | For of id * expr * block
   | Return of expr
+[@@deriving compare]
 
-and block = stmt list [@@deriving sexp, compare]
+and block = stmt list [@@deriving compare]
 
-type defn = id list * block [@@deriving sexp, compare]
-type env = defn String.Map.t [@@deriving sexp, compare]
-type program = env * block [@@deriving sexp, compare]
+type defn = id list * block [@@deriving compare]
+type env = defn String.Map.t [@@deriving compare]
+type program = env * block [@@deriving compare]

@@ -1,5 +1,7 @@
-open Cbr_numpy.Lang
-open Cbr_numpy.Partial_eval
+open Cbr_numpy
+open Lang
+open Partial_eval
+open Parse
 open Core
 
 let env = Map.empty (module String)
