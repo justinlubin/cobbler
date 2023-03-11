@@ -30,7 +30,7 @@ let p2 =
   , [ Return (Call (Name "sum", [ Call (Name "add", [ Name "x"; Name "y" ]) ]))
     ] )
 
-let p3 = (env, [ Assign (Name "x", Num 5); Return (Call (Name "f", [ Num 0 ])) ])
+let p3 = (env, [ Assign (Name "y", Num 5); Return (Call (Name "f", [ Num 0 ])) ])
 
 let p4 =
   (env, [ Assign (Name "x", Num 5); Return (Call (Name "id", [ Num 0 ])) ])
@@ -44,7 +44,7 @@ let inline_of_p1 =
 
 let inline_of_p3 =
   ( env
-  , [ Assign (Name "x", Num 5)
+  , [ Assign (Name "y", Num 5)
     ; Assign (Name "x", Str "cat")
     ; Return (Name "x")
     ] )
