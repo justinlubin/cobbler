@@ -1,6 +1,6 @@
 open Core
 
-type id = string
+type id = string [@@deriving compare, sexp]
 
 type expr =
   | Num of int
@@ -8,18 +8,21 @@ type expr =
   | Call of expr * expr list
   | Str of string
   | Name of id
+[@@deriving compare]
 
-type lhs =
+type pat =
   | Name of id
-  | Index of lhs * expr
+  | Index of pat * expr
+[@@deriving compare]
 
 type stmt =
-  | Assign of lhs * expr
-  | For of id * expr * block
+  | Assign of pat * expr
+  | For of pat * expr * block
   | Return of expr
+[@@deriving compare]
 
-and block = stmt list
+and block = stmt list [@@deriving compare]
 
-type defn = id list * block
-type env = (id, defn, String.comparator_witness) Map.t
-type program = env * block
+type defn = id list * block [@@deriving compare]
+type env = defn Map.M(String).t [@@deriving compare]
+type program = env * block [@@deriving compare]

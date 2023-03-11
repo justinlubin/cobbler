@@ -21,6 +21,5 @@
    (>= 4.14.0))
   dune
   core
-  pyre-ast
   ppx_jane
   ppx_deriving))

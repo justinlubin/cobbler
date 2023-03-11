@@ -15,13 +15,13 @@ let parse_file_fp : string -> datatype_env * typ_env * Cbr_fp.Lang.env =
   In_channel.with_file filename ~f:(fun file ->
       Cbr_fp.Parse.definitions (In_channel.input_all file))
 
-let parse_file_np : string -> Cbr_numpy.Lang.program =
+let parse_file_np : string -> program =
  fun filename ->
   In_channel.with_file filename ~f:(fun file ->
-      Cbr_numpy.Parse.parse_py (In_channel.input_all file))
+      Sexp.of_string (In_channel.input_all file) |> Parse.program_of_sexp)
 
 let file = "test/test_cbr_fp/test_data/programs/list2.lisp"
-let file_py = "test/test_cbr_numpy/test_data/programs/test1.py"
+let file_py = "test/test_cbr_numpy/test_data/programs/test1.sexp"
 
 let () =
   print_endline "FP execution:";
@@ -42,8 +42,7 @@ let () =
   | Some e ->
       printf "solution found:\n\n%s\n\n" (Exp.show_multi 1 (Exp.clean e));
       printf "of type: %s\n\n" (Typ.show (Type_system.infer sigma gamma e)));
-  print_endline "have a nice day!"
-(*print_endline "Starting NumPy execution:";
+  print_endline "Starting NumPy execution:";
   print_endline "Parsing ... %!";
   parse_file_np file_py |> Cbr_numpy.Parse.pprint_program;
-  print_endline "\ndone!"*)
+  print_endline "\ndone!"
