@@ -1,12 +1,12 @@
 open Lang
 open Core
 
-let rec pat_of_sexp : Sexp.t -> pat =
+let rec lhs_of_sexp : Sexp.t -> lhs =
  fun sexp ->
   match sexp with
   | Sexp.Atom name -> Name name
   | Sexp.List [ Sexp.Atom "Index"; p; e ] ->
-      Index (pat_of_sexp p, expr_of_sexp e)
+      Index (lhs_of_sexp p, expr_of_sexp e)
   | _ -> failwith ("Invalid pattern: " ^ Sexp.to_string sexp)
 
 and expr_of_sexp : Sexp.t -> expr =
@@ -25,9 +25,9 @@ let rec stmt_of_sexp : Sexp.t -> stmt =
  fun sexp ->
   match sexp with
   | Sexp.List [ Sexp.Atom "Assign"; left; right ] ->
-      Assign (pat_of_sexp left, expr_of_sexp right)
-  | Sexp.List [ Sexp.Atom "For"; i; iter; body ] ->
-      For (pat_of_sexp i, expr_of_sexp iter, block_of_sexp body)
+      Assign (lhs_of_sexp left, expr_of_sexp right)
+  | Sexp.List [ Sexp.Atom "For"; Sexp.Atom i; iter; body ] ->
+      For (i, expr_of_sexp iter, block_of_sexp body)
   | Sexp.List [ Sexp.Atom "Return"; e ] -> Return (expr_of_sexp e)
   | _ -> failwith ("Invalid statement: " ^ Sexp.to_string sexp)
 
@@ -61,12 +61,12 @@ let program_of_sexp : Sexp.t -> program =
 let program_of_str : string -> program =
  fun str -> Sexp.of_string str |> program_of_sexp
 
-let rec sexp_of_pat : pat -> Sexp.t =
+let rec sexp_of_lhs : lhs -> Sexp.t =
  fun p ->
   match p with
   | Name name -> Sexp.Atom name
   | Index (iter, index) ->
-      Sexp.List [ Sexp.Atom "Index"; sexp_of_pat iter; sexp_of_expr index ]
+      Sexp.List [ Sexp.Atom "Index"; sexp_of_lhs iter; sexp_of_expr index ]
 
 and sexp_of_expr : expr -> Sexp.t =
  fun e ->
@@ -84,11 +84,11 @@ let rec sexp_of_stmt : stmt -> Sexp.t =
  fun s ->
   match s with
   | Assign (left, right) ->
-      Sexp.List [ Sexp.Atom "Assign"; sexp_of_pat left; sexp_of_expr right ]
+      Sexp.List [ Sexp.Atom "Assign"; sexp_of_lhs left; sexp_of_expr right ]
   | For (index, iter, body) ->
       Sexp.List
         [ Sexp.Atom "For"
-        ; sexp_of_pat index
+        ; Sexp.Atom index
         ; sexp_of_expr iter
         ; sexp_of_block body
         ]

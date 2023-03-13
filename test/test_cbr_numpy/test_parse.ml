@@ -19,7 +19,7 @@ let expected_env2 =
       , ( [ "x"; "y" ]
         , [ Assign (Name "out", Num 0)
           ; For
-              ( Name "i"
+              ( "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
                     ( Name "out"
@@ -39,7 +39,7 @@ let expected_env2 =
       , ( [ "x" ]
         , [ Assign (Name "out", Num 0)
           ; For
-              ( Name "i"
+              ( "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
                     ( Name "out"
@@ -54,7 +54,7 @@ let expected_env2 =
               ( Name "out"
               , Call (Name "np_zeros", [ Call (Name "len", [ Name "x" ]) ]) )
           ; For
-              ( Name "i"
+              ( "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
                     ( Index (Name "out", Name "i")
@@ -82,16 +82,16 @@ let expected_env3 =
                     ; Call (Name "len", [ Index (Name "y", Num 0) ])
                     ] ) )
           ; For
-              ( Name "i"
+              ( "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ For
-                    ( Name "j"
+                    ( "j"
                     , Call
                         ( Name "range"
                         , [ Call (Name "len", [ Index (Name "y", Num 0) ]) ] )
                     , [ Assign (Name "dot", Num 0)
                       ; For
-                          ( Name "k"
+                          ( "k"
                           , Call
                               (Name "range", [ Call (Name "len", [ Name "y" ]) ])
                           , [ Assign
