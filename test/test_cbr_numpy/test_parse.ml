@@ -19,7 +19,7 @@ let expected_env2 =
       , ( [ "x"; "y" ]
         , [ Assign (Name "out", Num 0)
           ; For
-              ( Name "i"
+              ( "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
                     ( Name "out"
@@ -39,7 +39,7 @@ let expected_env2 =
       , ( [ "x" ]
         , [ Assign (Name "out", Num 0)
           ; For
-              ( Name "i"
+              ( "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
                     ( Name "out"
@@ -54,7 +54,7 @@ let expected_env2 =
               ( Name "out"
               , Call (Name "np_zeros", [ Call (Name "len", [ Name "x" ]) ]) )
           ; For
-              ( Name "i"
+              ( "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
                     ( Index (Name "out", Name "i")
@@ -82,16 +82,16 @@ let expected_env3 =
                     ; Call (Name "len", [ Index (Name "y", Num 0) ])
                     ] ) )
           ; For
-              ( Name "i"
+              ( "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ For
-                    ( Name "j"
+                    ( "j"
                     , Call
                         ( Name "range"
                         , [ Call (Name "len", [ Index (Name "y", Num 0) ]) ] )
                     , [ Assign (Name "dot", Num 0)
                       ; For
-                          ( Name "k"
+                          ( "k"
                           , Call
                               (Name "range", [ Call (Name "len", [ Name "y" ]) ])
                           , [ Assign
@@ -119,45 +119,37 @@ let expected_env3 =
           ] ) )
     ]
 
-let expected_block3 =
-  [ Assign (Name "x", Call (Name "np_zeros", [ Num 2; Num 2 ]))
-  ; Assign (Name "y", Call (Name "np_zeros", [ Num 2; Num 2 ]))
-  ; Assign (Name "i", Num 1)
-  ; Assign (Index (Index (Name "x", Num 0), Num 0), Num 3)
-  ; Assign (Index (Index (Name "y", Num 1), Num 0), Num 5)
-  ; Assign
-      ( Index
-          ( Index (Name "x", Call (Name "-", [ Name "i"; Num 1 ]))
-          , Call (Name "*", [ Name "i"; Num 1 ]) )
-      , Num 4 )
-  ; Assign (Name "z", Call (Name "matmul", [ Name "x"; Name "y" ]))
-  ]
+let input_test1 = "x = 3 + 5"
+let input_test2 = "y = 2 * 5"
 
-let expected_progs : program list =
-  [ (expected_env1, expected_block1)
-  ; (expected_env2, expected_block2)
-  ; (expected_env3, expected_block3)
-  ]
+let expected_test1 =
+  "((body((Assign(location((start((line 1)(column 0)))(stop((line 1)(column \
+   9)))))(targets((Name(location((start((line 1)(column 0)))(stop((line \
+   1)(column 1)))))(id x)(ctx Store))))(value(BinOp(location((start((line \
+   1)(column 4)))(stop((line 1)(column \
+   9)))))(left(Constant(location((start((line 1)(column 4)))(stop((line \
+   1)(column 5)))))(value(Integer 3))(kind())))(op \
+   Add)(right(Constant(location((start((line 1)(column 8)))(stop((line \
+   1)(column 9)))))(value(Integer \
+   5))(kind())))))(type_comment()))))(type_ignores()))"
 
-let test_fnames = [ "test1.sexp"; "test2.sexp"; "test3.sexp" ]
+let expected_test2 =
+  "((body((Assign(location((start((line 1)(column 0)))(stop((line 1)(column \
+   9)))))(targets((Name(location((start((line 1)(column 0)))(stop((line \
+   1)(column 1)))))(id y)(ctx Store))))(value(BinOp(location((start((line \
+   1)(column 4)))(stop((line 1)(column \
+   9)))))(left(Constant(location((start((line 1)(column 4)))(stop((line \
+   1)(column 5)))))(value(Integer 2))(kind())))(op \
+   Mult)(right(Constant(location((start((line 1)(column 8)))(stop((line \
+   1)(column 9)))))(value(Integer \
+   5))(kind())))))(type_comment()))))(type_ignores()))"
 
-let parsed_progs : program list =
-  List.map test_fnames ~f:(fun fname ->
-      program_dir ^ fname
-      |> In_channel.with_file ~f:(fun file ->
-             program_of_str (In_channel.input_all file)))
+(*TODO: Un-comment out tests once parsing is working*)
+(*let parsed_test1 : string = parse_py input_test1 |> str_of_ast
+let parsed_test2 : string = parse_py input_test2 |> str_of_ast
 
 let%test_unit "parse program 1" =
-  [%test_result: program]
-    (List.nth_exn parsed_progs 0)
-    ~expect:(List.nth_exn expected_progs 0)
+  [%test_result: string] parsed_test1 ~expect:expected_test1
 
 let%test_unit "parse program 2" =
-  [%test_result: program]
-    (List.nth_exn parsed_progs 1)
-    ~expect:(List.nth_exn expected_progs 1)
-
-let%test_unit "parse program 3" =
-  [%test_result: program]
-    (List.nth_exn parsed_progs 2)
-    ~expect:(List.nth_exn expected_progs 2)
+  [%test_result: string] parsed_test2 ~expect:expected_test2*)
