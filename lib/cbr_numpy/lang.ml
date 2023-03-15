@@ -8,6 +8,7 @@ type expr =
   | Call of expr * expr list
   | Str of string
   | Name of id
+  | Hole of int
 [@@deriving compare]
 
 type lhs =
@@ -26,3 +27,5 @@ and block = stmt list [@@deriving compare]
 type defn = id list * block [@@deriving compare]
 type env = defn String.Map.t [@@deriving compare]
 type program = env * block [@@deriving compare]
+type hole = Hole of int
+type substitution = (hole * expr) list
