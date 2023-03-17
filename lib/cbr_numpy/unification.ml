@@ -109,10 +109,4 @@ let unify_env : env -> env -> substitutions option =
 
 let unify : program -> program -> substitutions option =
  fun (env1, block1) (env2, block2) ->
-  match (unify_env env1 env2, unify_block block1 block2) with
-  | Some sub1, Some sub2 ->
-      Some
-        (Map.merge sub1 sub2 ~f:(fun ~key:_ _ ->
-             failwith "Non-unique hole name"))
-  | None, _ -> None
-  | _, None -> None
+  merge_option_skewed (unify_env env1 env2) (unify_block block1 block2)

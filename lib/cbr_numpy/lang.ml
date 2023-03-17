@@ -27,4 +27,4 @@ and block = stmt list [@@deriving compare]
 type defn = id list * block [@@deriving compare]
 type env = defn String.Map.t [@@deriving compare]
 type program = env * block [@@deriving compare]
-type substitutions = expr String.Map.t
+type substitutions = expr String.Map.t [@@deriving compare]
