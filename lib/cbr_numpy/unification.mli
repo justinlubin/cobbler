@@ -5,5 +5,6 @@
 open Lang
 open Core
 
-(* [unify] takes in 2 expressions and a returns a substitution of holes into values*)
-val unify : expr -> expr -> substitution
+(* [unify program1 program2] takes in 2 program and returns a list of mappings from holes in [program2] to values in [program1]. 
+ *  Returns None if no substitutions can be made. Note: this assumes that [program1] contains no holes. *)
+val unify : program -> program -> substitutions option

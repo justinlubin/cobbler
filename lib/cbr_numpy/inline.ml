@@ -11,6 +11,7 @@ let rec substitute_expr : (id * expr) list -> expr -> expr =
       Call (substitute_expr binds head, List.map (substitute_expr binds) args)
   | Name id when List.mem_assoc id binds -> List.assoc id binds
   | Name id -> Name id
+  | Hole hole -> Hole hole
 
 and substitute_lhs : (id * expr) list -> lhs -> lhs =
  fun binds lhs ->

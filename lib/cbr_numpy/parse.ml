@@ -18,8 +18,8 @@ and expr_of_sexp : Sexp.t -> expr =
   | Sexp.List (Sexp.Atom "Call" :: name :: args) ->
       Call (expr_of_sexp name, List.map args ~f:expr_of_sexp)
   | Sexp.List [ Sexp.Atom "Str"; Sexp.Atom str ] -> Str str
-  | Sexp.List [ Sexp.Atom "Hole"; Sexp.Atom h ] -> Hole (int_of_string h)
   | Sexp.Atom name -> Name name
+  | Sexp.List [ Sexp.Atom "Hole"; Sexp.Atom hole ] -> Hole hole
   | _ -> failwith ("Invalid expression: " ^ Sexp.to_string sexp)
 
 let rec stmt_of_sexp : Sexp.t -> stmt =
@@ -80,7 +80,7 @@ and sexp_of_expr : expr -> Sexp.t =
         ([ Sexp.Atom "Call"; sexp_of_expr name ] @ List.map args ~f:sexp_of_expr)
   | Str str -> Sexp.List [ Sexp.Atom "Str"; Sexp.Atom str ]
   | Name name -> Sexp.Atom name
-  | Hole h -> Sexp.List [ Sexp.Atom "Hole"; Sexp.Atom (string_of_int h) ]
+  | Hole hole -> Sexp.List [ Sexp.Atom "Hole"; Sexp.Atom hole ]
 
 let rec sexp_of_stmt : stmt -> Sexp.t =
  fun s ->

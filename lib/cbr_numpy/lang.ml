@@ -1,6 +1,6 @@
 open Core
 
-type id = string [@@deriving sexp, compare]
+type id = string [@@deriving sexp, compare, eq]
 
 type expr =
   | Num of int
@@ -8,13 +8,13 @@ type expr =
   | Call of expr * expr list
   | Str of string
   | Name of id
-  | Hole of int
-[@@deriving compare]
+  | Hole of string
+[@@deriving compare, eq]
 
 type lhs =
   | Name of id
   | Index of lhs * expr
-[@@deriving compare]
+[@@deriving compare, eq]
 
 type stmt =
   | Assign of lhs * expr
@@ -27,5 +27,4 @@ and block = stmt list [@@deriving compare]
 type defn = id list * block [@@deriving compare]
 type env = defn String.Map.t [@@deriving compare]
 type program = env * block [@@deriving compare]
-type hole = Hole of int
-type substitution = (hole * expr) list
+type substitutions = expr String.Map.t
