@@ -6,5 +6,6 @@ open Lang
 open Core
 
 (* [unify program1 program2] takes in 2 program and returns a list of mappings from holes in [program2] to values in [program1]. 
- *  Returns None if no substitutions can be made. Note: this assumes that [program1] contains no holes. *)
+ *  Returns None if no substitutions can be made. Note: this assumes that [program1] contains no holes. 
+ *  Will raise an error if there are two holes with the same name. *)
 val unify : program -> program -> substitutions option

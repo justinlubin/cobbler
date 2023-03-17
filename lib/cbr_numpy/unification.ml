@@ -43,15 +43,15 @@ let rec unify_expr : expr -> expr -> substitutions option =
           (match args_list with
           | List.Or_unequal_lengths.Unequal_lengths -> None
           | List.Or_unequal_lengths.Ok l ->
-              let sub1 = unify_expr name1 name2 in
-              let sub2 =
+              let sub_names = unify_expr name1 name2 in
+              let sub_args =
                 List.fold
                   l
                   ~init:(Some String.Map.empty)
-                  ~f:(fun sub1 (arg1, arg2) ->
-                    unify_expr arg1 arg2 |> merge_option_skewed sub1)
+                  ~f:(fun sub_accum (arg1, arg2) ->
+                    unify_expr arg1 arg2 |> merge_option_skewed sub_accum)
               in
-              merge_option_skewed sub1 sub2)
+              merge_option_skewed sub_names sub_args)
       | _ -> None)
   | Name name2 ->
       (match expr1 with
@@ -72,9 +72,9 @@ let rec unify_stmt : stmt -> stmt -> substitutions option =
       | For (index2, iter2, body2) ->
           if compare_id index1 index2 = 0
           then (
-            let sub1 = unify_expr iter1 iter2 in
-            let sub2 = unify_block body1 body2 in
-            merge_option_skewed sub1 sub2)
+            let sub_iter = unify_expr iter1 iter2 in
+            let sub_body = unify_block body1 body2 in
+            merge_option_skewed sub_iter sub_body)
           else None
       | Assign _ | Return _ -> None)
   | Return expr1 ->
