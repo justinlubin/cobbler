@@ -19,6 +19,7 @@ and expr_of_sexp : Sexp.t -> expr =
       Call (expr_of_sexp name, List.map args ~f:expr_of_sexp)
   | Sexp.List [ Sexp.Atom "Str"; Sexp.Atom str ] -> Str str
   | Sexp.Atom name -> Name name
+  | Sexp.List [ Sexp.Atom "Hole"; Sexp.Atom hole ] -> Hole hole
   | _ -> failwith ("Invalid expression: " ^ Sexp.to_string sexp)
 
 let rec stmt_of_sexp : Sexp.t -> stmt =
@@ -79,6 +80,7 @@ and sexp_of_expr : expr -> Sexp.t =
         ([ Sexp.Atom "Call"; sexp_of_expr name ] @ List.map args ~f:sexp_of_expr)
   | Str str -> Sexp.List [ Sexp.Atom "Str"; Sexp.Atom str ]
   | Name name -> Sexp.Atom name
+  | Hole hole -> Sexp.List [ Sexp.Atom "Hole"; Sexp.Atom hole ]
 
 let rec sexp_of_stmt : stmt -> Sexp.t =
  fun s ->
@@ -110,6 +112,22 @@ let sexp_of_env : env -> Sexp.t =
 
 let sexp_of_program : program -> Sexp.t =
  fun (env, block) -> Sexp.List [ sexp_of_env env; sexp_of_block block ]
+
+let sexp_of_substitutions : substitutions -> Sexp.t =
+ fun subs ->
+  String.Map.to_alist subs
+  |> List.sexp_of_t (fun (hole, e) ->
+         Sexp.List [ Sexp.Atom hole; sexp_of_expr e ])
+
+let substitutions_of_sexp : Sexp.t -> substitutions =
+ fun sexp ->
+  List.t_of_sexp
+    (fun sexp ->
+      match sexp with
+      | Sexp.List [ Sexp.Atom hole; e ] -> (hole, expr_of_sexp e)
+      | _ -> failwith "Invalid s-expression")
+    sexp
+  |> String.Map.of_alist_exn
 
 let str_of_program : program -> string =
  fun p -> sexp_of_program p |> Sexp.to_string

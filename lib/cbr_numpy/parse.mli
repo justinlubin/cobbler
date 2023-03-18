@@ -6,6 +6,8 @@
 open Lang
 open Core
 
+val sexp_of_expr : expr -> Sexp.t
+
 (** [str_of_program] translates a program back into an s-expression, and then to a string. *)
 val str_of_program : program -> string
 
@@ -14,6 +16,12 @@ val sexp_of_program : program -> Sexp.t
 
 (** [program_of_sexp] translates an s-expression into a program**)
 val program_of_sexp : Sexp.t -> program
+
+(** [sexp_of_substitions] translates a list of hole substitions back into an s-expression **)
+val sexp_of_substitutions : substitutions -> Sexp.t
+
+(** [substitions_of_sexp] translates an s-expression into a list of hole substitutions**)
+val substitutions_of_sexp : Sexp.t -> substitutions
 
 (** [program_of_str] translates an s-expression string into a program. **)
 val program_of_str : string -> program

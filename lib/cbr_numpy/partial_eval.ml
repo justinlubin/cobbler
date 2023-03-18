@@ -6,6 +6,7 @@ let rec partial_eval_expr : expr -> expr =
   | Num n -> Num n
   | Str s -> Str s
   | Name id -> Name id
+  | Hole hole -> Hole hole
   | Call (fn, args) ->
       let fn = partial_eval_expr fn in
       (match fn with
