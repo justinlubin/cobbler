@@ -18,11 +18,10 @@ let rec unify_expr : expr -> expr -> substitutions option =
   match expr2 with
   | Hole h ->
       (match expr1 with
-      | Hole _ -> None
       | _ -> Some (String.Map.of_alist_exn [ (h, expr1) ]))
   | Num n2 ->
       (match expr1 with
-      | Num n1 -> if n1 = n2 then Some String.Map.empty else None
+      | Num n1 when Int.equal n1 n2 -> Some String.Map.empty
       | _ -> None)
   | Index (index2, iter2) ->
       (match expr1 with
@@ -33,8 +32,7 @@ let rec unify_expr : expr -> expr -> substitutions option =
       | _ -> None)
   | Str s2 ->
       (match expr1 with
-      | Str s1 ->
-          if compare_string s1 s2 = 0 then Some String.Map.empty else None
+      | Str s1 when String.equal s1 s2 -> Some String.Map.empty
       | _ -> None)
   | Call (name2, args2) ->
       (match expr1 with
@@ -55,8 +53,7 @@ let rec unify_expr : expr -> expr -> substitutions option =
       | _ -> None)
   | Name name2 ->
       (match expr1 with
-      | Name name1 ->
-          if compare_string name1 name2 = 0 then Some String.Map.empty else None
+      | Name name1 when String.equal name1 name2 -> Some String.Map.empty
       | _ -> None)
 
 let rec unify_stmt : stmt -> stmt -> substitutions option =
@@ -64,19 +61,15 @@ let rec unify_stmt : stmt -> stmt -> substitutions option =
   match stmt1 with
   | Assign (l1, r1) ->
       (match stmt2 with
-      | Assign (l2, r2) ->
-          if compare_lhs l1 l2 = 0 then unify_expr r1 r2 else None
-      | For _ | Return _ -> None)
+      | Assign (l2, r2) when equal_lhs l1 l2 -> unify_expr r1 r2
+      | _ -> None)
   | For (index1, iter1, body1) ->
       (match stmt2 with
-      | For (index2, iter2, body2) ->
-          if compare_id index1 index2 = 0
-          then (
-            let sub_iter = unify_expr iter1 iter2 in
-            let sub_body = unify_block body1 body2 in
-            merge_option_skewed sub_iter sub_body)
-          else None
-      | Assign _ | Return _ -> None)
+      | For (index2, iter2, body2) when equal_id index1 index2 ->
+          let sub_iter = unify_expr iter1 iter2 in
+          let sub_body = unify_block body1 body2 in
+          merge_option_skewed sub_iter sub_body
+      | _ -> None)
   | Return expr1 ->
       (match stmt2 with
       | Return expr2 -> unify_expr expr1 expr2
@@ -96,7 +89,7 @@ let unify_defn : defn -> defn -> substitutions option =
 
 let unify_env : env -> env -> substitutions option =
  fun env1 env2 ->
-  if String.Map.length env1 <> String.Map.length env2
+  if not (Int.equal (String.Map.length env1) (String.Map.length env2))
   then None
   else
     String.Map.fold
