@@ -22,4 +22,8 @@
   dune
   core
   ppx_jane
-  ppx_deriving))
+  ppx_deriving
+  (bisect_ppx
+   (and
+    :dev
+    (>= "2.5.0")))))
