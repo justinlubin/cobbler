@@ -16,7 +16,7 @@ let merge_option_skewed
 let rec unify_expr : expr -> expr -> substitutions option =
  fun expr1 expr2 ->
   match expr2 with
-  | Hole h ->
+  | Hole (_, h) ->
       (match expr1 with
       | _ -> Some (String.Map.of_alist_exn [ (h, expr1) ]))
   | Num n2 ->
