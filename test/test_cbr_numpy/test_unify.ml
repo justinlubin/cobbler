@@ -31,7 +31,7 @@ let candidate3 : program =
 
 let candidate4 : program =
   ( String.Map.of_alist_exn []
-  , [ Assign (Name "x", Call (Name "+", [ Hole (Number, "1"); Hole (Number, "2") ])) ] )
+  , [ Assign (Name "x", Call (Name "+", [ Hole (Number, "1"); Hole (Number, "1") ])) ] )
 
 let unify_raises_error : program -> program -> bool =
  fun reference candidate ->
