@@ -35,30 +35,30 @@ let candidate4 : program =
 
 let unify_raises_error : program -> program -> bool =
  fun reference candidate ->
-  match unify reference candidate with
+  match unify_naive reference candidate with
   | exception s -> true
   | _ -> false
 
 let%test_unit "simple hole substitution" =
   [%test_result: substitutions option]
-    (unify reference1 candidate1)
+    (unify_naive reference1 candidate1)
     ~expect:(Some (String.Map.of_alist_exn [ ("1", Num 1) ]))
 
 let%test_unit "no substitution possible" =
   [%test_result: substitutions option]
-    (unify reference1 candidate2)
+    (unify_naive reference1 candidate2)
     ~expect:None
 
 let%test_unit "2 hole substitutions" =
   [%test_result: substitutions option]
-    (unify reference1 candidate3)
+    (unify_naive reference1 candidate3)
     ~expect:(Some (String.Map.of_alist_exn [ ("1", Num 1); ("2", Num 2) ]))
 
 let%test "duplicate hole value" = unify_raises_error reference1 candidate4
 
 let%test_unit "more complex hole substitution" =
   [%test_result: substitutions option]
-    (unify reference2 candidate1)
+    (unify_naive reference2 candidate1)
     ~expect:
       (Some
          (String.Map.of_alist_exn [ ("1", Call (Name "*", [ Num 2; Num 3 ])) ]))

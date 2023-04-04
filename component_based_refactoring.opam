@@ -13,6 +13,7 @@ depends: [
   "core"
   "ppx_jane"
   "ppx_deriving"
+  "ego"
   "bisect_ppx" {dev & >= "2.5.0"}
   "odoc" {with-doc}
 ]

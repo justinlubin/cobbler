@@ -23,6 +23,7 @@
   core
   ppx_jane
   ppx_deriving
+  ego
   (bisect_ppx
    (and
     :dev
