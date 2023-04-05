@@ -22,16 +22,24 @@ let candidate2 : program =
   ( String.Map.of_alist_exn []
   , [ Assign
         ( Name "x"
-        , Call (Name "+", [ Call (Name "*", [ Hole (Number, "1"); Hole (Number, "2") ]); Num 3 ]) )
+        , Call
+            ( Name "+"
+            , [ Call (Name "*", [ Hole (Number, "1"); Hole (Number, "2") ])
+              ; Num 3
+              ] ) )
     ] )
 
 let candidate3 : program =
   ( String.Map.of_alist_exn []
-  , [ Assign (Name "x", Call (Name "+", [ Hole (Number, "1"); Hole (Number, "2") ])) ] )
+  , [ Assign
+        (Name "x", Call (Name "+", [ Hole (Number, "1"); Hole (Number, "2") ]))
+    ] )
 
 let candidate4 : program =
   ( String.Map.of_alist_exn []
-  , [ Assign (Name "x", Call (Name "+", [ Hole (Number, "1"); Hole (Number, "1") ])) ] )
+  , [ Assign
+        (Name "x", Call (Name "+", [ Hole (Number, "1"); Hole (Number, "1") ]))
+    ] )
 
 let unify_raises_error : program -> program -> bool =
  fun reference candidate ->

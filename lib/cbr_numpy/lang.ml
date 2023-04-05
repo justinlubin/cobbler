@@ -1,6 +1,9 @@
 open Core
 
-type hole_type = Number | Array [@@deriving compare, eq]
+type hole_type =
+  | Number
+  | Array
+[@@deriving compare, eq]
 
 type id = string [@@deriving sexp, compare, eq]
 

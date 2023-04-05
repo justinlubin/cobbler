@@ -2,7 +2,9 @@ open Lang
 open Core
 
 let sum_body =
-  [ Assign (Name "sum_count", Call (Name "+", [ Name "sum_count"; Name "sum_i" ])) ]
+  [ Assign
+      (Name "sum_count", Call (Name "+", [ Name "sum_count"; Name "sum_i" ]))
+  ]
 
 let sum_defn =
   ( [ "sum_1" ]
@@ -11,5 +13,4 @@ let sum_defn =
     ; Return (Name "sum_count")
     ] )
 
-let np_env : env =
-  String.Map.of_alist_exn [ ("sum", sum_defn) ]
+let np_env : env = String.Map.of_alist_exn [ ("sum", sum_defn) ]
