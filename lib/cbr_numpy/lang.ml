@@ -1,5 +1,10 @@
 open Core
 
+type hole_type =
+  | Number
+  | Array
+[@@deriving compare, eq]
+
 type id = string [@@deriving sexp, compare, eq]
 
 type expr =
@@ -8,7 +13,7 @@ type expr =
   | Call of expr * expr list
   | Str of string
   | Name of id
-  | Hole of string
+  | Hole of hole_type * string
 [@@deriving compare, eq]
 
 type lhs =
