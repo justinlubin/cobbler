@@ -48,9 +48,7 @@ let substitute_expr : expr -> substitutions -> expr =
 
 let canonicalize : program -> program =
   fun p ->
-    let p = p |> Inline.inline_program in
-    let _ = Parse.pprint_program p in
-    p
+    p |> Inline.inline_program |> Partial_eval.partial_eval_program
 
 let solve : int -> program -> program option =
   fun depth target ->
