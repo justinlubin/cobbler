@@ -100,6 +100,6 @@ let unify_env : env -> env -> substitutions option =
         | None -> None
         | Some defn2 -> unify_defn defn1 defn2 |> merge_option_skewed sub)
 
-let unify : program -> program -> substitutions option =
- fun (env1, block1) (env2, block2) ->
+let unify : target:program -> pattern:program -> substitutions option =
+ fun ~target:(env1, block1) ~pattern:(env2, block2) ->
   merge_option_skewed (unify_env env1 env2) (unify_block block1 block2)

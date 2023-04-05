@@ -64,7 +64,7 @@ let solve : int -> program -> program option =
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
-    match Unification.unify target canonical with
+    match Unification.unify ~target ~pattern:canonical with
     | Some sub -> Some (substitute_expr e sub)
     | None -> None
   in
