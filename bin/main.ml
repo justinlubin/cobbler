@@ -44,5 +44,5 @@ let () =
       printf "of type: %s\n\n" (Typ.show (Type_system.infer sigma gamma e)));
   print_endline "Starting NumPy execution:";
   print_endline "Parsing ... %!";
-  parse_file_np file_py |> Cbr_numpy.Parse.pprint_program;
+  parse_file_np file_py |> Cbr_numpy.Parse.pp_program;
   print_endline "\ndone!"

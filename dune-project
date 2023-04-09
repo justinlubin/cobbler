@@ -21,6 +21,7 @@
    (>= 4.14.0))
   dune
   core
+  ocamldot
   ppx_jane
   ppx_deriving
   ego

@@ -132,7 +132,7 @@ let substitutions_of_sexp : Sexp.t -> substitutions =
 let str_of_program : program -> string =
  fun p -> sexp_of_program p |> Sexp.to_string
 
-let pprint_program : ?channel:Out_channel.t -> program -> unit =
+let pp_program : ?channel:Out_channel.t -> program -> unit =
  fun ?(channel = stdout) p ->
   let formatter = Format.formatter_of_out_channel channel in
   sexp_of_program p |> Sexp.pp_hum formatter;
