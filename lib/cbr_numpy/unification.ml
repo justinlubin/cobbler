@@ -13,26 +13,30 @@ let merge_option_skewed
       Some (String.Map.merge_skewed s1 s2 ~combine:unique_hole_fail)
   | _ -> None
 
-let rec unify_expr : expr -> expr -> substitutions option =
- fun expr1 expr2 ->
+let rec unify_expr : substitutions option -> expr -> expr -> substitutions option =
+ fun subs_opt expr1 expr2 ->
+  match subs_opt with
+  | None -> None
+  | Some subs ->
   match expr2 with
+  | Hole (_, h) when String.Map.mem subs h ->
+      if equal_expr expr1 (String.Map.find_exn subs h)
+      then Some subs
+      else None
   | Hole (_, h) ->
-      (match expr1 with
-      | _ -> Some (String.Map.of_alist_exn [ (h, expr1) ]))
+      Some (String.Map.add_exn subs ~key:h ~data:expr1)
   | Num n2 ->
       (match expr1 with
-      | Num n1 when Int.equal n1 n2 -> Some String.Map.empty
+      | Num n1 when Int.equal n1 n2 -> Some subs
       | _ -> None)
   | Index (index2, iter2) ->
       (match expr1 with
       | Index (index1, iter1) ->
-          let sub1 = unify_expr index1 index2 in
-          let sub2 = unify_expr iter1 iter2 in
-          merge_option_skewed sub1 sub2
+          ((subs_opt |> unify_expr) iter1 iter2 |>  unify_expr) index1 index2
       | _ -> None)
   | Str s2 ->
       (match expr1 with
-      | Str s1 when String.equal s1 s2 -> Some String.Map.empty
+      | Str s1 when String.equal s1 s2 -> Some subs
       | _ -> None)
   | Call (name2, args2) ->
       (match expr1 with
@@ -41,51 +45,69 @@ let rec unify_expr : expr -> expr -> substitutions option =
           (match args_list with
           | List.Or_unequal_lengths.Unequal_lengths -> None
           | List.Or_unequal_lengths.Ok l ->
-              let sub_names = unify_expr name1 name2 in
-              let sub_args =
-                List.fold
-                  l
-                  ~init:(Some String.Map.empty)
-                  ~f:(fun sub_accum (arg1, arg2) ->
-                    unify_expr arg1 arg2 |> merge_option_skewed sub_accum)
-              in
-              merge_option_skewed sub_names sub_args)
+              let sub_args = List.fold2_exn args1 args2 ~init:subs_opt ~f:unify_expr in
+              let sub_names = unify_expr sub_args name1 name2 in
+              sub_names )
       | _ -> None)
   | Name name2 ->
       (match expr1 with
-      | Name name1 when String.equal name1 name2 -> Some String.Map.empty
+      | Name name1 when String.equal name1 name2 -> Some subs
       | _ -> None)
 
-let rec unify_stmt : stmt -> stmt -> substitutions option =
- fun stmt1 stmt2 ->
+let rec unify_pat : substitutions option -> pat -> pat -> substitutions option =
+ fun subs_opt pat1 pat2 ->
+  match subs_opt with 
+  | None -> None
+  | Some subs ->
+  match pat2 with 
+  | PName _ when equal_pat pat1 pat2 -> let _ = print_string "checkpoint" in Some subs 
+  | PName _ -> None
+  | PHole (_, h) when String.Map.mem subs h -> Some subs
+  | PHole (_, h) ->
+    ( match pat1 with 
+      | PName n -> Some (String.Map.add_exn subs ~key:h ~data:(Name n))
+      (* maybe need to consider case of matching hole with index*)
+      | _ -> None
+    )
+  | PIndex (l2, r2) ->
+    ( match pat1 with 
+      | PIndex (l1, r1) -> (unify_pat subs_opt l1 l2 |> unify_expr) r1 r2
+      | _ -> None 
+    )
+
+let rec unify_stmt : substitutions option -> stmt -> stmt -> substitutions option =
+ fun subs_opt stmt1 stmt2 ->
+  match subs_opt with 
+  | None -> None
+  | Some subs ->
   match stmt1 with
   | Assign (l1, r1) ->
       (match stmt2 with
-      | Assign (l2, r2) when equal_pat l1 l2 -> unify_expr r1 r2
+      | Assign (l2, r2) -> (unify_expr subs_opt r1 r2 |> unify_pat) l1 l2
       | _ -> None)
   | For (index1, iter1, body1) ->
       (match stmt2 with
-      | For (index2, iter2, body2) when equal_pat index1 index2 ->
-          let sub_iter = unify_expr iter1 iter2 in
-          let sub_body = unify_block body1 body2 in
-          merge_option_skewed sub_iter sub_body
+      | For (index2, iter2, body2) ->
+          let sub_iter = unify_expr subs_opt iter1 iter2 in
+          let sub_index = unify_pat sub_iter index1 index2 in
+          unify_block sub_index body1 body2
       | _ -> None)
   | Return expr1 ->
       (match stmt2 with
-      | Return expr2 -> unify_expr expr1 expr2
+      | Return expr2 -> unify_expr subs_opt expr1 expr2
       | _ -> None)
 
-and unify_block : block -> block -> substitutions option =
- fun block1 block2 ->
+and unify_block : substitutions option -> block -> block -> substitutions option =
+ fun subs_opt block1 block2 ->
   let block_list = List.zip block1 block2 in
   match block_list with
   | List.Or_unequal_lengths.Unequal_lengths -> None
   | List.Or_unequal_lengths.Ok l ->
-      List.fold l ~init:(Some String.Map.empty) ~f:(fun sub (stmt1, stmt2) ->
-          unify_stmt stmt1 stmt2 |> merge_option_skewed sub)
+      List.fold l ~init:subs_opt ~f:(fun subs (stmt1, stmt2) ->
+          unify_stmt subs stmt1 stmt2)
 
 let unify_defn : defn -> defn -> substitutions option =
- fun (_, body1) (_, body2) -> unify_block body1 body2
+ fun (_, body1) (_, body2) -> unify_block (Some String.Map.empty) body1 body2
 
 let unify_env : env -> env -> substitutions option =
  fun env1 env2 ->
@@ -102,4 +124,4 @@ let unify_env : env -> env -> substitutions option =
 
 let unify : target:program -> pattern:program -> substitutions option =
  fun ~target:(env1, block1) ~pattern:(env2, block2) ->
-  merge_option_skewed (unify_env env1 env2) (unify_block block1 block2)
+  unify_block (Some String.Map.empty) block1 block2

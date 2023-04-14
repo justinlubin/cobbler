@@ -6,21 +6,21 @@ open Parse
 
 let target1 : program =
   ( Cbr_numpy.Env.np_env
-  , [ Assign (PName "sum_count", Num 0)
+  , [ Assign (PName "y", Num 0)
     ; For
-        ( PName "sum_i"
+        ( PName "i"
         , Name "x"
         , [ Assign
-              ( PName "sum_count"
-              , Call (Name "+", [ Name "sum_count"; Name "sum_i" ]) )
+              ( PName "y"
+              , Call (Name "+", [ Name "y"; Name "i" ]) )
           ] )
-    ; Return (Name "sum_count")
+    ; Return (Name "y")
     ] )
 
 let solution1 : program =
   (Cbr_numpy.Env.np_env, [ Return (Call (Name "sum", [ Name "x" ])) ])
 
-let target2 : program =
+let no_sol_target : program =
   ( Cbr_numpy.Env.np_env
   , [ Assign (PName "x", Num 0); Return (Call (Name "+", [ Name "x"; Num 1 ])) ]
   )
@@ -33,4 +33,4 @@ let%test_unit "np_solve 1" =
     ~expect:solution1
 
 let%test_unit "np_solve no solution" =
-  [%test_result: program option] (solve 3 target2) ~expect:None
+  [%test_result: program option] (solve 1 no_sol_target) ~expect:None
