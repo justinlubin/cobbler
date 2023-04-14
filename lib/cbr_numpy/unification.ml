@@ -61,11 +61,11 @@ let rec unify_stmt : stmt -> stmt -> substitutions option =
   match stmt1 with
   | Assign (l1, r1) ->
       (match stmt2 with
-      | Assign (l2, r2) when equal_lhs l1 l2 -> unify_expr r1 r2
+      | Assign (l2, r2) when equal_pat l1 l2 -> unify_expr r1 r2
       | _ -> None)
   | For (index1, iter1, body1) ->
       (match stmt2 with
-      | For (index2, iter2, body2) when equal_id index1 index2 ->
+      | For (index2, iter2, body2) when equal_pat index1 index2 ->
           let sub_iter = unify_expr iter1 iter2 in
           let sub_body = unify_block body1 body2 in
           merge_option_skewed sub_iter sub_body

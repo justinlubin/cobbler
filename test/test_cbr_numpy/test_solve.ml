@@ -6,12 +6,12 @@ open Parse
 
 let target1 : program =
   ( Cbr_numpy.Env.np_env
-  , [ Assign (Name "sum_count", Num 0)
+  , [ Assign (PName "sum_count", Num 0)
     ; For
-        ( "sum_i"
+        ( PName "sum_i"
         , Name "x"
         , [ Assign
-              ( Name "sum_count"
+              ( PName "sum_count"
               , Call (Name "+", [ Name "sum_count"; Name "sum_i" ]) )
           ] )
     ; Return (Name "sum_count")
@@ -22,7 +22,7 @@ let solution1 : program =
 
 let target2 : program =
   ( Cbr_numpy.Env.np_env
-  , [ Assign (Name "x", Num 0); Return (Call (Name "+", [ Name "x"; Num 1 ])) ]
+  , [ Assign (PName "x", Num 0); Return (Call (Name "+", [ Name "x"; Num 1 ])) ]
   )
 
 let%test_unit "np_solve 1" =

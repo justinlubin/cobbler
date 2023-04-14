@@ -16,14 +16,15 @@ type expr =
   | Hole of hole_type * string
 [@@deriving compare, eq]
 
-type lhs =
-  | Name of id
-  | Index of lhs * expr
+type pat =
+  | PName of id
+  | PIndex of pat * expr
+  | PHole of hole_type * string
 [@@deriving compare, eq]
 
 type stmt =
-  | Assign of lhs * expr
-  | For of id * expr * block
+  | Assign of pat * expr
+  | For of pat * expr * block
   | Return of expr
 [@@deriving compare]
 

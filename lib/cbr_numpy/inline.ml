@@ -4,34 +4,38 @@ open Lang
 let rec substitute_expr : (id * expr) list -> expr -> expr =
  fun binds e ->
   match e with
-  | Num n -> Num n
-  | Str s -> Str s
+  | Num _ | Str _ | Hole _ -> e
   | Index (e1, e2) -> Index (substitute_expr binds e1, substitute_expr binds e2)
   | Call (head, args) ->
       Call (substitute_expr binds head, List.map (substitute_expr binds) args)
   | Name id when List.mem_assoc id binds -> List.assoc id binds
   | Name id -> Name id
-  | Hole (hole_type, hole) -> Hole (hole_type, hole)
-
-and substitute_lhs : (id * expr) list -> lhs -> lhs =
- fun binds lhs ->
-  match lhs with
-  | Index (new_lhs, e) ->
-      Index (substitute_lhs binds new_lhs, substitute_expr binds e)
-  | Name id -> Name id
+  
+and substitute_pat : (id * expr) list -> pat -> pat =
+ fun binds pat ->
+  match pat with
+  | PIndex (new_pat, e) ->
+      PIndex (substitute_pat binds new_pat, substitute_expr binds e)
+  | PName id -> PName id
+  | PHole _ -> pat
 
 and substitute_stmt : (id * expr) list -> stmt -> (id * expr) list * stmt =
  fun binds stmt ->
   match stmt with
-  | Assign (lhs, e) ->
-      (match lhs with
-      | Name id ->
-          (List.remove_assoc id binds, Assign (Name id, substitute_expr binds e))
-      | lhs ->
-          (binds, Assign (substitute_lhs binds lhs, substitute_expr binds e)))
-  | For (id, e, block) ->
-      ( List.remove_assoc id binds
-      , For (id, substitute_expr binds e, substitute_block binds block) )
+  | Assign (pat, e) ->
+      (match pat with
+      | PName id ->
+          (List.remove_assoc id binds, Assign (PName id, substitute_expr binds e))
+      | pat ->
+          (binds, Assign (substitute_pat binds pat, substitute_expr binds e)))
+  | For (pat, e, block) ->
+      let new_binds = match pat with
+      | PName id ->
+          List.remove_assoc id binds
+      | pat -> binds
+      in
+      ( new_binds
+      , For (pat, substitute_expr binds e, substitute_block new_binds block) )
   | Return e -> (binds, Return (substitute_expr binds e))
 
 and substitute_block : (id * expr) list -> block -> block =
@@ -58,14 +62,14 @@ let rec inline_expr : env -> expr -> block * expr =
       | _ -> ([], e))
   | _ -> ([], e)
 
-and inline_lhs : env -> lhs -> block * lhs =
- fun env lhs ->
-  match lhs with
-  | Name id -> ([], Name id)
-  | Index (l, e) ->
-      let stmts1, lhs = inline_lhs env l in
+and inline_pat : env -> pat -> block * pat =
+ fun env pat ->
+  match pat with
+  | PName _ | PHole _ -> ([], pat)
+  | PIndex (lhs, e) ->
+      let stmts1, new_pat = inline_pat env lhs in
       let stmts2, e = inline_expr env e in
-      (stmts1 @ stmts2, Index (lhs, e))
+      (stmts1 @ stmts2, PIndex (new_pat, e))
 
 let rec inline_stmt : env -> stmt -> block =
  fun env stmt ->
@@ -73,10 +77,10 @@ let rec inline_stmt : env -> stmt -> block =
   | Return e ->
       let stmts, e = inline_expr env e in
       stmts @ [ Return e ]
-  | Assign (lhs, e) ->
-      let stmts1, lhs = inline_lhs env lhs in
+  | Assign (pat, e) ->
+      let stmts1, new_pat = inline_pat env pat in
       let stmts2, e = inline_expr env e in
-      stmts1 @ stmts2 @ [ Assign (lhs, e) ]
+      stmts1 @ stmts2 @ [ Assign (new_pat, e) ]
   | For (id, e, block) ->
       let stmts, e = inline_expr env e in
       let body = inline_block env block in

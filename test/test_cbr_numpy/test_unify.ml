@@ -6,22 +6,22 @@ open Lang
 
 let reference1 : program =
   ( String.Map.of_alist_exn []
-  , [ Assign (Name "x", Call (Name "+", [ Num 1; Num 2 ])) ] )
+  , [ Assign (PName "x", Call (Name "+", [ Num 1; Num 2 ])) ] )
 
 let reference2 : program =
   ( String.Map.of_alist_exn []
   , [ Assign
-        (Name "x", Call (Name "+", [ Call (Name "*", [ Num 2; Num 3 ]); Num 2 ]))
+        (PName "x", Call (Name "+", [ Call (Name "*", [ Num 2; Num 3 ]); Num 2 ]))
     ] )
 
 let candidate1 : program =
   ( String.Map.of_alist_exn []
-  , [ Assign (Name "x", Call (Name "+", [ Hole (Number, "1"); Num 2 ])) ] )
+  , [ Assign (PName "x", Call (Name "+", [ Hole (Number, "1"); Num 2 ])) ] )
 
 let candidate2 : program =
   ( String.Map.of_alist_exn []
   , [ Assign
-        ( Name "x"
+        ( PName "x"
         , Call
             ( Name "+"
             , [ Call (Name "*", [ Hole (Number, "1"); Hole (Number, "2") ])
@@ -32,13 +32,13 @@ let candidate2 : program =
 let candidate3 : program =
   ( String.Map.of_alist_exn []
   , [ Assign
-        (Name "x", Call (Name "+", [ Hole (Number, "1"); Hole (Number, "2") ]))
+        (PName "x", Call (Name "+", [ Hole (Number, "1"); Hole (Number, "2") ]))
     ] )
 
 let candidate4 : program =
   ( String.Map.of_alist_exn []
   , [ Assign
-        (Name "x", Call (Name "+", [ Hole (Number, "1"); Hole (Number, "1") ]))
+        (PName "x", Call (Name "+", [ Hole (Number, "1"); Hole (Number, "1") ]))
     ] )
 
 let unify_raises_error : program -> program -> bool =

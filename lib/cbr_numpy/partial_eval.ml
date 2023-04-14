@@ -3,10 +3,7 @@ open Lang
 let rec partial_eval_expr : expr -> expr =
  fun e ->
   match e with
-  | Num n -> Num n
-  | Str s -> Str s
-  | Name id -> Name id
-  | Hole (hole_type, hole) -> Hole (hole_type, hole)
+  | Num _ | Str _ | Name _ | Hole _ -> e
   | Call (fn, args) ->
       let fn = partial_eval_expr fn in
       (match fn with
@@ -24,16 +21,16 @@ let rec partial_eval_expr : expr -> expr =
           Call (Name "*", [ Index (x, Num i); Index (y, Num i) ])
       | _ -> Index (e1, e2))
 
-and partial_eval_lhs : lhs -> lhs =
- fun lhs ->
-  match lhs with
-  | Index (l, e) -> Index (partial_eval_lhs l, partial_eval_expr e)
-  | Name id -> Name id
+and partial_eval_pat : pat -> pat =
+ fun pat ->
+  match pat with
+  | PName _ | PHole _ -> pat
+  | PIndex (l, e) -> PIndex (partial_eval_pat l, partial_eval_expr e)
 
 let rec partial_eval_stmt : stmt -> stmt =
  fun stmt ->
   match stmt with
-  | Assign (lhs, e) -> Assign (partial_eval_lhs lhs, partial_eval_expr e)
+  | Assign (pat, e) -> Assign (partial_eval_pat pat, partial_eval_expr e)
   | For (id, e, body) -> For (id, partial_eval_expr e, partial_eval_block body)
   | Return e -> Return (partial_eval_expr e)
 
