@@ -3,6 +3,7 @@ open Cbr_fp
 open Cbr_numpy
 open Cbr_fp.Lang
 open Cbr_numpy.Lang
+open Cbr_numpy.Unification
 
 let () =
   Core.Caml.Printexc.register_printer (function
@@ -22,6 +23,7 @@ let parse_file_np : string -> program =
 
 let file = "test/test_cbr_fp/test_data/programs/list2.lisp"
 let file_py = "test/test_cbr_numpy/test_data/programs/test1.sexp"
+let file_comm_py = "test/test_cbr_numpy/test_data/programs/test1_comm.sexp"
 
 let () =
   print_endline "FP execution:";
@@ -44,5 +46,8 @@ let () =
       printf "of type: %s\n\n" (Typ.show (Type_system.infer sigma gamma e)));
   print_endline "Starting NumPy execution:";
   print_endline "Parsing ... %!";
-  parse_file_np file_py |> Cbr_numpy.Parse.pp_program;
+  let p1 = parse_file_np file_py in
+  let p2 = parse_file_np file_comm_py in
+  Cbr_numpy.Parse.pp_program p1;
+  let _ = unify_egraph p1 p2 in
   print_endline "\ndone!"
