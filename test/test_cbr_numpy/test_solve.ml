@@ -53,17 +53,17 @@ let no_sol_target : program =
 
 let%test_unit "np_solve 1" =
   [%test_result: program]
-    (match solve 1 target1 with
+    (match solve 1 Number target1 with
     | Some p -> p
     | None -> failwith "no solution")
     ~expect:solution1
 
 let%test_unit "np_solve 2" =
   [%test_result: program]
-    (match solve 2 target2 with
+    (match solve 2 Number target2 with
     | Some p -> p
     | None -> failwith "no solution")
     ~expect:solution2
 
 let%test_unit "np_solve no solution" =
-  [%test_result: program option] (solve 1 no_sol_target) ~expect:None
+  [%test_result: program option] (solve 3 Number no_sol_target) ~expect:None
