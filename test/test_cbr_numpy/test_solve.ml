@@ -9,8 +9,11 @@ let target1 : program =
   , [ Assign (PName "c", Num 0)
     ; For
         ( PName "i"
-        , Call (Name "range", [Call (Name "len", [Name "x"])])
-        , [ Assign (PName "c", Call (Name "+", [ Name "c"; Index (Name "x", Name "i") ])) ] )
+        , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
+        , [ Assign
+              ( PName "c"
+              , Call (Name "+", [ Name "c"; Index (Name "x", Name "i") ]) )
+          ] )
     ; Return (Name "c")
     ] )
 
@@ -19,8 +22,19 @@ let target2 : program =
   , [ Assign (PName "c", Num 0)
     ; For
         ( PName "j"
-        , Call (Name "range", [Call (Name "len", [Name "x"])])
-        , [ Assign (PName "c", Call (Name "+", [ Name "c"; Call (Name "*", [Index (Name "x", Name "j"); Index (Name "y", Name "j")]) ])) ] )
+        , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
+        , [ Assign
+              ( PName "c"
+              , Call
+                  ( Name "+"
+                  , [ Name "c"
+                    ; Call
+                        ( Name "*"
+                        , [ Index (Name "x", Name "j")
+                          ; Index (Name "y", Name "j")
+                          ] )
+                    ] ) )
+          ] )
     ; Return (Name "c")
     ] )
 
