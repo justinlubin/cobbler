@@ -10,7 +10,7 @@ let rec substitute_expr : (id * expr) list -> expr -> expr =
       Call (substitute_expr binds head, List.map (substitute_expr binds) args)
   | Name id when List.mem_assoc id binds -> List.assoc id binds
   | Name id -> Name id
-  
+
 and substitute_pat : (id * expr) list -> pat -> pat =
  fun binds pat ->
   match pat with
@@ -25,14 +25,15 @@ and substitute_stmt : (id * expr) list -> stmt -> (id * expr) list * stmt =
   | Assign (pat, e) ->
       (match pat with
       | PName id ->
-          (List.remove_assoc id binds, Assign (PName id, substitute_expr binds e))
+          ( List.remove_assoc id binds
+          , Assign (PName id, substitute_expr binds e) )
       | pat ->
           (binds, Assign (substitute_pat binds pat, substitute_expr binds e)))
   | For (pat, e, block) ->
-      let new_binds = match pat with
-      | PName id ->
-          List.remove_assoc id binds
-      | pat -> binds
+      let new_binds =
+        match pat with
+        | PName id -> List.remove_assoc id binds
+        | pat -> binds
       in
       ( new_binds
       , For (pat, substitute_expr binds e, substitute_block new_binds block) )

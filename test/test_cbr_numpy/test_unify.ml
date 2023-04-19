@@ -11,7 +11,8 @@ let reference1 : program =
 let reference2 : program =
   ( String.Map.of_alist_exn []
   , [ Assign
-        (PName "x", Call (Name "+", [ Call (Name "*", [ Num 2; Num 3 ]); Num 2 ]))
+        ( PName "x"
+        , Call (Name "+", [ Call (Name "*", [ Num 2; Num 3 ]); Num 2 ]) )
     ] )
 
 let candidate1 : program =

@@ -17,8 +17,8 @@ let rec partial_eval_expr : expr -> expr =
       let e1 = partial_eval_expr e1 in
       let e2 = partial_eval_expr e2 in
       (match (e1, e2) with
-      | Call (Name "mul", [ x; y ]), Num i ->
-          Call (Name "*", [ Index (x, Num i); Index (y, Num i) ])
+      | Call (Name "mul", [ x; y ]), e2 ->
+          Call (Name "*", [ Index (x, e2); Index (y, e2) ])
       | _ -> Index (e1, e2))
 
 and partial_eval_pat : pat -> pat =

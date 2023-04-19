@@ -30,7 +30,8 @@ let p2 =
   , [ Return (Call (Name "sum", [ Call (Name "add", [ Name "x"; Name "y" ]) ]))
     ] )
 
-let p3 = (env, [ Assign (PName "y", Num 5); Return (Call (Name "f", [ Num 0 ])) ])
+let p3 =
+  (env, [ Assign (PName "y", Num 5); Return (Call (Name "f", [ Num 0 ])) ])
 
 let p4 =
   (env, [ Assign (PName "x", Num 5); Return (Call (Name "id", [ Num 0 ])) ])

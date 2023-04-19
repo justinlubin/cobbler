@@ -71,8 +71,9 @@ let rec sexp_of_pat : pat -> Sexp.t =
   | PName name -> Sexp.Atom name
   | PIndex (iter, index) ->
       Sexp.List [ Sexp.Atom "Index"; sexp_of_pat iter; sexp_of_expr index ]
-  | PHole (Number, name) -> Sexp.List [Sexp.Atom "Number_Hole"; Sexp.Atom name]
-  | PHole (Array, name) -> Sexp.List [Sexp.Atom "Array_Hole"; Sexp.Atom name]
+  | PHole (Number, name) ->
+      Sexp.List [ Sexp.Atom "Number_Hole"; Sexp.Atom name ]
+  | PHole (Array, name) -> Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom name ]
 
 and sexp_of_expr : expr -> Sexp.t =
  fun e ->
