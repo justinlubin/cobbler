@@ -53,6 +53,7 @@ let unify_raises_error : program -> program -> bool =
 let%test_unit "simple hole substitution" =
   [%test_result: substitutions option]
     (unify ~target:reference1 ~pattern:candidate1)
+    (unify ~target:reference1 ~pattern:candidate1)
     ~expect:(Some (String.Map.of_alist_exn [ ("1", Num 1) ]))
 
 let%test_unit "no substitution possible" =
