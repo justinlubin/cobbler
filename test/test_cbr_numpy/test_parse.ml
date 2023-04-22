@@ -7,22 +7,22 @@ let program_dir = "test_data/programs/"
 let expected_env1 = String.Map.of_alist_exn []
 
 let expected_block1 =
-  [ Assign (Name "x", Call (Name "+", [ Num 3; Num 5 ]))
+  [ Assign (PName "x", Call (Name "+", [ Num 3; Num 5 ]))
   ; Assign
-      (Name "y", Call (Name "-", [ Call (Name "+", [ Num 1; Num 2 ]); Num 3 ]))
-  ; Assign (Name "z", Call (Name "*", [ Name "y"; Name "x" ]))
+      (PName "y", Call (Name "-", [ Call (Name "+", [ Num 1; Num 2 ]); Num 3 ]))
+  ; Assign (PName "z", Call (Name "*", [ Name "y"; Name "x" ]))
   ]
 
 let expected_env2 =
   String.Map.of_alist_exn
     [ ( "dot"
       , ( [ "x"; "y" ]
-        , [ Assign (Name "out", Num 0)
+        , [ Assign (PName "out", Num 0)
           ; For
-              ( "i"
+              ( PName "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
-                    ( Name "out"
+                    ( PName "out"
                     , Call
                         ( Name "+"
                         , [ Name "out"
@@ -37,12 +37,12 @@ let expected_env2 =
           ] ) )
     ; ( "sum"
       , ( [ "x" ]
-        , [ Assign (Name "out", Num 0)
+        , [ Assign (PName "out", Num 0)
           ; For
-              ( "i"
+              ( PName "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
-                    ( Name "out"
+                    ( PName "out"
                     , Call (Name "+", [ Name "out"; Index (Name "x", Name "i") ])
                     )
                 ] )
@@ -51,13 +51,13 @@ let expected_env2 =
     ; ( "mul"
       , ( [ "x"; "y" ]
         , [ Assign
-              ( Name "out"
+              ( PName "out"
               , Call (Name "np_zeros", [ Call (Name "len", [ Name "x" ]) ]) )
           ; For
-              ( "i"
+              ( PName "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ Assign
-                    ( Index (Name "out", Name "i")
+                    ( PIndex (PName "out", Name "i")
                     , Call
                         ( Name "*"
                         , [ Index (Name "x", Name "i")
@@ -75,27 +75,27 @@ let expected_env3 =
     [ ( "matmul"
       , ( [ "x"; "y" ]
         , [ Assign
-              ( Name "out"
+              ( PName "out"
               , Call
                   ( Name "np_zeros"
                   , [ Call (Name "len", [ Name "x" ])
                     ; Call (Name "len", [ Index (Name "y", Num 0) ])
                     ] ) )
           ; For
-              ( "i"
+              ( PName "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
               , [ For
-                    ( "j"
+                    ( PName "j"
                     , Call
                         ( Name "range"
                         , [ Call (Name "len", [ Index (Name "y", Num 0) ]) ] )
-                    , [ Assign (Name "dot", Num 0)
+                    , [ Assign (PName "dot", Num 0)
                       ; For
-                          ( "k"
+                          ( PName "k"
                           , Call
                               (Name "range", [ Call (Name "len", [ Name "y" ]) ])
                           , [ Assign
-                                ( Name "dot"
+                                ( PName "dot"
                                 , Call
                                     ( Name "+"
                                     , [ Name "dot"
@@ -111,7 +111,7 @@ let expected_env3 =
                                       ] ) )
                             ] )
                       ; Assign
-                          ( Index (Index (Name "out", Name "i"), Name "j")
+                          ( PIndex (PIndex (PName "out", Name "i"), Name "j")
                           , Name "dot" )
                       ] )
                 ] )
@@ -120,17 +120,17 @@ let expected_env3 =
     ]
 
 let expected_block3 =
-  [ Assign (Name "x", Call (Name "np_zeros", [ Num 2; Num 2 ]))
-  ; Assign (Name "y", Call (Name "np_zeros", [ Num 2; Num 2 ]))
-  ; Assign (Name "i", Num 1)
-  ; Assign (Index (Index (Name "x", Num 0), Num 0), Num 3)
-  ; Assign (Index (Index (Name "y", Num 1), Num 0), Num 5)
+  [ Assign (PName "x", Call (Name "np_zeros", [ Num 2; Num 2 ]))
+  ; Assign (PName "y", Call (Name "np_zeros", [ Num 2; Num 2 ]))
+  ; Assign (PName "i", Num 1)
+  ; Assign (PIndex (PIndex (PName "x", Num 0), Num 0), Num 3)
+  ; Assign (PIndex (PIndex (PName "y", Num 1), Num 0), Num 5)
   ; Assign
-      ( Index
-          ( Index (Name "x", Call (Name "-", [ Name "i"; Num 1 ]))
+      ( PIndex
+          ( PIndex (PName "x", Call (Name "-", [ Name "i"; Num 1 ]))
           , Call (Name "*", [ Name "i"; Num 1 ]) )
       , Num 4 )
-  ; Assign (Name "z", Call (Name "matmul", [ Name "x"; Name "y" ]))
+  ; Assign (PName "z", Call (Name "matmul", [ Name "x"; Name "y" ]))
   ]
 
 let expected_progs : program list =

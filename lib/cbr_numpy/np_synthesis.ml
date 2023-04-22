@@ -59,8 +59,8 @@ let substitute_expr : expr -> substitutions -> expr =
 let canonicalize : program -> program =
  fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
 
-let solve : int -> program -> program option =
- fun depth target ->
+let solve : int -> hole_type -> program -> program option =
+ fun depth program_type target ->
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
@@ -71,7 +71,7 @@ let solve : int -> program -> program option =
   match
     Cbr_framework.Enumerative_search.top_down
       ~max_iterations:depth
-      ~start:(Hole (Number, Util.gensym "hole"))
+      ~start:(Hole (program_type, Util.gensym "hole"))
       ~expand
       ~correct
   with
