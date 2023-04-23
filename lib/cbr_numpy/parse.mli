@@ -8,7 +8,7 @@ open Core
 
 val sexp_of_expr : expr -> Sexp.t
 val expr_of_sexp : Sexp.t -> expr
-val sexp_of_lhs : lhs -> Sexp.t
+val sexp_of_pat : pat -> Sexp.t
 
 (** [str_of_program] translates a program back into an s-expression, and then to a string. *)
 val str_of_program : program -> string

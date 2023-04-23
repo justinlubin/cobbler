@@ -16,79 +16,107 @@ let merge_option_skewed
       Some (String.Map.merge_skewed s1 s2 ~combine:unique_hole_fail)
   | _ -> None
 
-let rec unify_expr : expr -> expr -> substitutions option =
- fun expr1 expr2 ->
-  match expr2 with
-  | Hole h ->
-      (match expr1 with
-      | _ -> Some (String.Map.of_alist_exn [ (h, expr1) ]))
-  | Num n2 ->
-      (match expr1 with
-      | Num n1 when Int.equal n1 n2 -> Some String.Map.empty
-      | _ -> None)
-  | Index (index2, iter2) ->
-      (match expr1 with
-      | Index (index1, iter1) ->
-          let sub1 = unify_expr index1 index2 in
-          let sub2 = unify_expr iter1 iter2 in
-          merge_option_skewed sub1 sub2
-      | _ -> None)
-  | Str s2 ->
-      (match expr1 with
-      | Str s1 when String.equal s1 s2 -> Some String.Map.empty
-      | _ -> None)
-  | Call (name2, args2) ->
-      (match expr1 with
-      | Call (name1, args1) ->
-          let args_list = List.zip args1 args2 in
-          (match args_list with
-          | List.Or_unequal_lengths.Unequal_lengths -> None
-          | List.Or_unequal_lengths.Ok l ->
-              let sub_names = unify_expr name1 name2 in
-              let sub_args =
-                List.fold
-                  l
-                  ~init:(Some String.Map.empty)
-                  ~f:(fun sub_accum (arg1, arg2) ->
-                    unify_expr arg1 arg2 |> merge_option_skewed sub_accum)
-              in
-              merge_option_skewed sub_names sub_args)
-      | _ -> None)
-  | Name name2 ->
-      (match expr1 with
-      | Name name1 when String.equal name1 name2 -> Some String.Map.empty
-      | _ -> None)
+let rec unify_expr
+    : substitutions option -> expr -> expr -> substitutions option
+  =
+ fun subs_opt expr1 expr2 ->
+  match subs_opt with
+  | None -> None
+  | Some subs ->
+      (match expr2 with
+      | Hole (_, h) when String.Map.mem subs h ->
+          if equal_expr expr1 (String.Map.find_exn subs h)
+          then Some subs
+          else None
+      | Hole (_, h) -> Some (String.Map.add_exn subs ~key:h ~data:expr1)
+      | Num n2 ->
+          (match expr1 with
+          | Num n1 when Int.equal n1 n2 -> Some subs
+          | _ -> None)
+      | Index (index2, iter2) ->
+          (match expr1 with
+          | Index (index1, iter1) ->
+              ((subs_opt |> unify_expr) iter1 iter2 |> unify_expr) index1 index2
+          | _ -> None)
+      | Str s2 ->
+          (match expr1 with
+          | Str s1 when String.equal s1 s2 -> Some subs
+          | _ -> None)
+      | Call (name2, args2) ->
+          (match expr1 with
+          | Call (name1, args1) ->
+              let args_list = List.zip args1 args2 in
+              (match args_list with
+              | List.Or_unequal_lengths.Unequal_lengths -> None
+              | List.Or_unequal_lengths.Ok l ->
+                  let sub_args =
+                    List.fold2_exn args1 args2 ~init:subs_opt ~f:unify_expr
+                  in
+                  let sub_names = unify_expr sub_args name1 name2 in
+                  sub_names)
+          | _ -> None)
+      | Name name2 ->
+          (match expr1 with
+          | Name name1 when String.equal name1 name2 -> Some subs
+          | _ -> None))
 
-let rec unify_stmt : stmt -> stmt -> substitutions option =
- fun stmt1 stmt2 ->
-  match stmt1 with
-  | Assign (l1, r1) ->
-      (match stmt2 with
-      | Assign (l2, r2) when equal_lhs l1 l2 -> unify_expr r1 r2
-      | _ -> None)
-  | For (index1, iter1, body1) ->
-      (match stmt2 with
-      | For (index2, iter2, body2) when equal_id index1 index2 ->
-          let sub_iter = unify_expr iter1 iter2 in
-          let sub_body = unify_block body1 body2 in
-          merge_option_skewed sub_iter sub_body
-      | _ -> None)
-  | Return expr1 ->
-      (match stmt2 with
-      | Return expr2 -> unify_expr expr1 expr2
-      | _ -> None)
+let rec unify_pat : substitutions option -> pat -> pat -> substitutions option =
+ fun subs_opt pat1 pat2 ->
+  match subs_opt with
+  | None -> None
+  | Some subs ->
+      (match pat2 with
+      | PName _ when equal_pat pat1 pat2 ->
+          let _ = print_string "checkpoint" in
+          Some subs
+      | PName _ -> None
+      | PHole (_, h) when String.Map.mem subs h -> Some subs
+      | PHole (_, h) ->
+          (match pat1 with
+          | PName n -> Some (String.Map.add_exn subs ~key:h ~data:(Name n))
+          (* maybe need to consider case of matching hole with index*)
+          | _ -> None)
+      | PIndex (l2, r2) ->
+          (match pat1 with
+          | PIndex (l1, r1) -> (unify_pat subs_opt l1 l2 |> unify_expr) r1 r2
+          | _ -> None))
 
-and unify_block : block -> block -> substitutions option =
- fun block1 block2 ->
+let rec unify_stmt
+    : substitutions option -> stmt -> stmt -> substitutions option
+  =
+ fun subs_opt stmt1 stmt2 ->
+  match subs_opt with
+  | None -> None
+  | Some subs ->
+      (match stmt1 with
+      | Assign (l1, r1) ->
+          (match stmt2 with
+          | Assign (l2, r2) -> (unify_expr subs_opt r1 r2 |> unify_pat) l1 l2
+          | _ -> None)
+      | For (index1, iter1, body1) ->
+          (match stmt2 with
+          | For (index2, iter2, body2) ->
+              let sub_iter = unify_expr subs_opt iter1 iter2 in
+              let sub_index = unify_pat sub_iter index1 index2 in
+              unify_block sub_index body1 body2
+          | _ -> None)
+      | Return expr1 ->
+          (match stmt2 with
+          | Return expr2 -> unify_expr subs_opt expr1 expr2
+          | _ -> None))
+
+and unify_block : substitutions option -> block -> block -> substitutions option
+  =
+ fun subs_opt block1 block2 ->
   let block_list = List.zip block1 block2 in
   match block_list with
   | List.Or_unequal_lengths.Unequal_lengths -> None
   | List.Or_unequal_lengths.Ok l ->
-      List.fold l ~init:(Some String.Map.empty) ~f:(fun sub (stmt1, stmt2) ->
-          unify_stmt stmt1 stmt2 |> merge_option_skewed sub)
+      List.fold l ~init:subs_opt ~f:(fun subs (stmt1, stmt2) ->
+          unify_stmt subs stmt1 stmt2)
 
 let unify_defn : defn -> defn -> substitutions option =
- fun (_, body1) (_, body2) -> unify_block body1 body2
+ fun (_, body1) (_, body2) -> unify_block (Some String.Map.empty) body1 body2
 
 let unify_env : env -> env -> substitutions option =
  fun env1 env2 ->
@@ -103,9 +131,9 @@ let unify_env : env -> env -> substitutions option =
         | None -> None
         | Some defn2 -> unify_defn defn1 defn2 |> merge_option_skewed sub)
 
-let unify_naive : program -> program -> substitutions option =
- fun (env1, block1) (env2, block2) ->
-  merge_option_skewed (unify_env env1 env2) (unify_block block1 block2)
+let unify_naive : target:program -> pattern:program -> substitutions option =
+ fun ~target:(env1, block1) ~pattern:(env2, block2) ->
+  unify_block (Some String.Map.empty) block1 block2
 
 let commutative_add = ("(Call EName+ ?a ?b)", "(Call EName+ ?b ?a)")
 let commutative_mul = ("(Call EName* ?a ?b)", "(Call EName* ?b ?a)")
@@ -126,18 +154,24 @@ let query_of_prog : program -> hole_map * 'a Query.t =
   let replace_holes_id : hole_map -> id -> hole_map * Sexp.t =
    fun map id -> (map, Sexp.Atom id)
   in
-  let rec replace_holes_lhs : hole_map -> lhs -> hole_map * Sexp.t =
+  let rec replace_holes_pat : hole_map -> pat -> hole_map * Sexp.t =
    fun map l ->
     match l with
-    | Index (lhs, index) ->
-        let map, lhs = replace_holes_lhs map lhs in
+    | PIndex (pat, index) ->
+        let map, pat = replace_holes_pat map pat in
         let map, index = replace_holes_expr map index in
-        (map, Sexp.List [ Sexp.Atom "LIndex"; lhs; index ])
-    | Name n -> (map, Sexp.Atom ("LName" ^ n))
+        (map, Sexp.List [ Sexp.Atom "LIndex"; pat; index ])
+    | PName n -> (map, Sexp.Atom ("LName" ^ n))
+    | PHole (_, h) ->
+        if String.Map.mem map h
+        then (map, Sexp.Atom (String.Map.find_exn map h))
+        else (
+          let new_name = gensym "?" |> String.chop_prefix_exn ~prefix:"__" in
+          (String.Map.add_exn map ~key:h ~data:new_name, Sexp.Atom new_name))
   and replace_holes_expr : hole_map -> expr -> hole_map * Sexp.t =
    fun map e ->
     match e with
-    | Hole h ->
+    | Hole (_, h) ->
         if String.Map.mem map h
         then (map, Sexp.Atom (String.Map.find_exn map h))
         else (
@@ -145,10 +179,10 @@ let query_of_prog : program -> hole_map * 'a Query.t =
           (String.Map.add_exn map ~key:h ~data:new_name, Sexp.Atom new_name))
     | Name n -> (map, Sexp.Atom ("EName" ^ n))
     | Num n -> (map, Sexp.Atom ("Num" ^ string_of_int n))
-    | Index (lhs, index) ->
-        let map, lhs = replace_holes_expr map lhs in
+    | Index (pat, index) ->
+        let map, pat = replace_holes_expr map pat in
         let map, index = replace_holes_expr map index in
-        (map, Sexp.List [ Sexp.Atom "ExprIndex"; lhs; index ])
+        (map, Sexp.List [ Sexp.Atom "ExprIndex"; pat; index ])
     | Call (func, args) ->
         let map, func = replace_holes_expr map func in
         let map, args = List.fold_map args ~init:map ~f:replace_holes_expr in
@@ -162,11 +196,11 @@ let query_of_prog : program -> hole_map * 'a Query.t =
         let map, e = replace_holes_expr map e in
         (map, Sexp.List [ Sexp.Atom "Return"; e ])
     | Assign (lhs, rhs) ->
-        let map, lhs = replace_holes_lhs map lhs in
+        let map, lhs = replace_holes_pat map lhs in
         let map, rhs = replace_holes_expr map rhs in
         (map, Sexp.List [ Sexp.Atom "Assign"; lhs; rhs ])
     | For (index, iter, body) ->
-        let map, index = replace_holes_id map index in
+        let map, index = replace_holes_pat map index in
         let map, iter = replace_holes_expr map iter in
         let map, body = replace_holes_block map body in
         (map, Sexp.List [ Sexp.Atom "For"; index; iter; body ])
@@ -227,8 +261,8 @@ let extract_matches
   | [] -> None
   | _ -> Some map
 
-let unify_egraph : program -> program -> substitutions option =
- fun p1 p2 ->
+let unify_egraph : target:program -> pattern:program -> substitutions option =
+ fun ~target:p1 ~pattern:p2 ->
   let graph = EGraph.init () in
   let _ = sexp_of_program p1 |> t_of_sexp |> EGraph.add_node graph in
   EGraph.to_dot graph |> Odot.print_file "before_eqsat.txt";

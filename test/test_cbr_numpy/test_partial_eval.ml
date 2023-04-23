@@ -16,7 +16,7 @@ let expect1 = (env, [ Return (Call (Name "len", [ Name "x" ])) ])
 let p2 =
   ( env
   , [ Assign
-        ( Index (Name "a", Num 1)
+        ( PIndex (PName "a", Num 1)
         , Index (Call (Name "mul", [ Name "x"; Name "y" ]), Num 0) )
     ; Return (Name "a")
     ] )
@@ -24,7 +24,7 @@ let p2 =
 let expect2 =
   ( env
   , [ Assign
-        ( Index (Name "a", Num 1)
+        ( PIndex (PName "a", Num 1)
         , Call (Name "*", [ Index (Name "x", Num 0); Index (Name "y", Num 0) ])
         )
     ; Return (Name "a")

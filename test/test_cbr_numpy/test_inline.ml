@@ -5,16 +5,16 @@ open Parse
 open Core
 
 let sum_body =
-  [ Assign (Name "count", Call (Name "+", [ Name "count"; Name "xi" ])) ]
+  [ Assign (PName "count", Call (Name "+", [ Name "count"; Name "xi" ])) ]
 
 let sum_defn =
   ( [ "x1" ]
-  , [ Assign (Name "count", Num 0)
-    ; For ("xi", Name "x1", sum_body)
+  , [ Assign (PName "count", Num 0)
+    ; For (PName "xi", Name "x1", sum_body)
     ; Return (Name "count")
     ] )
 
-let f_defn = ([ "x" ], [ Assign (Name "x", Str "cat"); Return (Name "x") ])
+let f_defn = ([ "x" ], [ Assign (PName "x", Str "cat"); Return (Name "x") ])
 let id_defn = ([ "x" ], [ Return (Name "x") ])
 
 let env : env =
@@ -30,26 +30,27 @@ let p2 =
   , [ Return (Call (Name "sum", [ Call (Name "add", [ Name "x"; Name "y" ]) ]))
     ] )
 
-let p3 = (env, [ Assign (Name "y", Num 5); Return (Call (Name "f", [ Num 0 ])) ])
+let p3 =
+  (env, [ Assign (PName "y", Num 5); Return (Call (Name "f", [ Num 0 ])) ])
 
 let p4 =
-  (env, [ Assign (Name "x", Num 5); Return (Call (Name "id", [ Num 0 ])) ])
+  (env, [ Assign (PName "x", Num 5); Return (Call (Name "id", [ Num 0 ])) ])
 
 let inline_of_p1 =
   ( env
-  , [ Assign (Name "count", Num 0)
-    ; For ("xi", Call (Name "add", [ Name "x"; Name "y" ]), sum_body)
+  , [ Assign (PName "count", Num 0)
+    ; For (PName "xi", Call (Name "add", [ Name "x"; Name "y" ]), sum_body)
     ; Return (Name "count")
     ] )
 
 let inline_of_p3 =
   ( env
-  , [ Assign (Name "y", Num 5)
-    ; Assign (Name "x", Str "cat")
+  , [ Assign (PName "y", Num 5)
+    ; Assign (PName "x", Str "cat")
     ; Return (Name "x")
     ] )
 
-let inline_of_p4 = (env, [ Assign (Name "x", Num 5); Return (Num 0) ])
+let inline_of_p4 = (env, [ Assign (PName "x", Num 5); Return (Num 0) ])
 
 let%test_unit "inline 1" =
   [%test_result: program] (inline_program p1) ~expect:inline_of_p1

@@ -1,5 +1,10 @@
 open Core
 
+type hole_type =
+  | Number
+  | Array
+[@@deriving compare, eq, show]
+
 type id = string [@@deriving sexp, compare, eq, show]
 
 type expr =
@@ -8,17 +13,18 @@ type expr =
   | Call of expr * expr list
   | Str of string
   | Name of id
-  | Hole of string
+  | Hole of hole_type * string
 [@@deriving compare, eq, show]
 
-type lhs =
-  | Name of id
-  | Index of lhs * expr
+type pat =
+  | PName of id
+  | PIndex of pat * expr
+  | PHole of hole_type * string
 [@@deriving compare, eq, show]
 
 type stmt =
-  | Assign of lhs * expr
-  | For of id * expr * block
+  | Assign of pat * expr
+  | For of pat * expr * block
   | Return of expr
 [@@deriving compare, show]
 
@@ -44,7 +50,8 @@ type stmtType =
   | SReturn
 [@@deriving ord]
 
-type lhsType =
+type patType =
   | LName of string
   | LIndex
+  | LHole
 [@@deriving ord]

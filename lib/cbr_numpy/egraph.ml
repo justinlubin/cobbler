@@ -12,7 +12,7 @@ module L = struct
     | Expr of exprType * 'a list
     | Defn of string * 'a list
     | Id of id
-    | Lhs of lhsType * 'a list
+    | Pat of patType * 'a list
   [@@deriving ord]
 
   type t = Mk of t shape [@@unboxed]
@@ -31,8 +31,8 @@ module L = struct
             let [ index; iter; _ ] = stmt in
             Format.fprintf fmt "For %a in %a" f index f iter
         | SAssign ->
-            let [ lhs; rhs ] = stmt in
-            Format.fprintf fmt "%a = %a" f lhs f rhs
+            let [ pat; rhs ] = stmt in
+            Format.fprintf fmt "%a = %a" f pat f rhs
         | SReturn ->
             let [ expr ] = stmt in
             Format.fprintf fmt "Return %a" f expr)
@@ -49,12 +49,12 @@ module L = struct
             let [ expr; index ] = children in
             Format.fprintf fmt "%a[%a]" f expr f index
         | EHole -> Format.fprintf fmt "Hole")
-    | Lhs (l, children) ->
+    | Pat (l, children) ->
         (match[@warning "-8"] l with
         | LName n -> Format.fprintf fmt "%s" n
         | LIndex ->
-            let [ lhs; index ] = children in
-            Format.fprintf fmt "%a[%a]" f lhs f index)
+            let [ pat; index ] = children in
+            Format.fprintf fmt "%a[%a]" f pat f index)
     | Defn (name, children) ->
         Format.fprintf fmt "%s" name;
         List.iter children ~f:(function child ->
@@ -69,7 +69,7 @@ module L = struct
     | Expr (_, expr) -> expr
     | Defn (_, defn) -> defn
     | Id _ -> []
-    | Lhs (_, children) -> children
+    | Pat (_, children) -> children
 
   let map_children : 'a shape -> ('a -> 'b) -> 'b shape =
    fun term f ->
@@ -81,22 +81,23 @@ module L = struct
     | Expr (eType, expr) -> Expr (eType, List.map expr ~f)
     | Defn (name, defn) -> Defn (name, List.map defn ~f)
     | Id id -> Id id
-    | Lhs (lType, lhs) -> Lhs (lType, List.map lhs ~f)
+    | Pat (lType, pat) -> Pat (lType, List.map pat ~f)
 
   let of_sexp : Sexplib0.Sexp.t -> 'a =
    fun s ->
     let t_of_id : id -> 'a = fun id -> Mk (Id id) in
-    let rec t_of_lhs : lhs -> 'a =
-     fun lhs ->
-      match lhs with
-      | Name n -> Mk (Lhs (LName n, []))
-      | Index (l, expr) -> Mk (Lhs (LIndex, [ t_of_lhs l; t_of_expr expr ]))
+    let rec t_of_pat : pat -> 'a =
+     fun pat ->
+      match pat with
+      | PName n -> Mk (Pat (LName n, []))
+      | PIndex (l, expr) -> Mk (Pat (LIndex, [ t_of_pat l; t_of_expr expr ]))
+      | PHole _ -> Mk (Pat (LHole, []))
     and t_of_expr : expr -> 'a =
      fun expr ->
       match expr with
       | Name n -> Mk (Expr (EName n, []))
       | Num n -> Mk (Expr (ENum n, []))
-      | Hole h -> Mk (Expr (EHole, []))
+      | Hole _ -> Mk (Expr (EHole, []))
       | Str s -> Mk (Expr (EStr s, []))
       | Index (e, i) -> Mk (Expr (EIndex, [ t_of_expr e; t_of_expr i ]))
       | Call (f, args) ->
@@ -107,9 +108,9 @@ module L = struct
       match stmt with
       | Return e -> Mk (Stmt (SReturn, [ t_of_expr e ]))
       | For (index, iter, body) ->
-          Mk (Stmt (SFor, [ t_of_id index; t_of_expr iter; t_of_block body ]))
+          Mk (Stmt (SFor, [ t_of_pat index; t_of_expr iter; t_of_block body ]))
       | Assign (lhs, rhs) ->
-          Mk (Stmt (SAssign, [ t_of_lhs lhs; t_of_expr rhs ]))
+          Mk (Stmt (SAssign, [ t_of_pat lhs; t_of_expr rhs ]))
     and t_of_block : block -> 'a =
      fun block -> Mk (Block (List.map block ~f:t_of_stmt))
     in
@@ -134,15 +135,15 @@ module L = struct
     let id_of_t : t -> id = function
       | Mk (Id id) -> id
     in
-    let rec lhs_of_t : t -> lhs = function
-      | Mk (Lhs (LIndex, [ lhs; index ])) ->
-          Index (lhs_of_t lhs, expr_of_t index)
-      | Mk (Lhs (LName n, _)) -> Name n
+    let rec pat_of_t : t -> pat = function
+      | Mk (Pat (LIndex, [ pat; index ])) ->
+          PIndex (pat_of_t pat, expr_of_t index)
+      | Mk (Pat (LName n, _)) -> PName n
     and expr_of_t : t -> expr = function
       | Mk (Expr (EName n, _)) -> Name n
       | Mk (Expr (ENum n, _)) -> Num n
       | Mk (Expr (EStr s, _)) -> Str s
-      | Mk (Expr (EHole, _)) -> Hole "1"
+      | Mk (Expr (EHole, _)) -> failwith "Hole in reference e-graph"
       | Mk (Expr (ECall, func :: args)) ->
           Call (expr_of_t func, List.map args ~f:expr_of_t)
       | Mk (Expr (EIndex, [ expr; index ])) ->
@@ -150,8 +151,8 @@ module L = struct
     in
     let rec stmt_of_t : t -> stmt = function
       | Mk (Stmt (SFor, [ index; iter; body ])) ->
-          For (id_of_t index, expr_of_t iter, block_of_t body)
-      | Mk (Stmt (SAssign, [ lhs; rhs ])) -> Assign (lhs_of_t lhs, expr_of_t rhs)
+          For (pat_of_t index, expr_of_t iter, block_of_t body)
+      | Mk (Stmt (SAssign, [ lhs; rhs ])) -> Assign (pat_of_t lhs, expr_of_t rhs)
       | Mk (Stmt (SReturn, [ expr ])) -> Return (expr_of_t expr)
     and block_of_t : t -> block = function
       | Mk (Block block) -> List.map block ~f:stmt_of_t
@@ -188,8 +189,9 @@ module L = struct
     | CallOp
     | ExprIndexOp
     | ExprNameOp of string
-    | LhsIndexOp
-    | LhsNameOp of string
+    | PatIndexOp
+    | PatNameOp of string
+    | PatHoleOp
   [@@deriving eq]
 
   let op : 'a shape -> op = function
@@ -207,8 +209,9 @@ module L = struct
     | Expr (EIndex, _) -> ExprIndexOp
     | Expr (ECall, _) -> CallOp
     | Id id -> IdOp id
-    | Lhs (LIndex, _) -> LhsIndexOp
-    | Lhs (LName n, _) -> LhsNameOp n
+    | Pat (LIndex, _) -> PatIndexOp
+    | Pat (LName n, _) -> PatNameOp n
+    | Pat (LHole, _) -> PatHoleOp
 
   let make : op -> 'a list -> 'a shape =
    fun op ls ->
@@ -227,8 +230,8 @@ module L = struct
     | StrOp s, _ -> Expr (EStr s, [])
     | HoleOp, _ -> Expr (EHole, [])
     | IdOp id, _ -> Id id
-    | LhsIndexOp, [ lhs; expr ] -> Lhs (LIndex, [ lhs; expr ])
-    | LhsNameOp n, _ -> Lhs (LName n, [])
+    | PatIndexOp, [ pat; expr ] -> Pat (LIndex, [ pat; expr ])
+    | PatNameOp n, _ -> Pat (LName n, [])
 
   let op_of_string : string -> op =
    fun s ->
@@ -245,13 +248,13 @@ module L = struct
     | "Call" -> CallOp
     | "Hole" -> HoleOp
     | "EIndex" -> ExprIndexOp
-    | "LIndex" -> LhsIndexOp
+    | "LIndex" -> PatIndexOp
     | s when String.is_prefix ~prefix:"Num" s ->
         NumOp (String.chop_prefix_exn s ~prefix:"Num" |> int_of_string)
     | s when String.is_prefix ~prefix:"EName" s ->
         ExprNameOp (String.chop_prefix_exn s ~prefix:"EName")
     | s when String.is_prefix ~prefix:"LName" s ->
-        LhsNameOp (String.chop_prefix_exn s ~prefix:"LName")
+        PatNameOp (String.chop_prefix_exn s ~prefix:"LName")
     | _ -> IdOp s
 
   let string_of_op : op -> string =
@@ -271,8 +274,9 @@ module L = struct
     | StrOp s -> "Str " ^ s
     | HoleOp -> "Hole"
     | IdOp id -> id
-    | LhsIndexOp -> "Index"
-    | LhsNameOp n -> "LName " ^ n
+    | PatIndexOp -> "Index"
+    | PatNameOp n -> "LName " ^ n
+    | PatHoleOp -> "LHole"
 end
 
 module A = struct
@@ -310,7 +314,7 @@ module C = struct
     let node_cost =
       match s with
       | L.Prog _ | L.Env _ | L.Block _ | L.Defn _ -> 0
-      | L.Stmt _ | L.Expr _ | L.Lhs _ | L.Id _ -> 1
+      | L.Stmt _ | L.Expr _ | L.Pat _ | L.Id _ -> 1
     in
     node_cost + List.fold (L.children s) ~init:0 ~f:(fun sum c -> sum + f c)
 end
