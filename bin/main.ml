@@ -22,8 +22,8 @@ let parse_file_np : string -> program =
       Sexp.of_string (In_channel.input_all file) |> Parse.program_of_sexp)
 
 let file = "test/test_cbr_fp/test_data/programs/list2.lisp"
-let file_py = "test/test_cbr_numpy/test_data/programs/test1.sexp"
-let file_comm_py = "test/test_cbr_numpy/test_data/programs/test1_comm.sexp"
+let file_py = "test/test_cbr_numpy/test_data/programs/test_simple_comp.sexp"
+let file_comm_py = "test/test_cbr_numpy/test_data/programs/test_simple.sexp"
 
 let () =
   print_endline "FP execution:";
@@ -48,6 +48,10 @@ let () =
   print_endline "Parsing ... %!";
   let p1 = parse_file_np file_py in
   let p2 = parse_file_np file_comm_py in
-  Cbr_numpy.Parse.pp_program p1;
-  let _ = unify_egraph p1 p2 in
+  let subs = unify_egraph p1 p2 in
+  (match subs with
+  | None -> print_endline "failure"
+  | Some subs ->
+      print_endline
+        (Cbr_numpy.Parse.sexp_of_substitutions subs |> Sexp.to_string));
   print_endline "\ndone!"

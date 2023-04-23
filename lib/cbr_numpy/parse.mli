@@ -7,6 +7,7 @@ open Lang
 open Core
 
 val sexp_of_expr : expr -> Sexp.t
+val expr_of_sexp : Sexp.t -> expr
 val sexp_of_lhs : lhs -> Sexp.t
 
 (** [str_of_program] translates a program back into an s-expression, and then to a string. *)

@@ -3,6 +3,7 @@ open Core
 open Parse
 open Ego.Generic
 open Egraph
+open Util
 
 let unique_hole_fail ~key:_ _ _ = failwith "Non-unique hole"
 
@@ -109,7 +110,7 @@ let unify_naive : program -> program -> substitutions option =
 let commutative_add = ("(Call EName+ ?a ?b)", "(Call EName+ ?b ?a)")
 let commutative_mul = ("(Call EName* ?a ?b)", "(Call EName* ?b ?a)")
 let identity_add = ("(Call EName+ ?a Num0)", "?a")
-let identity_mul = ("(Call EName* ?a Num1", "?a")
+let identity_mul = ("(Call EName* ?a Num1)", "?a")
 
 let rewrite_rules =
   [ commutative_add; commutative_mul; identity_add; identity_mul ]
@@ -118,16 +119,121 @@ let rewrite_rules =
            ~from:(Sexp.of_string from |> Query.of_sexp op_of_string)
            ~into:(Sexp.of_string into |> Query.of_sexp op_of_string))
 
+type hole_map = string String.Map.t
+
+let query_of_prog : program -> hole_map * 'a Query.t =
+ fun p ->
+  let replace_holes_id : hole_map -> id -> hole_map * Sexp.t =
+   fun map id -> (map, Sexp.Atom id)
+  in
+  let rec replace_holes_lhs : hole_map -> lhs -> hole_map * Sexp.t =
+   fun map l ->
+    match l with
+    | Index (lhs, index) ->
+        let map, lhs = replace_holes_lhs map lhs in
+        let map, index = replace_holes_expr map index in
+        (map, Sexp.List [ Sexp.Atom "LIndex"; lhs; index ])
+    | Name n -> (map, Sexp.Atom ("LName" ^ n))
+  and replace_holes_expr : hole_map -> expr -> hole_map * Sexp.t =
+   fun map e ->
+    match e with
+    | Hole h ->
+        if String.Map.mem map h
+        then (map, Sexp.Atom (String.Map.find_exn map h))
+        else (
+          let new_name = gensym "?" |> String.chop_prefix_exn ~prefix:"__" in
+          (String.Map.add_exn map ~key:h ~data:new_name, Sexp.Atom new_name))
+    | Name n -> (map, Sexp.Atom ("EName" ^ n))
+    | Num n -> (map, Sexp.Atom ("Num" ^ string_of_int n))
+    | Index (lhs, index) ->
+        let map, lhs = replace_holes_expr map lhs in
+        let map, index = replace_holes_expr map index in
+        (map, Sexp.List [ Sexp.Atom "ExprIndex"; lhs; index ])
+    | Call (func, args) ->
+        let map, func = replace_holes_expr map func in
+        let map, args = List.fold_map args ~init:map ~f:replace_holes_expr in
+        (map, Sexp.List ([ Sexp.Atom "Call"; func ] @ args))
+    | Str s -> (map, Sexp.Atom ("Str" ^ s))
+  in
+  let rec replace_holes_stmt : hole_map -> stmt -> hole_map * Sexp.t =
+   fun map s ->
+    match s with
+    | Return e ->
+        let map, e = replace_holes_expr map e in
+        (map, Sexp.List [ Sexp.Atom "Return"; e ])
+    | Assign (lhs, rhs) ->
+        let map, lhs = replace_holes_lhs map lhs in
+        let map, rhs = replace_holes_expr map rhs in
+        (map, Sexp.List [ Sexp.Atom "Assign"; lhs; rhs ])
+    | For (index, iter, body) ->
+        let map, index = replace_holes_id map index in
+        let map, iter = replace_holes_expr map iter in
+        let map, body = replace_holes_block map body in
+        (map, Sexp.List [ Sexp.Atom "For"; index; iter; body ])
+  and replace_holes_block : hole_map -> block -> hole_map * Sexp.t =
+   fun map b ->
+    let map, l = List.fold_map b ~init:map ~f:replace_holes_stmt in
+    (map, Sexp.List ([ Sexp.Atom "Block" ] @ l))
+  in
+  let replace_holes_defn : hole_map -> defn -> hole_map * Sexp.t =
+   fun map (args, body) ->
+    let map, args = List.fold_map args ~init:map ~f:replace_holes_id in
+    let map, body = replace_holes_block map body in
+    (map, Sexp.List [ Sexp.Atom "Defn"; Sexp.List args; body ])
+  in
+  let replace_holes_env : hole_map -> env -> hole_map * Sexp.t =
+   fun map e ->
+    let map, l =
+      String.Map.to_alist e
+      |> List.fold_map ~init:map ~f:(fun map (name, d) ->
+             let map, d = replace_holes_defn map d in
+             (map, Sexp.List [ Sexp.Atom name; d ]))
+    in
+    (map, Sexp.List ([ Sexp.Atom "Env" ] @ l))
+  in
+  let replace_holes_prog : program -> hole_map * Sexp.t =
+   fun (e, b) ->
+    let map = String.Map.empty in
+    let map, e = replace_holes_env map e in
+    let map, b = replace_holes_block map b in
+    (map, Sexp.List [ Sexp.Atom "Prog"; e; b ])
+  in
+  let map, p = replace_holes_prog p in
+  (map, Query.of_sexp op_of_string p)
+
+let extract_matches
+    :  rw EGraph.t -> (Ego.Id.t * Ego.Id.t StringMap.t) Iter.t -> hole_map
+    -> substitutions option
+  =
+ fun graph matches hole_names ->
+  let map =
+    String.Map.to_alist hole_names
+    |> List.fold ~init:String.Map.empty ~f:(fun map (prog_hole, egraph_hole) ->
+           let egraph_hole = String.chop_prefix_exn egraph_hole ~prefix:"?" in
+           match
+             Iter.find_pred
+               (fun (_, match_map) -> StringMap.mem egraph_hole match_map)
+               matches
+           with
+           | None -> map
+           | Some (_, match_map) ->
+               let id = StringMap.find egraph_hole match_map in
+               String.Map.add_exn
+                 map
+                 ~key:prog_hole
+                 ~data:(Extractor.extract graph id |> sexp_of_t |> expr_of_sexp))
+  in
+  match String.Map.to_alist map with
+  | [] -> None
+  | _ -> Some map
+
 let unify_egraph : program -> program -> substitutions option =
  fun p1 p2 ->
   let graph = EGraph.init () in
-  let expr_id1 = sexp_of_program p1 |> t_of_sexp |> EGraph.add_node graph in
-  let expr_id2 = sexp_of_program p2 |> t_of_sexp |> EGraph.add_node graph in
+  let _ = sexp_of_program p1 |> t_of_sexp |> EGraph.add_node graph in
   EGraph.to_dot graph |> Odot.print_file "before_eqsat.txt";
-  let eq_before = EGraph.class_equal (EGraph.freeze graph) expr_id1 expr_id2 in
-  if eq_before then printf "Equal\n" else printf "Not equal\n";
   let _ = EGraph.run_until_saturation graph rewrite_rules in
-  let eq_after = EGraph.class_equal (EGraph.freeze graph) expr_id1 expr_id2 in
-  if eq_after then printf "Success" else printf "Failure";
   EGraph.to_dot graph |> Odot.print_file "after_eqsat.txt";
-  None
+  let map, q = query_of_prog p2 in
+  let matches = EGraph.find_matches (EGraph.freeze graph) q in
+  extract_matches graph matches map

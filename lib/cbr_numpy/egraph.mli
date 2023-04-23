@@ -104,6 +104,11 @@ module EGraph : sig
   end
 end
 
+module Extractor : sig
+  val extract : (Ego.Id.t L.shape, 'a, 'b, rw) egraph -> Ego.Id.t -> L.t
+end
+
 val op_of_string : string -> L.op
 val string_of_op : L.op -> string
 val t_of_sexp : Sexplib.Sexp.t -> L.t
+val sexp_of_t : L.t -> Sexplib.Sexp.t

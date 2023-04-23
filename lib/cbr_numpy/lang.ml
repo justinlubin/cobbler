@@ -35,7 +35,7 @@ type exprType =
   | ECall
   | EStr of string
   | EName of string
-  | EHole of string
+  | EHole
 [@@deriving ord]
 
 type stmtType =

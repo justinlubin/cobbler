@@ -48,7 +48,7 @@ module L = struct
         | EIndex ->
             let [ expr; index ] = children in
             Format.fprintf fmt "%a[%a]" f expr f index
-        | EHole h -> Format.fprintf fmt "Hole %s" h)
+        | EHole -> Format.fprintf fmt "Hole")
     | Lhs (l, children) ->
         (match[@warning "-8"] l with
         | LName n -> Format.fprintf fmt "%s" n
@@ -96,7 +96,7 @@ module L = struct
       match expr with
       | Name n -> Mk (Expr (EName n, []))
       | Num n -> Mk (Expr (ENum n, []))
-      | Hole h -> Mk (Expr (EHole h, []))
+      | Hole h -> Mk (Expr (EHole, []))
       | Str s -> Mk (Expr (EStr s, []))
       | Index (e, i) -> Mk (Expr (EIndex, [ t_of_expr e; t_of_expr i ]))
       | Call (f, args) ->
@@ -142,7 +142,7 @@ module L = struct
       | Mk (Expr (EName n, _)) -> Name n
       | Mk (Expr (ENum n, _)) -> Num n
       | Mk (Expr (EStr s, _)) -> Str s
-      | Mk (Expr (EHole h, _)) -> Hole h
+      | Mk (Expr (EHole, _)) -> Hole "1"
       | Mk (Expr (ECall, func :: args)) ->
           Call (expr_of_t func, List.map args ~f:expr_of_t)
       | Mk (Expr (EIndex, [ expr; index ])) ->
@@ -169,7 +169,9 @@ module L = struct
     let prog_of_t : t -> program = function
       | Mk (Prog (env, block)) -> (env_of_t env, block_of_t block)
     in
-    prog_of_t t |> sexp_of_program
+    match t with
+    | Mk (Prog _) -> prog_of_t t |> sexp_of_program
+    | Mk (Expr _) -> expr_of_t t |> sexp_of_expr
 
   type op =
     | ProgOp
@@ -182,7 +184,7 @@ module L = struct
     | ReturnOp
     | NumOp of int
     | StrOp of string
-    | HoleOp of string
+    | HoleOp
     | CallOp
     | ExprIndexOp
     | ExprNameOp of string
@@ -200,7 +202,7 @@ module L = struct
     | Stmt (SReturn, _) -> ReturnOp
     | Expr (ENum n, _) -> NumOp n
     | Expr (EName n, _) -> ExprNameOp n
-    | Expr (EHole h, _) -> HoleOp h
+    | Expr (EHole, _) -> HoleOp
     | Expr (EStr s, _) -> StrOp s
     | Expr (EIndex, _) -> ExprIndexOp
     | Expr (ECall, _) -> CallOp
@@ -223,7 +225,7 @@ module L = struct
     | ExprNameOp n, _ -> Expr (EName n, [])
     | NumOp n, _ -> Expr (ENum n, [])
     | StrOp s, _ -> Expr (EStr s, [])
-    | HoleOp h, _ -> Expr (EHole h, [])
+    | HoleOp, _ -> Expr (EHole, [])
     | IdOp id, _ -> Id id
     | LhsIndexOp, [ lhs; expr ] -> Lhs (LIndex, [ lhs; expr ])
     | LhsNameOp n, _ -> Lhs (LName n, [])
@@ -241,11 +243,16 @@ module L = struct
     | "Assign" -> AssignOp
     | "Return" -> ReturnOp
     | "Call" -> CallOp
+    | "Hole" -> HoleOp
+    | "EIndex" -> ExprIndexOp
+    | "LIndex" -> LhsIndexOp
     | s when String.is_prefix ~prefix:"Num" s ->
         NumOp (String.chop_prefix_exn s ~prefix:"Num" |> int_of_string)
     | s when String.is_prefix ~prefix:"EName" s ->
         ExprNameOp (String.chop_prefix_exn s ~prefix:"EName")
-    | _ -> failwith "TODO"
+    | s when String.is_prefix ~prefix:"LName" s ->
+        LhsNameOp (String.chop_prefix_exn s ~prefix:"LName")
+    | _ -> IdOp s
 
   let string_of_op : op -> string =
    fun op ->
@@ -262,10 +269,10 @@ module L = struct
     | ExprNameOp n -> "EName " ^ n
     | NumOp n -> "Num " ^ string_of_int n
     | StrOp s -> "Str " ^ s
-    | HoleOp h -> "Hole" ^ h
+    | HoleOp -> "Hole"
     | IdOp id -> id
     | LhsIndexOp -> "Index"
-    | LhsNameOp n -> "Name " ^ n
+    | LhsNameOp n -> "LName " ^ n
 end
 
 module A = struct
@@ -295,6 +302,22 @@ end
 
 module EGraph = Make (L) (A) (MA)
 
+module C = struct
+  type t = int [@@deriving ord]
+
+  let cost f : Ego.Id.t L.shape -> t =
+   fun s ->
+    let node_cost =
+      match s with
+      | L.Prog _ | L.Env _ | L.Block _ | L.Defn _ -> 0
+      | L.Stmt _ | L.Expr _ | L.Lhs _ | L.Id _ -> 1
+    in
+    node_cost + List.fold (L.children s) ~init:0 ~f:(fun sum c -> sum + f c)
+end
+
+module Extractor = MakeExtractor (L) (C)
+
 let string_of_op = L.string_of_op
 let op_of_string = L.op_of_string
 let t_of_sexp = L.of_sexp
+let sexp_of_t = L.to_sexp
