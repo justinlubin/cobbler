@@ -48,7 +48,7 @@ let () =
   print_endline "Parsing ... %!";
   let p1 = parse_file_np file_py in
   let p2 = parse_file_np file_comm_py in
-  let subs = unify_egraph ~target:p1 ~pattern:p2 in
+  let subs = unify_egraph ~target:p1 ~pattern:p2 () in
   (match subs with
   | None -> print_endline "failure"
   | Some subs ->

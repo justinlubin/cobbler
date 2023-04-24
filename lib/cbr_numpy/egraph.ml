@@ -5,15 +5,15 @@ open Parse
 
 module L = struct
   type 'a shape =
-    | Prog of int * 'a
-    | Block of int * 'a list
-    | Stmt of int * stmtType * 'a list
-    | Expr of int * exprType * 'a list
+    | Prog of 'a
+    | Block of 'a list
+    | Stmt of stmtType * 'a list
+    | Expr of exprType * 'a list
     | Id of id
-    | Pat of int * patType * 'a list
-  [@@deriving ord]
+    | Pat of patType * 'a list
+  [@@deriving ord, hash]
 
-  type t = Mk of t shape [@@unboxed]
+  type t = Mk of t shape [@@unboxed] [@@deriving hash]
 
   let pp_shape
       : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a shape -> unit
@@ -22,7 +22,7 @@ module L = struct
     match shape with
     | Prog _ -> Format.fprintf fmt "Program"
     | Block _ -> Format.fprintf fmt "Block"
-    | Stmt (_, s, stmt) ->
+    | Stmt (s, stmt) ->
         (match[@warning "-8"] s with
         | SFor ->
             let [ index; iter; body ] = stmt in
@@ -33,7 +33,7 @@ module L = struct
         | SReturn ->
             let [ expr ] = stmt in
             Format.fprintf fmt "Return %a" f expr)
-    | Expr (_, e, children) ->
+    | Expr (e, children) ->
         (match[@warning "-8"] e with
         | ENum n -> Format.fprintf fmt "%d" n
         | EName n -> Format.fprintf fmt "%s" n
@@ -46,7 +46,7 @@ module L = struct
             let [ expr; index ] = children in
             Format.fprintf fmt "%a[%a]" f expr f index
         | EHole -> Format.fprintf fmt "Hole")
-    | Pat (_, l, children) ->
+    | Pat (l, children) ->
         (match[@warning "-8"] l with
         | LName n -> Format.fprintf fmt "%s" n
         | LIndex ->
@@ -56,64 +56,56 @@ module L = struct
     | Id id -> Format.fprintf fmt "%s" id
 
   let children : 'a shape -> 'a list = function
-    | Prog (_, block) -> [ block ]
-    | Block (_, block) -> block
-    | Stmt (_, _, stmt) -> stmt
-    | Expr (_, _, expr) -> expr
+    | Prog block -> [ block ]
+    | Block block -> block
+    | Stmt (_, stmt) -> stmt
+    | Expr (_, expr) -> expr
     | Id _ -> []
-    | Pat (_, _, children) -> children
+    | Pat (_, children) -> children
 
   let map_children : 'a shape -> ('a -> 'b) -> 'b shape =
    fun term f ->
     match term with
-    | Prog (hash, block) -> Prog (hash, f block)
-    | Block (hash, block) -> Block (hash, List.map block ~f)
-    | Stmt (hash, sType, stmt) -> Stmt (hash, sType, List.map stmt ~f)
-    | Expr (hash, eType, expr) -> Expr (hash, eType, List.map expr ~f)
+    | Prog block -> Prog (f block)
+    | Block block -> Block (List.map block ~f)
+    | Stmt (sType, stmt) -> Stmt (sType, List.map stmt ~f)
+    | Expr (eType, expr) -> Expr (eType, List.map expr ~f)
     | Id id -> Id id
-    | Pat (hash, lType, pat) -> Pat (hash, lType, List.map pat ~f)
+    | Pat (lType, pat) -> Pat (lType, List.map pat ~f)
 
   let of_sexp : Sexplib0.Sexp.t -> 'a =
    fun s ->
     let t_of_id : id -> 'a = fun id -> Mk (Id id) in
     let rec t_of_pat : pat -> 'a =
      fun pat ->
-      let h = Hashtbl.hash pat in
       match pat with
-      | PName n -> Mk (Pat (h, LName n, []))
-      | PIndex (l, expr) -> Mk (Pat (h, LIndex, [ t_of_pat l; t_of_expr expr ]))
-      | PHole _ -> Mk (Pat (h, LHole, []))
+      | PName n -> Mk (Pat (LName n, []))
+      | PIndex (l, expr) -> Mk (Pat (LIndex, [ t_of_pat l; t_of_expr expr ]))
+      | PHole _ -> Mk (Pat (LHole, []))
     and t_of_expr : expr -> 'a =
      fun expr ->
-      let h = Hashtbl.hash expr in
       match expr with
-      | Name n -> Mk (Expr (h, EName n, []))
-      | Num n -> Mk (Expr (h, ENum n, []))
-      | Hole _ -> Mk (Expr (h, EHole, []))
-      | Str s -> Mk (Expr (h, EStr s, []))
-      | Index (e, i) -> Mk (Expr (h, EIndex, [ t_of_expr e; t_of_expr i ]))
+      | Name n -> Mk (Expr (EName n, []))
+      | Num n -> Mk (Expr (ENum n, []))
+      | Hole _ -> Mk (Expr (EHole, []))
+      | Str s -> Mk (Expr (EStr s, []))
+      | Index (e, i) -> Mk (Expr (EIndex, [ t_of_expr e; t_of_expr i ]))
       | Call (f, args) ->
-          Mk (Expr (h, ECall, t_of_expr f :: List.map args ~f:t_of_expr))
+          Mk (Expr (ECall, t_of_expr f :: List.map args ~f:t_of_expr))
     in
     let rec t_of_stmt : stmt -> 'a =
      fun stmt ->
-      let h = Hashtbl.hash stmt in
       match stmt with
-      | Return e -> Mk (Stmt (h, SReturn, [ t_of_expr e ]))
+      | Return e -> Mk (Stmt (SReturn, [ t_of_expr e ]))
       | For (index, iter, body) ->
-          Mk
-            (Stmt (h, SFor, [ t_of_pat index; t_of_expr iter; t_of_block body ]))
+          Mk (Stmt (SFor, [ t_of_pat index; t_of_expr iter; t_of_block body ]))
       | Assign (lhs, rhs) ->
-          Mk (Stmt (h, SAssign, [ t_of_pat lhs; t_of_expr rhs ]))
+          Mk (Stmt (SAssign, [ t_of_pat lhs; t_of_expr rhs ]))
     and t_of_block : block -> 'a =
-     fun block ->
-      let h = Hashtbl.hash block in
-      Mk (Block (h, List.map block ~f:t_of_stmt))
+     fun block -> Mk (Block (List.map block ~f:t_of_stmt))
     in
     let t_of_prog : program -> 'a =
-     fun (_, block) ->
-      let h = Hashtbl.hash (String.Map.empty, block) in
-      Mk (Prog (h, t_of_block block))
+     fun (_, block) -> Mk (Prog (t_of_block block))
     in
     program_of_sexp s |> t_of_prog
 
@@ -123,30 +115,29 @@ module L = struct
       | Mk (Id id) -> id
     in
     let rec pat_of_t : t -> pat = function
-      | Mk (Pat (_, LIndex, [ pat; index ])) ->
+      | Mk (Pat (LIndex, [ pat; index ])) ->
           PIndex (pat_of_t pat, expr_of_t index)
-      | Mk (Pat (_, LName n, _)) -> PName n
+      | Mk (Pat (LName n, _)) -> PName n
     and expr_of_t : t -> expr = function
-      | Mk (Expr (_, EName n, _)) -> Name n
-      | Mk (Expr (_, ENum n, _)) -> Num n
-      | Mk (Expr (_, EStr s, _)) -> Str s
-      | Mk (Expr (_, EHole, _)) -> failwith "Hole in reference e-graph"
-      | Mk (Expr (_, ECall, func :: args)) ->
+      | Mk (Expr (EName n, _)) -> Name n
+      | Mk (Expr (ENum n, _)) -> Num n
+      | Mk (Expr (EStr s, _)) -> Str s
+      | Mk (Expr (EHole, _)) -> failwith "Hole in reference e-graph"
+      | Mk (Expr (ECall, func :: args)) ->
           Call (expr_of_t func, List.map args ~f:expr_of_t)
-      | Mk (Expr (_, EIndex, [ expr; index ])) ->
+      | Mk (Expr (EIndex, [ expr; index ])) ->
           Index (expr_of_t expr, expr_of_t index)
     in
     let rec stmt_of_t : t -> stmt = function
-      | Mk (Stmt (_, SFor, [ index; iter; body ])) ->
+      | Mk (Stmt (SFor, [ index; iter; body ])) ->
           For (pat_of_t index, expr_of_t iter, block_of_t body)
-      | Mk (Stmt (_, SAssign, [ lhs; rhs ])) ->
-          Assign (pat_of_t lhs, expr_of_t rhs)
-      | Mk (Stmt (_, SReturn, [ expr ])) -> Return (expr_of_t expr)
+      | Mk (Stmt (SAssign, [ lhs; rhs ])) -> Assign (pat_of_t lhs, expr_of_t rhs)
+      | Mk (Stmt (SReturn, [ expr ])) -> Return (expr_of_t expr)
     and block_of_t : t -> block = function
-      | Mk (Block (_, block)) -> List.map block ~f:stmt_of_t
+      | Mk (Block block) -> List.map block ~f:stmt_of_t
     in
     let prog_of_t : t -> program = function
-      | Mk (Prog (_, block)) -> (String.Map.empty, block_of_t block)
+      | Mk (Prog block) -> (String.Map.empty, block_of_t block)
     in
     match t with
     | Mk (Prog _) -> prog_of_t t |> sexp_of_program
@@ -173,47 +164,31 @@ module L = struct
   let op : 'a shape -> op = function
     | Prog _ -> ProgOp
     | Block _ -> BlockOp
-    | Stmt (_, SFor, _) -> ForOp
-    | Stmt (_, SAssign, _) -> AssignOp
-    | Stmt (_, SReturn, _) -> ReturnOp
-    | Expr (_, ENum n, _) -> NumOp n
-    | Expr (_, EName n, _) -> ExprNameOp n
-    | Expr (_, EHole, _) -> HoleOp
-    | Expr (_, EStr s, _) -> StrOp s
-    | Expr (_, EIndex, _) -> ExprIndexOp
-    | Expr (_, ECall, _) -> CallOp
+    | Stmt (SFor, _) -> ForOp
+    | Stmt (SAssign, _) -> AssignOp
+    | Stmt (SReturn, _) -> ReturnOp
+    | Expr (ENum n, _) -> NumOp n
+    | Expr (EName n, _) -> ExprNameOp n
+    | Expr (EHole, _) -> HoleOp
+    | Expr (EStr s, _) -> StrOp s
+    | Expr (EIndex, _) -> ExprIndexOp
+    | Expr (ECall, _) -> CallOp
     | Id id -> IdOp id
-    | Pat (_, LIndex, _) -> PatIndexOp
-    | Pat (_, LName n, _) -> PatNameOp n
-    | Pat (_, LHole, _) -> PatHoleOp
+    | Pat (LIndex, _) -> PatIndexOp
+    | Pat (LName n, _) -> PatNameOp n
+    | Pat (LHole, _) -> PatHoleOp
 
   let make : op -> 'a list -> 'a shape =
    fun op ls ->
     match[@warning "-8"] (op, ls) with
-    | ProgOp, [ block ] ->
-        let h = Hashtbl.hash (String.Map.empty, block) in
-        Prog (h, block)
-    | BlockOp, block ->
-        let h = Hashtbl.hash block in
-        Block (h, block)
-    | ForOp, stmt ->
-        let h = Hashtbl.hash stmt in
-        Stmt (h, SFor, stmt)
-    | AssignOp, stmt ->
-        let h = Hashtbl.hash stmt in
-        Stmt (h, SAssign, stmt)
-    | ReturnOp, stmt ->
-        let h = Hashtbl.hash stmt in
-        Stmt (h, SReturn, stmt)
-    | ExprIndexOp, expr ->
-        let h = Hashtbl.hash expr in
-        Expr (h, EIndex, expr)
-    | CallOp, expr ->
-        let h = Hashtbl.hash expr in
-        Expr (h, ECall, expr)
-    | ExprNameOp n, _ ->
-        let h = Hashtbl.hash n in
-        Expr (h, EName n, [])
+    | ProgOp, [ block ] -> Prog block
+    | BlockOp, block -> Block block
+    | ForOp, stmt -> Stmt (SFor, stmt)
+    | AssignOp, stmt -> Stmt (SAssign, stmt)
+    | ReturnOp, stmt -> Stmt (SReturn, stmt)
+    | ExprIndexOp, expr -> Expr (EIndex, expr)
+    | CallOp, expr -> Expr (ECall, expr)
+    | ExprNameOp n, _ -> Expr (EName n, [])
     | NumOp n, _ -> Expr (ENum n, [])
     | StrOp s, _ -> Expr (EStr s, [])
     | HoleOp, _ -> Expr (EHole, [])

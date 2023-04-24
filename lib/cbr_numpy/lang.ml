@@ -5,7 +5,7 @@ type hole_type =
   | Array
 [@@deriving compare, eq, show]
 
-type id = string [@@deriving sexp, compare, eq, show]
+type id = string [@@deriving sexp, compare, eq, show, hash]
 
 type expr =
   | Num of int
@@ -42,16 +42,16 @@ type exprType =
   | EStr of string
   | EName of string
   | EHole
-[@@deriving ord]
+[@@deriving ord, hash]
 
 type stmtType =
   | SFor
   | SAssign
   | SReturn
-[@@deriving ord]
+[@@deriving ord, hash]
 
 type patType =
   | LName of string
   | LIndex
   | LHole
-[@@deriving ord]
+[@@deriving ord, hash]
