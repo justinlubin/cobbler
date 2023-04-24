@@ -6,7 +6,7 @@ open Parse
 module L = struct
   type 'a shape =
     | Prog of 'a
-    | Block of 'a list
+    | Block of int * 'a list
     | Stmt of stmtType * 'a list
     | Expr of exprType * 'a list
     | Id of id
@@ -21,7 +21,7 @@ module L = struct
    fun f fmt shape ->
     match shape with
     | Prog _ -> Format.fprintf fmt "Program"
-    | Block _ -> Format.fprintf fmt "Block"
+    | Block (h, _) -> Format.fprintf fmt "Block %d" h
     | Stmt (s, stmt) ->
         (match[@warning "-8"] s with
         | SFor ->
@@ -57,7 +57,7 @@ module L = struct
 
   let children : 'a shape -> 'a list = function
     | Prog block -> [ block ]
-    | Block block -> block
+    | Block (_, block) -> block
     | Stmt (_, stmt) -> stmt
     | Expr (_, expr) -> expr
     | Id _ -> []
@@ -67,7 +67,7 @@ module L = struct
    fun term f ->
     match term with
     | Prog block -> Prog (f block)
-    | Block block -> Block (List.map block ~f)
+    | Block (h, block) -> Block (h, List.map block ~f)
     | Stmt (sType, stmt) -> Stmt (sType, List.map stmt ~f)
     | Expr (eType, expr) -> Expr (eType, List.map expr ~f)
     | Id id -> Id id
@@ -102,7 +102,10 @@ module L = struct
       | Assign (lhs, rhs) ->
           Mk (Stmt (SAssign, [ t_of_pat lhs; t_of_expr rhs ]))
     and t_of_block : block -> 'a =
-     fun block -> Mk (Block (List.map block ~f:t_of_stmt))
+     fun block ->
+      let children = List.map block ~f:t_of_stmt in
+      let h = Hashtbl.hash children in
+      Mk (Block (h, children))
     in
     let t_of_prog : program -> 'a =
      fun (_, block) -> Mk (Prog (t_of_block block))
@@ -134,7 +137,7 @@ module L = struct
       | Mk (Stmt (SAssign, [ lhs; rhs ])) -> Assign (pat_of_t lhs, expr_of_t rhs)
       | Mk (Stmt (SReturn, [ expr ])) -> Return (expr_of_t expr)
     and block_of_t : t -> block = function
-      | Mk (Block block) -> List.map block ~f:stmt_of_t
+      | Mk (Block (_, block)) -> List.map block ~f:stmt_of_t
     in
     let prog_of_t : t -> program = function
       | Mk (Prog block) -> (String.Map.empty, block_of_t block)
@@ -163,7 +166,7 @@ module L = struct
 
   let op : 'a shape -> op = function
     | Prog _ -> ProgOp
-    | Block _ -> BlockOp
+    | Block (_, block) -> BlockOp
     | Stmt (SFor, _) -> ForOp
     | Stmt (SAssign, _) -> AssignOp
     | Stmt (SReturn, _) -> ReturnOp
@@ -182,7 +185,9 @@ module L = struct
    fun op ls ->
     match[@warning "-8"] (op, ls) with
     | ProgOp, [ block ] -> Prog block
-    | BlockOp, block -> Block block
+    | BlockOp, block ->
+        let h = Hashtbl.hash block in
+        Block (h, block)
     | ForOp, stmt -> Stmt (SFor, stmt)
     | AssignOp, stmt -> Stmt (SAssign, stmt)
     | ReturnOp, stmt -> Stmt (SReturn, stmt)
