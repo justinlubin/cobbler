@@ -59,12 +59,23 @@ let substitute_expr : expr -> substitutions -> expr =
 let canonicalize : program -> program =
  fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
 
-let solve : int -> hole_type -> program -> program option =
- fun depth program_type target ->
+let solve
+    :  int -> ?debug:bool -> hole_type -> program
+    -> (?debug:bool
+        -> target:program
+        -> pattern:program
+        -> unit
+        -> substitutions option)
+    -> program option
+  =
+ fun depth ?(debug = false) program_type target unify ->
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
-    match Unification.unify_naive ~target ~pattern:canonical with
+    (*if debug
+    then print_endline ("\nCandidate:\n" ^ Parse.str_of_program canonical)
+    else ();*)
+    match unify ~debug ~target ~pattern:canonical () with
     | Some sub -> Some (substitute_expr e sub)
     | None -> None
   in

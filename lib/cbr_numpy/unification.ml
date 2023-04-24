@@ -131,8 +131,11 @@ let unify_env : env -> env -> substitutions option =
         | None -> None
         | Some defn2 -> unify_defn defn1 defn2 |> merge_option_skewed sub)
 
-let unify_naive : target:program -> pattern:program -> substitutions option =
- fun ~target:(env1, block1) ~pattern:(env2, block2) ->
+let unify_naive
+    :  ?debug:bool -> target:program -> pattern:program -> unit
+    -> substitutions option
+  =
+ fun ?(debug = false) ~target:(env1, block1) ~pattern:(env2, block2) () ->
   unify_block (Some String.Map.empty) block1 block2
 
 let commutative_add = ("(Call EName+ ?a ?b)", "(Call EName+ ?b ?a)")
@@ -209,28 +212,11 @@ let query_of_prog : program -> hole_map * 'a Query.t =
     let map, l = List.fold_map b ~init:map ~f:replace_holes_stmt in
     (map, Sexp.List ([ Sexp.Atom "Block" ] @ l))
   in
-  let replace_holes_defn : hole_map -> defn -> hole_map * Sexp.t =
-   fun map (args, body) ->
-    let map, args = List.fold_map args ~init:map ~f:replace_holes_id in
-    let map, body = replace_holes_block map body in
-    (map, Sexp.List [ Sexp.Atom "Defn"; Sexp.List args; body ])
-  in
-  let replace_holes_env : hole_map -> env -> hole_map * Sexp.t =
-   fun map e ->
-    let map, l =
-      String.Map.to_alist e
-      |> List.fold_map ~init:map ~f:(fun map (name, d) ->
-             let map, d = replace_holes_defn map d in
-             (map, Sexp.List [ Sexp.Atom name; d ]))
-    in
-    (map, Sexp.List ([ Sexp.Atom "Env" ] @ l))
-  in
   let replace_holes_prog : program -> hole_map * Sexp.t =
    fun (e, b) ->
     let map = String.Map.empty in
-    let map, e = replace_holes_env map e in
     let map, b = replace_holes_block map b in
-    (map, Sexp.List [ Sexp.Atom "Prog"; e; b ])
+    (map, Sexp.List [ Sexp.Atom "Prog"; b ])
   in
   let map, p = replace_holes_prog p in
   (map, Query.of_sexp op_of_string p)
@@ -261,13 +247,28 @@ let extract_matches
   | [] -> None
   | _ -> Some map
 
-let unify_egraph : target:program -> pattern:program -> substitutions option =
- fun ~target:p1 ~pattern:p2 ->
+let unify_egraph
+    :  ?debug:bool -> target:program -> pattern:program -> unit
+    -> substitutions option
+  =
+ fun ?(debug = false) ~target ~pattern () ->
   let graph = EGraph.init () in
-  let _ = sexp_of_program p1 |> t_of_sexp |> EGraph.add_node graph in
-  EGraph.to_dot graph |> Odot.print_file "before_eqsat.txt";
+  let root = sexp_of_program target |> t_of_sexp |> EGraph.add_node graph in
+  if debug
+  then (
+    let _, block = target in
+    print_endline ("\nTarget: \n" ^ str_of_program (String.Map.empty, block));
+    EGraph.to_dot graph |> Odot.print_file "before_eqsat.txt")
+  else ();
   let _ = EGraph.run_until_saturation graph rewrite_rules in
   EGraph.to_dot graph |> Odot.print_file "after_eqsat.txt";
-  let map, q = query_of_prog p2 in
+  let map, q = query_of_prog pattern in
+  if debug
+  then (
+    print_endline
+      ("Pattern:\n" ^ (Query.to_sexp string_of_op q |> Sexp.to_string));
+    print_endline
+      ("graph" ^ (Extractor.extract graph root |> sexp_of_t |> Sexp.to_string)))
+  else ();
   let matches = EGraph.find_matches (EGraph.freeze graph) q in
   extract_matches graph matches map

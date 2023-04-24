@@ -7,7 +7,7 @@ let rec pat_of_sexp : Sexp.t -> pat =
   | Sexp.Atom name -> PName name
   | Sexp.List [ Sexp.Atom "Index"; p; e ] ->
       PIndex (pat_of_sexp p, expr_of_sexp e)
-  | Sexp.List [ Sexp.Atom "Num_Hole"; Sexp.Atom hole ] -> PHole (Number, hole)
+  | Sexp.List [ Sexp.Atom "Number_Hole"; Sexp.Atom hole ] -> PHole (Number, hole)
   | Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ] -> PHole (Array, hole)
   | _ -> failwith ("Invalid pattern: " ^ Sexp.to_string sexp)
 

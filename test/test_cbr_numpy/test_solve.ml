@@ -3,6 +3,7 @@ open Core
 open Np_synthesis
 open Lang
 open Parse
+open Util
 
 let target1 : program =
   ( Cbr_numpy.Env.np_env
@@ -73,39 +74,51 @@ let no_sol_target : program =
   , [ Assign (PName "x", Num 0); Return (Call (Name "+", [ Name "x"; Num 1 ])) ]
   )
 
+let unify_funcs = [ Unification.unify_egraph; Unification.unify_naive ]
+
 let%test_unit "np_solve 1" =
-  [%test_result: program]
-    (match solve 1 Number target1 with
-    | Some p -> p
-    | None -> failwith "no solution")
-    ~expect:solution1
+  [%test_result: program list]
+    (List.map unify_funcs ~f:(fun unify ->
+         match solve 1 ~debug:true Number target1 unify with
+         | Some p -> p
+         | None -> failwith "no solution"))
+    ~expect:(repeat solution1 (List.length unify_funcs))
 
 let%test_unit "np_solve 1'" =
-  [%test_result: program]
-    (match solve 1 Number target1' with
-    | Some p -> p
-    | None -> failwith "no solution")
-    ~expect:solution1
+  [%test_result: program list]
+    (List.map unify_funcs ~f:(fun unify ->
+         match solve 1 Number target1' unify with
+         | Some p -> p
+         | None -> failwith "no solution"))
+    ~expect:(repeat solution1 (List.length unify_funcs))
 
 let%test_unit "np_solve 2" =
-  [%test_result: program]
-    (match solve 2 Number target2 with
-    | Some p -> p
-    | None -> failwith "no solution")
-    ~expect:solution2
+  [%test_result: program list]
+    (List.map unify_funcs ~f:(fun unify ->
+         match solve 2 Number target2 unify with
+         | Some p -> p
+         | None -> failwith "no solution"))
+    ~expect:(repeat solution2 (List.length unify_funcs))
 
 let%test_unit "np_solve 2: not enough depth" =
-  [%test_result: program option] (solve 1 Number target2) ~expect:None
+  [%test_result: program option list]
+    (List.map unify_funcs ~f:(fun unify -> solve 1 Number target2 unify))
+    ~expect:(repeat None (List.length unify_funcs))
 
 let%test_unit "np_solve 3" =
-  [%test_result: program]
-    (match solve 1 Array target3 with
-    | Some p -> p
-    | None -> failwith "no solution")
-    ~expect:solution3
+  [%test_result: program list]
+    (List.map unify_funcs ~f:(fun unify ->
+         match solve 1 Number target3 unify with
+         | Some p -> p
+         | None -> failwith "no solution"))
+    ~expect:(repeat solution2 (List.length unify_funcs))
 
 let%test_unit "np_solve 3: wrong starting hole type" =
-  [%test_result: program option] (solve 2 Number target3) ~expect:None
+  [%test_result: program option list]
+    (List.map unify_funcs ~f:(fun unify -> solve 2 Number target3 unify))
+    ~expect:(repeat None (List.length unify_funcs))
 
 let%test_unit "np_solve no solution" =
-  [%test_result: program option] (solve 3 Number no_sol_target) ~expect:None
+  [%test_result: program option list]
+    (List.map unify_funcs ~f:(fun unify -> solve 3 Number no_sol_target unify))
+    ~expect:(repeat None (List.length unify_funcs))
