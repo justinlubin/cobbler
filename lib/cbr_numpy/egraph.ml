@@ -11,9 +11,9 @@ module L = struct
     | Expr of exprType * 'a list
     | Id of id
     | Pat of patType * 'a list
-  [@@deriving ord, hash]
+  [@@deriving ord]
 
-  type t = Mk of t shape [@@unboxed] [@@deriving hash]
+  type t = Mk of t shape [@@unboxed]
 
   let pp_shape
       : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a shape -> unit

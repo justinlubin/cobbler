@@ -57,6 +57,9 @@ let s3 : string =
   \  )"
 
 let target3 : program = Parse.program_of_str s3
+let test_dir = "test_data/programs/"
+let s4 : string = In_channel.read_all (test_dir ^ "test_2fors.sexp")
+let target4 : program = Parse.program_of_str s4
 
 let solution1 : program =
   (Cbr_numpy.Env.np_env, [ Return (Call (Name "sum", [ Name "x" ])) ])
@@ -79,7 +82,7 @@ let unify_funcs = [ Unification.unify_egraph; Unification.unify_naive ]
 let%test_unit "np_solve 1" =
   [%test_result: program list]
     (List.map unify_funcs ~f:(fun unify ->
-         match solve 1 ~debug:true Number target1 unify with
+         match solve 1 ~debug:false Number target1 unify with
          | Some p -> p
          | None -> failwith "no solution"))
     ~expect:(repeat solution1 (List.length unify_funcs))
@@ -121,4 +124,10 @@ let%test_unit "np_solve 3: wrong starting hole type" =
 let%test_unit "np_solve no solution" =
   [%test_result: program option list]
     (List.map unify_funcs ~f:(fun unify -> solve 3 Number no_sol_target unify))
+    ~expect:(repeat None (List.length unify_funcs))
+
+let%test_unit "np_solve no solution" =
+  [%test_result: program option list]
+    (List.map unify_funcs ~f:(fun unify ->
+         solve 1 ~debug:true Number target4 unify))
     ~expect:(repeat None (List.length unify_funcs))

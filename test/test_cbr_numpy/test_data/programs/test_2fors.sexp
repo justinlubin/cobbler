@@ -1,0 +1,5 @@
+(()((Assign c (Num 0)) 
+    (For i (Call range (Call len x))
+        ((Assign c (Call + c (Index x i)))))
+    (For j (Call range (Call len y))
+        ((Assign c (Call + c (Index y i)))))))
