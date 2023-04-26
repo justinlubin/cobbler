@@ -111,10 +111,10 @@ let%test_unit "np_solve 2: not enough depth" =
 let%test_unit "np_solve 3" =
   [%test_result: program list]
     (List.map unify_funcs ~f:(fun unify ->
-         match solve 1 ~debug:true Number target3 unify with
+         match solve 1 ~debug:false Array target3 unify with
          | Some p -> p
          | None -> failwith "no solution"))
-    ~expect:(repeat solution2 (List.length unify_funcs))
+    ~expect:(repeat solution3 (List.length unify_funcs))
 
 let%test_unit "np_solve 3: wrong starting hole type" =
   [%test_result: program option list]
@@ -129,5 +129,5 @@ let%test_unit "np_solve no solution" =
 let%test_unit "np_solve no solution" =
   [%test_result: program option list]
     (List.map unify_funcs ~f:(fun unify ->
-         solve 1 ~debug:true Number target4 unify))
+         solve 1 ~debug:false Number target4 unify))
     ~expect:(repeat None (List.length unify_funcs))
