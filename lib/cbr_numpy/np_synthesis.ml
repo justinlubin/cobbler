@@ -73,7 +73,10 @@ let solve
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
     if debug
-    then print_endline ("\nCandidate:\n" ^ Parse.str_of_program canonical)
+    then (
+      let _, block = canonical in
+      let canonical = (Core.String.Map.empty, block) in
+      print_endline ("\nCandidate:\n" ^ Parse.str_of_program canonical))
     else ();
     match unify ~debug ~target ~pattern:canonical () with
     | Some sub -> Some (substitute_expr e sub)

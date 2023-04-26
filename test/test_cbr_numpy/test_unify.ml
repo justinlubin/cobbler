@@ -48,6 +48,16 @@ let reference6 : program = (String.Map.empty, [ Assign (PName "c", Name "c") ])
 let reference7 : program =
   (String.Map.empty, [ Return (Index (Name "x", Num 3)) ])
 
+let s8 : string =
+  "( ()\n\
+  \    ((Assign z (Call zeros (Call len x)))\n\
+  \    (For i (Call range (Call len x)) ((Assign (Index z i) (Call * (Index x \
+   i) (Index y i)))))\n\
+  \    (Return z))\n\
+  \  )"
+
+let reference8 : program = program_of_str s8
+
 let candidate1 : program =
   ( String.Map.empty
   , [ Assign (PName "x", Call (Name "+", [ Hole (Number, "1"); Num 2 ])) ] )
@@ -97,6 +107,25 @@ let candidate6 : program =
 
 let candidate7 : program =
   (String.Map.empty, [ Return (Index (Hole (Number, "a"), Num 3)) ])
+
+let candidate8 : program =
+  ( String.Map.empty
+  , [ Assign
+        ( PHole (Array, "a")
+        , Call (Name "zeros", [ Call (Name "len", [ Hole (Array, "b") ]) ]) )
+    ; For
+        ( PHole (Number, "c")
+        , Call (Name "range", [ Call (Name "len", [ Hole (Array, "b") ]) ])
+        , [ Assign
+              ( PIndex (PHole (Array, "a"), Hole (Number, "c"))
+              , Call
+                  ( Name "*"
+                  , [ Index (Hole (Array, "b"), Hole (Number, "c"))
+                    ; Index (Hole (Array, "d"), Hole (Number, "c"))
+                    ] ) )
+          ] )
+    ; Return (Hole (Array, "a"))
+    ] )
 
 let unify_raises_error : program -> program -> bool =
  fun reference candidate ->
@@ -179,4 +208,15 @@ let%test_unit "index hole" =
   [%test_result: substitutions option list]
     (List.map unify_funcs ~f:(fun unify ->
          unify ~debug:false ~target:reference7 ~pattern:candidate7 ()))
+    ~expect:(repeat expect (List.length unify_funcs))
+
+let%test_unit "unify mul" =
+  let expect =
+    Some
+      (String.Map.of_alist_exn
+         [ ("a", Name "z"); ("b", Name "x"); ("c", Name "i"); ("d", Name "y") ])
+  in
+  [%test_result: substitutions option list]
+    (List.map unify_funcs ~f:(fun unify ->
+         unify ~debug:false ~target:reference8 ~pattern:candidate8 ()))
     ~expect:(repeat expect (List.length unify_funcs))

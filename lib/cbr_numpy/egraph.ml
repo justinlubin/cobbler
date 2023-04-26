@@ -149,8 +149,8 @@ module L = struct
     | StrOp of string
     | HoleOp
     | CallOp
-    | ExprIndexOp
-    | ExprNameOp of string
+    | IndexOp
+    | NameOp of string
   [@@deriving eq]
 
   let op : 'a shape -> op = function
@@ -160,10 +160,10 @@ module L = struct
     | Stmt (SAssign, _) -> AssignOp
     | Stmt (SReturn, _) -> ReturnOp
     | Expr (ENum n, _) -> NumOp n
-    | Expr (EName n, _) -> ExprNameOp n
+    | Expr (EName n, _) -> NameOp n
     | Expr (EHole, _) -> HoleOp
     | Expr (EStr s, _) -> StrOp s
-    | Expr (EIndex, _) -> ExprIndexOp
+    | Expr (EIndex, _) -> IndexOp
     | Expr (ECall, _) -> CallOp
     | Id id -> IdOp id
 
@@ -175,9 +175,9 @@ module L = struct
     | ForOp, stmt -> Stmt (SFor, stmt)
     | AssignOp, stmt -> Stmt (SAssign, stmt)
     | ReturnOp, stmt -> Stmt (SReturn, stmt)
-    | ExprIndexOp, expr -> Expr (EIndex, expr)
+    | IndexOp, expr -> Expr (EIndex, expr)
     | CallOp, expr -> Expr (ECall, expr)
-    | ExprNameOp n, _ -> Expr (EName n, [])
+    | NameOp n, _ -> Expr (EName n, [])
     | NumOp n, _ -> Expr (ENum n, [])
     | StrOp s, _ -> Expr (EStr s, [])
     | HoleOp, _ -> Expr (EHole, [])
@@ -193,13 +193,13 @@ module L = struct
     | "Return" -> ReturnOp
     | "Call" -> CallOp
     | "Hole" -> HoleOp
-    | "EIndex" | "LIndex" | "ExprIndex" -> ExprIndexOp
-    | s when String.is_prefix ~prefix:"Num" s ->
-        NumOp (String.chop_prefix_exn s ~prefix:"Num" |> int_of_string)
-    | s when String.is_prefix ~prefix:"EName" s ->
-        ExprNameOp (String.chop_prefix_exn s ~prefix:"EName")
-    | s when String.is_prefix ~prefix:"LName" s ->
-        ExprNameOp (String.chop_prefix_exn s ~prefix:"LName")
+    | "Index" -> IndexOp
+    | s when String.is_prefix ~prefix:"Num_" s ->
+        NumOp (String.chop_prefix_exn s ~prefix:"Num_" |> int_of_string)
+    | s when String.is_prefix ~prefix:"Name_" s ->
+        NameOp (String.chop_prefix_exn s ~prefix:"Name_")
+    | s when String.is_prefix ~prefix:"Str_" s ->
+        StrOp (String.chop_prefix_exn s ~prefix:"Str_")
     | _ -> IdOp s
 
   let string_of_op : op -> string =
@@ -210,11 +210,11 @@ module L = struct
     | ForOp -> "For"
     | AssignOp -> "Assign"
     | ReturnOp -> "Return"
-    | ExprIndexOp -> "Index"
+    | IndexOp -> "Index"
     | CallOp -> "Call"
-    | ExprNameOp n -> "EName " ^ n
-    | NumOp n -> "Num " ^ string_of_int n
-    | StrOp s -> "Str " ^ s
+    | NameOp n -> "Name_" ^ n
+    | NumOp n -> "Num_" ^ string_of_int n
+    | StrOp s -> "Str_" ^ s
     | HoleOp -> "Hole"
     | IdOp id -> id
 end
