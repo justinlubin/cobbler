@@ -1,1 +1,1 @@
-(()((Return (Num 1)) (Return (Call + (Num 1) (Num 2)))))
+(()((Assign x x)))

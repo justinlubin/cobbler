@@ -138,10 +138,10 @@ let unify_naive
  fun ?(debug = false) ~target:(env1, block1) ~pattern:(env2, block2) () ->
   unify_block (Some String.Map.empty) block1 block2
 
-let commutative_add = ("(Call EName+ ?a ?b)", "(Call EName+ ?b ?a)")
-let commutative_mul = ("(Call EName* ?a ?b)", "(Call EName* ?b ?a)")
-let identity_add = ("(Call EName+ ?a Num0)", "?a")
-let identity_mul = ("(Call EName* ?a Num1)", "?a")
+let commutative_add = ("(Call Name_+ ?a ?b)", "(Call Name_+ ?b ?a)")
+let commutative_mul = ("(Call Name_* ?a ?b)", "(Call Name_* ?b ?a)")
+let identity_add = ("(Call Name_+ ?a Num_0)", "?a")
+let identity_mul = ("(Call Name_* ?a Num_1)", "?a")
 
 let rewrite_rules =
   [ commutative_add; commutative_mul; identity_add; identity_mul ]
@@ -163,8 +163,8 @@ let query_of_prog : program -> hole_map * 'a Query.t =
     | PIndex (pat, index) ->
         let map, pat = replace_holes_pat map pat in
         let map, index = replace_holes_expr map index in
-        (map, Sexp.List [ Sexp.Atom "LIndex"; pat; index ])
-    | PName n -> (map, Sexp.Atom ("LName" ^ n))
+        (map, Sexp.List [ Sexp.Atom "Index"; pat; index ])
+    | PName n -> (map, Sexp.Atom ("Name_" ^ n))
     | PHole (_, h) ->
         if String.Map.mem map h
         then (map, Sexp.Atom (String.Map.find_exn map h))
@@ -180,17 +180,17 @@ let query_of_prog : program -> hole_map * 'a Query.t =
         else (
           let new_name = gensym "?" |> String.chop_prefix_exn ~prefix:"__" in
           (String.Map.add_exn map ~key:h ~data:new_name, Sexp.Atom new_name))
-    | Name n -> (map, Sexp.Atom ("EName" ^ n))
-    | Num n -> (map, Sexp.Atom ("Num" ^ string_of_int n))
+    | Name n -> (map, Sexp.Atom ("Name_" ^ n))
+    | Num n -> (map, Sexp.Atom ("Num_" ^ string_of_int n))
     | Index (pat, index) ->
         let map, pat = replace_holes_expr map pat in
         let map, index = replace_holes_expr map index in
-        (map, Sexp.List [ Sexp.Atom "ExprIndex"; pat; index ])
+        (map, Sexp.List [ Sexp.Atom "Index"; pat; index ])
     | Call (func, args) ->
         let map, func = replace_holes_expr map func in
         let map, args = List.fold_map args ~init:map ~f:replace_holes_expr in
         (map, Sexp.List ([ Sexp.Atom "Call"; func ] @ args))
-    | Str s -> (map, Sexp.Atom ("Str" ^ s))
+    | Str s -> (map, Sexp.Atom ("Str_" ^ s))
   in
   let rec replace_holes_stmt : hole_map -> stmt -> hole_map * Sexp.t =
    fun map s ->
@@ -253,15 +253,16 @@ let unify_egraph
   =
  fun ?(debug = false) ~target ~pattern () ->
   let graph = EGraph.init () in
-  let root = sexp_of_program target |> t_of_sexp |> EGraph.add_node graph in
+  let t = sexp_of_program target |> t_of_sexp in
+  let root = EGraph.add_node graph t in
   if debug
   then (
     let _, block = target in
-    print_endline ("\nTarget: \n" ^ str_of_program (String.Map.empty, block));
+    print_endline ("\nTarget: \n" ^ (sexp_of_t t |> Sexp.to_string));
     EGraph.to_dot graph |> Odot.print_file "before_eqsat.txt")
   else ();
   let _ = EGraph.run_until_saturation graph rewrite_rules in
-  EGraph.to_dot graph |> Odot.print_file "after_eqsat.txt";
+  if debug then EGraph.to_dot graph |> Odot.print_file "after_eqsat.txt" else ();
   let map, q = query_of_prog pattern in
   if debug
   then (

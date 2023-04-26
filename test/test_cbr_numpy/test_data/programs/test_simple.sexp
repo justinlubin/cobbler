@@ -1,1 +1,1 @@
-(()((Assign x (Hole b))(Return (Hole a))))
+(()((Assign (Number_Hole "a") (Num_Hole "a"))))
