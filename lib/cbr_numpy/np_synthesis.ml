@@ -72,9 +72,9 @@ let solve
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
-    (*if debug
+    if debug
     then print_endline ("\nCandidate:\n" ^ Parse.str_of_program canonical)
-    else ();*)
+    else ();
     match unify ~debug ~target ~pattern:canonical () with
     | Some sub -> Some (substitute_expr e sub)
     | None -> None

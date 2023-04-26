@@ -163,8 +163,8 @@ let query_of_prog : program -> hole_map * 'a Query.t =
     | PIndex (pat, index) ->
         let map, pat = replace_holes_pat map pat in
         let map, index = replace_holes_expr map index in
-        (map, Sexp.List [ Sexp.Atom "LIndex"; pat; index ])
-    | PName n -> (map, Sexp.Atom ("LName" ^ n))
+        (map, Sexp.List [ Sexp.Atom "EIndex"; pat; index ])
+    | PName n -> (map, Sexp.Atom ("EName" ^ n))
     | PHole (_, h) ->
         if String.Map.mem map h
         then (map, Sexp.Atom (String.Map.find_exn map h))
@@ -253,11 +253,12 @@ let unify_egraph
   =
  fun ?(debug = false) ~target ~pattern () ->
   let graph = EGraph.init () in
-  let root = sexp_of_program target |> t_of_sexp |> EGraph.add_node graph in
+  let t = sexp_of_program target |> t_of_sexp in
+  let root = EGraph.add_node graph t in
   if debug
   then (
     let _, block = target in
-    print_endline ("\nTarget: \n" ^ str_of_program (String.Map.empty, block));
+    print_endline ("\nTarget: \n" ^ (sexp_of_t t |> Sexp.to_string));
     EGraph.to_dot graph |> Odot.print_file "before_eqsat.txt")
   else ();
   let _ = EGraph.run_until_saturation graph rewrite_rules in

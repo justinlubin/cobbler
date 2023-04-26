@@ -79,7 +79,7 @@ let unify_funcs = [ Unification.unify_egraph; Unification.unify_naive ]
 let%test_unit "np_solve 1" =
   [%test_result: program list]
     (List.map unify_funcs ~f:(fun unify ->
-         match solve 1 ~debug:true Number target1 unify with
+         match solve 1 ~debug:false Number target1 unify with
          | Some p -> p
          | None -> failwith "no solution"))
     ~expect:(repeat solution1 (List.length unify_funcs))
@@ -108,7 +108,7 @@ let%test_unit "np_solve 2: not enough depth" =
 let%test_unit "np_solve 3" =
   [%test_result: program list]
     (List.map unify_funcs ~f:(fun unify ->
-         match solve 1 Number target3 unify with
+         match solve 1 ~debug:true Number target3 unify with
          | Some p -> p
          | None -> failwith "no solution"))
     ~expect:(repeat solution2 (List.length unify_funcs))
