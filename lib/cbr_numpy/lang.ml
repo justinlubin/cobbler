@@ -34,24 +34,3 @@ type defn = id list * block [@@deriving compare]
 type env = defn String.Map.t [@@deriving compare]
 type program = env * block [@@deriving compare, ord]
 type substitutions = expr String.Map.t [@@deriving compare]
-
-type exprType =
-  | ENum of int
-  | EIndex
-  | ECall
-  | EStr of string
-  | EName of string
-  | EHole
-[@@deriving ord, hash]
-
-type stmtType =
-  | SFor
-  | SAssign
-  | SReturn
-[@@deriving ord, hash]
-
-type patType =
-  | LName of string
-  | LIndex
-  | LHole
-[@@deriving ord, hash]

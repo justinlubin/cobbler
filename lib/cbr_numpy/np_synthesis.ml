@@ -59,25 +59,15 @@ let substitute_expr : expr -> substitutions -> expr =
 let canonicalize : program -> program =
  fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
 
-let solve
-    :  int -> ?debug:bool -> hole_type -> program
-    -> (?debug:bool
-        -> target:program
-        -> pattern:program
-        -> unit
-        -> substitutions option)
-    -> program option
+let solve : int -> ?debug:bool -> hole_type -> program -> bool -> program option
   =
- fun depth ?(debug = false) program_type target unify ->
+ fun depth ?(debug = false) program_type target use_egraphs ->
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
-    if debug
-    then (
-      let _, block = canonical in
-      let canonical = (Core.String.Map.empty, block) in
-      print_endline ("\nCandidate:\n" ^ Parse.str_of_program canonical))
-    else ();
+    let unify =
+      if use_egraphs then Unification.unify_egraph else Unification.unify_naive
+    in
     match unify ~debug ~target ~pattern:canonical () with
     | Some sub -> Some (substitute_expr e sub)
     | None -> None

@@ -12,14 +12,4 @@ open Lang
     the resulting substitution is made in the original sketch and outputed. If no solution
     is found, [None] is returned. The starting sketch is a hole with type [program_type].
 *)
-val solve
-  :  int
-  -> ?debug:bool
-  -> hole_type
-  -> program
-  -> (?debug:bool
-      -> target:program
-      -> pattern:program
-      -> unit
-      -> substitutions option)
-  -> program option
+val solve : int -> ?debug:bool -> hole_type -> program -> bool -> program option

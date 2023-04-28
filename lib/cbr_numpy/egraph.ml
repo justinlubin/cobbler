@@ -3,6 +3,21 @@ open Lang
 open Core
 open Parse
 
+type exprType =
+  | ENum of int
+  | EIndex
+  | ECall
+  | EStr of string
+  | EName of string
+  | EHole
+[@@deriving ord, hash]
+
+type stmtType =
+  | SFor
+  | SAssign
+  | SReturn
+[@@deriving ord, hash]
+
 module L = struct
   type 'a shape =
     | Prog of 'a
@@ -14,17 +29,13 @@ module L = struct
 
   type t = Mk of t shape [@@unboxed]
 
-  let i = ref 0
-
   let pp_shape
       : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a shape -> unit
     =
    fun f fmt shape ->
     match shape with
     | Prog _ -> Format.fprintf fmt "Program"
-    | Block _ ->
-        i := !i + 1;
-        Format.fprintf fmt "Block"
+    | Block _ -> Format.fprintf fmt "Block"
     | Stmt (s, stmt) ->
         (match (s, stmt) with
         | SFor, [ index; iter; body ] ->
