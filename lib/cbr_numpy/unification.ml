@@ -253,17 +253,18 @@ let unify_egraph
   let t = sexp_of_program target |> t_of_sexp in
   let _ = EGraph.add_node graph t in
   if debug
-  then (
-    print_endline ("\nTarget: \n" ^ (sexp_of_t t |> Sexp.to_string));
-    EGraph.to_dot graph |> Odot.print_file "before_eqsat.txt")
+  then
+    (* print_endline ("\nTarget: \n" ^ (sexp_of_t t |> Sexp.to_string)); *)
+    EGraph.to_dot graph |> Odot.print_file "before_eqsat.txt"
   else ();
   let _ = EGraph.run_until_saturation graph rewrite_rules in
   if debug then EGraph.to_dot graph |> Odot.print_file "after_eqsat.txt" else ();
   let map, q = query_of_prog pattern in
   if debug
   then
-    print_endline
-      ("Pattern:\n" ^ (Query.to_sexp string_of_op q |> Sexp.to_string))
+    ()
+    (* print_endline *)
+    (* ("Pattern:\n" ^ (Query.to_sexp string_of_op q |> Sexp.to_string)) *)
   else ();
   let matches = EGraph.find_matches (EGraph.freeze graph) q in
   extract_matches graph matches map

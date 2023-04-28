@@ -61,6 +61,28 @@ let test_dir = "test_data/programs/"
 let s4 : string = In_channel.read_all (test_dir ^ "test_2fors.sexp")
 let target4 : program = Parse.program_of_str s4
 
+let target5 : program =
+  ( Cbr_numpy.Env.np_env
+  , [ Assign
+        (PName "z", Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]))
+    ; For
+        ( PName "i"
+        , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
+        , [ Assign
+              ( PIndex (PName "z", Name "i")
+              , Call
+                  ( Name "+"
+                  , [ Index (Name "w", Name "i")
+                    ; Call
+                        ( Name "+"
+                        , [ Index (Name "x", Name "i")
+                          ; Index (Name "y", Name "i")
+                          ] )
+                    ] ) )
+          ] )
+    ; Return (Name "z")
+    ] )
+
 let solution1 : program =
   (Cbr_numpy.Env.np_env, [ Return (Call (Name "sum", [ Name "x" ])) ])
 
@@ -71,6 +93,13 @@ let solution2 : program =
 
 let solution3 : program =
   (Cbr_numpy.Env.np_env, [ Return (Call (Name "mul", [ Name "x"; Name "y" ])) ])
+
+let solution5 : program =
+  ( Cbr_numpy.Env.np_env
+  , [ Return
+        (Call
+           (Name "add", [ Call (Name "add", [ Name "w"; Name "x" ]); Name "y" ]))
+    ] )
 
 let no_sol_target : program =
   ( Cbr_numpy.Env.np_env
