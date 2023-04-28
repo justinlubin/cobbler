@@ -21,5 +21,11 @@
    (>= 4.14.0))
   dune
   core
+  ocamldot
   ppx_jane
-  ppx_deriving))
+  ppx_deriving
+  ego
+  (bisect_ppx
+   (and
+    :dev
+    (>= "2.5.0")))))

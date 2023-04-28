@@ -7,6 +7,8 @@ open Lang
 open Core
 
 val sexp_of_expr : expr -> Sexp.t
+val expr_of_sexp : Sexp.t -> expr
+val sexp_of_pat : pat -> Sexp.t
 
 (** [str_of_program] translates a program back into an s-expression, and then to a string. *)
 val str_of_program : program -> string
@@ -26,8 +28,8 @@ val substitutions_of_sexp : Sexp.t -> substitutions
 (** [program_of_str] translates an s-expression string into a program. **)
 val program_of_str : string -> program
 
-(** [pprint_program] pretty-prints a program **)
-val pprint_program : ?channel:Out_channel.t -> program -> unit
+(** [pp_program] pretty-prints a program **)
+val pp_program : ?channel:Out_channel.t -> program -> unit
 
 (** [py_str_of_program] translates a program back into an s-expression, and then to a Python string. *)
 val py_str_of_program : program -> string

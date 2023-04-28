@@ -7,7 +7,7 @@ let rec pat_of_sexp : Sexp.t -> pat =
   | Sexp.Atom name -> PName name
   | Sexp.List [ Sexp.Atom "Index"; p; e ] ->
       PIndex (pat_of_sexp p, expr_of_sexp e)
-  | Sexp.List [ Sexp.Atom "Num_Hole"; Sexp.Atom hole ] -> PHole (Number, hole)
+  | Sexp.List [ Sexp.Atom "Number_Hole"; Sexp.Atom hole ] -> PHole (Number, hole)
   | Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ] -> PHole (Array, hole)
   | _ -> failwith ("Invalid pattern: " ^ Sexp.to_string sexp)
 
@@ -139,7 +139,7 @@ let substitutions_of_sexp : Sexp.t -> substitutions =
 let str_of_program : program -> string =
  fun p -> sexp_of_program p |> Sexp.to_string
 
-let pprint_program : ?channel:Out_channel.t -> program -> unit =
+let pp_program : ?channel:Out_channel.t -> program -> unit =
  fun ?(channel = stdout) p ->
   let formatter = Format.formatter_of_out_channel channel in
   sexp_of_program p |> Sexp.pp_hum formatter;

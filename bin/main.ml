@@ -3,6 +3,7 @@ open Cbr_fp
 open Cbr_numpy
 open Cbr_fp.Lang
 open Cbr_numpy.Lang
+open Cbr_numpy.Unification
 
 let () =
   Core.Caml.Printexc.register_printer (function
@@ -21,7 +22,11 @@ let parse_file_np : string -> program =
       Sexp.of_string (In_channel.input_all file) |> Parse.program_of_sexp)
 
 let file = "test/test_cbr_fp/test_data/programs/list2.lisp"
-let file_py = "test/test_cbr_numpy/test_data/programs/test1.sexp"
+
+let np_prog_fname =
+  "test/test_cbr_numpy/test_data/programs/test_simple_comp.sexp"
+
+let np_pat_fname = "test/test_cbr_numpy/test_data/programs/test_simple.sexp"
 
 let () =
   print_endline "FP execution:";
@@ -44,5 +49,12 @@ let () =
       printf "of type: %s\n\n" (Typ.show (Type_system.infer sigma gamma e)));
   print_endline "Starting NumPy execution:";
   print_endline "Parsing ... %!";
-  parse_file_np file_py |> Cbr_numpy.Parse.pprint_program;
+  let target = parse_file_np np_prog_fname in
+  let pattern = parse_file_np np_pat_fname in
+  let subs = unify_egraph ~debug:true ~target ~pattern () in
+  (match subs with
+  | None -> print_endline "failure"
+  | Some subs ->
+      print_endline
+        (Cbr_numpy.Parse.sexp_of_substitutions subs |> Sexp.to_string));
   print_endline "\ndone!"

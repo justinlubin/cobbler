@@ -5,8 +5,21 @@
 open Lang
 open Core
 
-(** [unify ~target ~pattern] takes in 2 program and returns a list of mappings from holes in [~pattern] to values in [~target]. 
-    Returns None if no substitutions can be made. Note: this assumes that [~target] contains no holes. 
-    Will raise an error if there are two holes with the same name. 
-*)
-val unify : target:program -> pattern:program -> substitutions option
+(* [unify_naive program1 program2] takes in 2 program and returns a list of mappings from holes in [program2] to values in [program1]. 
+ *  Returns None if no substitutions can be made. Note: this assumes that [program1] contains no holes. 
+ *  Will raise an error if there are two holes with the same name. Performs unification using naive pattern matching*)
+val unify_naive
+  :  ?debug:bool
+  -> target:program
+  -> pattern:program
+  -> unit
+  -> substitutions option
+
+(* [unify_egraph program1 program2] takes in 2 programs and returns a list of mappings from holes in [program2] to values in [program1].
+ * Returns None if no substitutions can be made. Note: this assumes that [program1] contains no holes. Performs unification using e-graphs. *)
+val unify_egraph
+  :  ?debug:bool
+  -> target:program
+  -> pattern:program
+  -> unit
+  -> substitutions option
