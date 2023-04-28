@@ -28,3 +28,6 @@ val program_of_str : string -> program
 
 (** [pprint_program] pretty-prints a program **)
 val pprint_program : ?channel:Out_channel.t -> program -> unit
+
+(** [py_str_of_program] translates a program back into an s-expression, and then to a Python string. *)
+val py_str_of_program : program -> string
