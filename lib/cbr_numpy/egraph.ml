@@ -26,29 +26,23 @@ module L = struct
         i := !i + 1;
         Format.fprintf fmt "Block"
     | Stmt (s, stmt) ->
-        (match[@warning "-8"] s with
-        | SFor ->
-            let [ index; iter; body ] = stmt in
+        (match (s, stmt) with
+        | SFor, [ index; iter; body ] ->
             Format.fprintf fmt "For %a in %a %a" f index f iter f body
-        | SAssign ->
-            let [ pat; rhs ] = stmt in
-            Format.fprintf fmt "%a = %a" f pat f rhs
-        | SReturn ->
-            let [ expr ] = stmt in
-            Format.fprintf fmt "Return %a" f expr)
+        | SAssign, [ pat; rhs ] -> Format.fprintf fmt "%a = %a" f pat f rhs
+        | SReturn, [ expr ] -> Format.fprintf fmt "Return %a" f expr
+        | _ -> failwith "Invalid statement when printing e-graph")
     | Expr (e, children) ->
-        (match[@warning "-8"] e with
-        | ENum n -> Format.fprintf fmt "%d" n
-        | EName n -> Format.fprintf fmt "%s" n
-        | ECall ->
-            let[@warning "-8"] (func :: args) = children in
+        (match (e, children) with
+        | ENum n, [] -> Format.fprintf fmt "%d" n
+        | EName n, [] -> Format.fprintf fmt "%s" n
+        | ECall, func :: args ->
             Format.fprintf fmt "%a" f func;
             List.iter args ~f:(function arg -> Format.fprintf fmt "%a" f arg)
-        | EStr s -> Format.fprintf fmt "Str %s" s
-        | EIndex ->
-            let [ expr; index ] = children in
-            Format.fprintf fmt "%a[%a]" f expr f index
-        | EHole -> Format.fprintf fmt "Hole")
+        | EStr s, [] -> Format.fprintf fmt "Str %s" s
+        | EIndex, [ expr; index ] -> Format.fprintf fmt "%a[%a]" f expr f index
+        | EHole, [] -> Format.fprintf fmt "Hole"
+        | _ -> failwith "Invalid expression when printing e-graph")
     | Id id -> Format.fprintf fmt "%s" id
 
   let children : 'a shape -> 'a list = function
@@ -69,7 +63,6 @@ module L = struct
 
   let of_sexp : Sexplib0.Sexp.t -> 'a =
    fun s ->
-    let t_of_id : id -> 'a = fun id -> Mk (Id id) in
     let rec t_of_pat : pat -> 'a =
      fun pat ->
       match pat with
@@ -106,15 +99,13 @@ module L = struct
     in
     program_of_sexp s |> t_of_prog
 
-  let[@warning "-8"] to_sexp : t -> Sexplib0.Sexp.t =
+  let to_sexp : t -> Sexplib0.Sexp.t =
    fun t ->
-    let id_of_t : t -> id = function
-      | Mk (Id id) -> id
-    in
     let rec pat_of_t : t -> pat = function
       | Mk (Expr (EIndex, [ pat; index ])) ->
           PIndex (pat_of_t pat, expr_of_t index)
       | Mk (Expr (EName n, _)) -> PName n
+      | _ -> failwith "Invalid pattern when converting e-graph to s-expression"
     and expr_of_t : t -> expr = function
       | Mk (Expr (EName n, _)) -> Name n
       | Mk (Expr (ENum n, _)) -> Num n
@@ -124,22 +115,31 @@ module L = struct
           Call (expr_of_t func, List.map args ~f:expr_of_t)
       | Mk (Expr (EIndex, [ expr; index ])) ->
           Index (expr_of_t expr, expr_of_t index)
+      | _ ->
+          failwith "Invalid expression when converting e-graph to s-expression"
     in
     let rec stmt_of_t : t -> stmt = function
       | Mk (Stmt (SFor, [ index; iter; body ])) ->
           For (pat_of_t index, expr_of_t iter, block_of_t body)
       | Mk (Stmt (SAssign, [ lhs; rhs ])) -> Assign (pat_of_t lhs, expr_of_t rhs)
       | Mk (Stmt (SReturn, [ expr ])) -> Return (expr_of_t expr)
+      | _ ->
+          failwith "Invalid statement when converting e-graph to s-expression"
     and block_of_t : t -> block = function
       | Mk (Block (_, block)) -> List.map block ~f:stmt_of_t
+      | _ -> failwith "Invalid block when converting e-graph to s-expression"
     in
     let prog_of_t : t -> program = function
       | Mk (Prog block) -> (String.Map.empty, block_of_t block)
+      | _ -> failwith "Invalid program when converting e-graph to s-expression"
     in
     match t with
     | Mk (Prog _) -> prog_of_t t |> sexp_of_program
     | Mk (Expr _) -> expr_of_t t |> sexp_of_expr
-  (*| Mk (Pat _) -> pat_of_t t |> sexp_of_pat*)
+    | _ ->
+        failwith
+          "Invalid top-level node in e-graph to s-expression conversion: must \
+           be expression or program"
 
   type op =
     | ProgOp

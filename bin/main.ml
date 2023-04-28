@@ -22,8 +22,11 @@ let parse_file_np : string -> program =
       Sexp.of_string (In_channel.input_all file) |> Parse.program_of_sexp)
 
 let file = "test/test_cbr_fp/test_data/programs/list2.lisp"
-let file_py = "test/test_cbr_numpy/test_data/programs/test_simple_comp.sexp"
-let file_comm_py = "test/test_cbr_numpy/test_data/programs/test_simple.sexp"
+
+let np_prog_fname =
+  "test/test_cbr_numpy/test_data/programs/test_simple_comp.sexp"
+
+let np_pat_fname = "test/test_cbr_numpy/test_data/programs/test_simple.sexp"
 
 let () =
   print_endline "FP execution:";
@@ -46,9 +49,9 @@ let () =
       printf "of type: %s\n\n" (Typ.show (Type_system.infer sigma gamma e)));
   print_endline "Starting NumPy execution:";
   print_endline "Parsing ... %!";
-  let p1 = parse_file_np file_py in
-  let p2 = parse_file_np file_comm_py in
-  let subs = unify_egraph ~debug:true ~target:p1 ~pattern:p2 () in
+  let target = parse_file_np np_prog_fname in
+  let pattern = parse_file_np np_pat_fname in
+  let subs = unify_egraph ~debug:true ~target ~pattern () in
   (match subs with
   | None -> print_endline "failure"
   | Some subs ->

@@ -127,6 +127,25 @@ let candidate8 : program =
     ; Return (Hole (Array, "a"))
     ] )
 
+let candidate8' : program =
+  ( String.Map.empty
+  , [ Assign
+        ( PHole (Array, "a")
+        , Call (Name "zeros", [ Call (Name "len", [ Hole (Array, "b") ]) ]) )
+    ; For
+        ( PHole (Number, "c")
+        , Call (Name "range", [ Call (Name "len", [ Hole (Array, "b") ]) ])
+        , [ Assign
+              ( PIndex (PHole (Array, "a"), Hole (Number, "c"))
+              , Call
+                  ( Name "*"
+                  , [ Index (Hole (Array, "d"), Hole (Number, "c"))
+                    ; Index (Hole (Array, "b"), Hole (Number, "c"))
+                    ] ) )
+          ] )
+    ; Return (Hole (Array, "a"))
+    ] )
+
 let unify_raises_error : program -> program -> bool =
  fun reference candidate ->
   match unify_naive ~target:reference ~pattern:candidate () with
@@ -220,3 +239,20 @@ let%test_unit "unify mul" =
     (List.map unify_funcs ~f:(fun unify ->
          unify ~debug:false ~target:reference8 ~pattern:candidate8 ()))
     ~expect:(repeat expect (List.length unify_funcs))
+
+let%test_unit "unify mul commutative" =
+  let expect =
+    [ Some
+        (String.Map.of_alist_exn
+           [ ("a", Name "z")
+           ; ("b", Name "x")
+           ; ("c", Name "i")
+           ; ("d", Name "y")
+           ])
+    ; None
+    ]
+  in
+  [%test_result: substitutions option list]
+    (List.map unify_funcs ~f:(fun unify ->
+         unify ~target:reference8 ~pattern:candidate8' ()))
+    ~expect
