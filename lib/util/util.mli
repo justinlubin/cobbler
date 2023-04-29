@@ -23,3 +23,6 @@ val embed_name : string -> string -> string
 (** [unembed_name (embed_name prefix metadata)] returns
     [Some (prefix, metadata)]. *)
 val unembed_name : string -> (string * string) option
+
+(** [repeat (el n)] returns a list with n elements, all of which are el*)
+val repeat : 'a -> int -> 'a list
