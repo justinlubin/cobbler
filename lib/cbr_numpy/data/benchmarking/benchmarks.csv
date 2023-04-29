@@ -6,10 +6,10 @@ x = np.arange(5)
 c = 0
 for i in range(len(x)):
     c = c + x[i]
-c",10,42,7.874800212448463e-05,"#test sum
+c",10,42,6.811699859099463e-05,"#test sum
 x = np.arange(5)
 np.sum(x)
-",10,18,0.00013016199955018237,0.39230361499721766,True,Success
+",10,18,0.00013612699694931507,0.4575012269997387,True,Success
 test sum mul,"#test sum mul
 x = np.arange(5)
 y = np.arange(5)
@@ -17,11 +17,11 @@ y = np.arange(5)
 c = 0
 for j in range(len(x)):
     c = c + (x[j] * y[j])
-c",30,60,5.408099968917668e-05,"#test sum mul
+c",30,60,7.293000089703128e-05,"#test sum mul
 x = np.arange(5)
 y = np.arange(5)
 np.sum(np.multiply(x, y))
-",30,34,0.00013875199874746613,0.585330272999272,True,Success
+",30,34,0.00012994000280741602,0.7274385939963395,True,Success
 test mul,"#test mul
 x = np.arange(5)
 y = np.arange(5)
@@ -29,11 +29,13 @@ y = np.arange(5)
 z = np.zeros(len(x))
 for i in range(len(x)):
     z[i] = x[i] * y[i]
-z",[ 0.  1.  4.  9. 16.],70,0.00014516100054606795,"#test mul
+z",[ 0.  1.  4.  9. 16.],70,8.051299664657563e-05,"#test mul
 x = np.arange(5)
 y = np.arange(5)
 np.multiply(x, y)
-",[ 0  1  4  9 16],29,6.917499922565185e-05,0.35354256800201256,True,Success
+",[ 0  1  4  9 16],29,7.202399865491316e-05,0.505836016003741,True,Success
 test no sol,"#test no sol
 x = 0
-x + 1",1,11,1.3675002264790237e-05,,,,,,,SynthFail
+x + 1",1,11,1.4984994777478278e-05,,,,,,,SynthFail
+
+

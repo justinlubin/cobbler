@@ -12,13 +12,12 @@ let () =
     | "Array" -> Array
     | _ -> failwith "Invalid target type"
   in
-  let target = read_line () in
-  let synthesized =
-    target
+  let input = read_line () in
+  let target =
+    input
     |> Sexp.of_string
     |> Parse.program_of_sexp
-    |> Cbr_numpy.Np_synthesis.solve 5 target_type
   in
-  match synthesized with
+  match Cbr_numpy.Np_synthesis.solve 5 ~debug:false target_type target true with
   | None -> print_endline "no solution found"
   | Some e -> print_endline (py_str_of_program e)
