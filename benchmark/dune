@@ -1,0 +1,4 @@
+(executable
+ (public_name benchmark_numpy)
+ (name main)
+ (libraries cbr_numpy))
