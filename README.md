@@ -4,6 +4,15 @@
 
 ## Installation instructions
 
+**Important note on Python:**
+For the benchmarking script, it is recommended to create a new Python
+environment to avoid polluting the global Python environment (e.g. via `conda`).
+The `make deps` command will use `pip` to install dependencies, so if you use
+`conda`, make sure to run `conda install pip` in your environment first. After
+running `make deps`,
+**you may also need to run `pip install -U pip setuptools`, as per
+[this GitHub issue](https://github.com/conda/conda/issues/11931)!**
+
 1. [Install OCaml and opam](https://ocaml.org/docs/up-and-running)
 2. Run `make switch`
 3. Restart your shell
