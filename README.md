@@ -13,6 +13,21 @@ To execute `bin/main.ml`, run `make exec`.
 
 To run the tests in the `tests` directory, run `make test`.
 
+## Benchmarking
+
+To build the benchmarking script, run `make build`. To run benchmarking, run `make benchmark`.
+
+Test synthesizer inputs should be placed in `lib/cbr_numpy/data/benchmarking/targets.ipynb`. Inputs should be of the form
+
+```
+#[test name]
+[environment]
+#synth
+[body]
+```
+
+where the body ends in an expression. Benchmarking data is generated in `lib/cbr_numpy/data/benchmarking/benchmarks.csv`.
+
 ## Project structure
 
 - `bin` implements the "main" executable function.
