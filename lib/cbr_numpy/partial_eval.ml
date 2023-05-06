@@ -11,15 +11,42 @@ let rec partial_eval_expr : expr -> expr =
           (match partial_eval_expr (List.hd args) with
           | Call (Name "mul", mul_args) ->
               Call (Name "len", [ List.hd mul_args ])
+          | Call (Name "add", add_args) ->
+              Call (Name "len", [ List.hd add_args ])
+          | Call (Name "eq", eq_args) -> Call (Name "len", [ List.hd eq_args ])
           | _ -> Call (Name "len", args))
       | _ -> Call (fn, List.map partial_eval_expr args))
   | Index (e1, e2) ->
-      let e1 = partial_eval_expr e1 in
-      let e2 = partial_eval_expr e2 in
       (match (e1, e2) with
       | Call (Name "mul", [ x; y ]), e2 ->
-          Call (Name "*", [ Index (x, e2); Index (y, e2) ])
-      | _ -> Index (e1, e2))
+          Call
+            ( Name "*"
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "add", [ x; y ]), e2 ->
+          Call
+            ( Name "+"
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "eq", [ x; y ]), e2 ->
+          Call
+            ( Name "=="
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "gt", [ x; y ]), e2 ->
+          Call
+            ( Name ">"
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "zeros", _), _ -> Num 0
+      | Call (Name "ones", _), _ -> Num 1
+      | _ ->
+          (* print_endline ("e1: " ^ (Parse.sexp_of_expr e1 |> Core.Sexp.to_string)); *)
+          Index (e1, e2))
 
 and partial_eval_pat : pat -> pat =
  fun pat ->
@@ -33,6 +60,11 @@ let rec partial_eval_stmt : stmt -> stmt =
   | Assign (pat, e) -> Assign (partial_eval_pat pat, partial_eval_expr e)
   | For (id, e, body) -> For (id, partial_eval_expr e, partial_eval_block body)
   | Return e -> Return (partial_eval_expr e)
+  | If (cond, body, orelse) ->
+      If
+        ( partial_eval_expr cond
+        , partial_eval_block body
+        , partial_eval_block orelse )
 
 and partial_eval_block : block -> block =
  fun block -> List.map partial_eval_stmt block

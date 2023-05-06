@@ -80,6 +80,9 @@ class IRParser(ast.NodeVisitor):
         return SList([SAtom("For"), self.visit(node.target), self.visit(
             node.iter), SList([self.visit(stmt) for stmt in node.body])])
 
+    def visit_If(self, node):
+        return SList([SAtom("If"), self.visit(node.test), SList([self.visit(stmt) for stmt in node.body]), SList([self.visit(stmt for stmt in node.orelse)])])
+
     def visit_Module(self, node):
         block = []
         env = []
@@ -119,6 +122,7 @@ class IRParser(ast.NodeVisitor):
     def generic_visit(self, node):
         name = self.getClassName(node)
         raise UnsupportedNodeException(name)
+
 
 class SList():
     def __init__(self, l):

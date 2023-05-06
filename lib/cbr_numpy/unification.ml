@@ -103,6 +103,13 @@ let rec unify_stmt
       | Return expr1 ->
           (match stmt2 with
           | Return expr2 -> unify_expr subs_opt expr1 expr2
+          | _ -> None)
+      | If (cond1, body1, orelse1) ->
+          (match stmt2 with
+          | If (cond2, body2, orelse2) ->
+              let sub_cond = unify_expr subs_opt cond1 cond2 in
+              let sub_body = unify_block sub_cond body1 body2 in
+              unify_block sub_body orelse1 orelse2
           | _ -> None))
 
 and unify_block : substitutions option -> block -> block -> substitutions option
@@ -136,15 +143,46 @@ let unify_naive
     -> substitutions option
   =
  fun ?(debug = false) ~target:(env1, block1) ~pattern:(env2, block2) () ->
+  if debug
+  then (
+    print_endline
+      ("Target:"
+      ^ (sexp_of_program (String.Map.empty, block1) |> Sexp.to_string));
+    print_endline
+      ("Pattern:"
+      ^ (sexp_of_program (String.Map.empty, block2) |> Sexp.to_string)))
+  else ();
   unify_block (Some String.Map.empty) block1 block2
 
 let commutative_add = ("(Call Name_+ ?a ?b)", "(Call Name_+ ?b ?a)")
 let commutative_mul = ("(Call Name_* ?a ?b)", "(Call Name_* ?b ?a)")
-let identity_add = ("(Call Name_+ ?a Num_0)", "?a")
-let identity_mul = ("(Call Name_* ?a Num_1)", "?a")
+let identity_add = ("(Call Name_+ ?a (Num 0))", "?a")
+let identity_mul = ("(Call Name_* ?a (Num 1))", "?a")
+
+let call_expand_r =
+  ( "(Call ?a (Index ?b ?c) (Num ?d))"
+  , "(Call ?a (Index ?b ?c) (Index (Call Name_fill (Num ?d) (Call Name_len \
+     ?b)) ?c))" )
+
+let call_expand_l =
+  ( "(Call ?a (Num ?b) (Index ?c ?d))"
+  , "(Call ?a (Index (Call Name_fill (Num ?b) (Call Name_len ?c)) ?d) (Index \
+     ?c ?d))" )
+
+let assign_expand =
+  ( "(Assign (Index ?a ?b) (Num ?c))"
+  , "(Assign (Index ?a ?b) (Index (Call Name_fill (Num ?c) (Call Name_len ?a)) \
+     ?b))" )
 
 let rewrite_rules =
-  [ commutative_add; commutative_mul; identity_add; identity_mul ]
+  [ commutative_add
+  ; commutative_mul
+  ; identity_add
+  ; identity_mul
+  ; call_expand_l
+  ; call_expand_r
+  ; assign_expand
+  ]
   |> List.map ~f:(fun (from, into) ->
          EGraph.Rule.make_constant
            ~from:(Sexp.of_string from |> Query.of_sexp op_of_string)
@@ -178,7 +216,7 @@ let query_of_prog : program -> hole_map * 'a Query.t =
           let new_name = gensym "?" |> String.chop_prefix_exn ~prefix:"__" in
           (String.Map.add_exn map ~key:h ~data:new_name, Sexp.Atom new_name))
     | Name n -> (map, Sexp.Atom ("Name_" ^ n))
-    | Num n -> (map, Sexp.Atom ("Num_" ^ string_of_int n))
+    | Num n -> (map, Sexp.List [ Sexp.Atom "Num"; Sexp.Atom (string_of_int n) ])
     | Index (pat, index) ->
         let map, pat = replace_holes_expr map pat in
         let map, index = replace_holes_expr map index in
@@ -204,6 +242,11 @@ let query_of_prog : program -> hole_map * 'a Query.t =
         let map, iter = replace_holes_expr map iter in
         let map, body = replace_holes_block map body in
         (map, Sexp.List [ Sexp.Atom "For"; index; iter; body ])
+    | If (cond, body, orelse) ->
+        let map, cond = replace_holes_expr map cond in
+        let map, body = replace_holes_block map body in
+        let map, orelse = replace_holes_block map orelse in
+        (map, Sexp.List [ Sexp.Atom "If"; cond; body; orelse ])
   and replace_holes_block : hole_map -> block -> hole_map * Sexp.t =
    fun map b ->
     let map, l = List.fold_map b ~init:map ~f:replace_holes_stmt in
@@ -253,18 +296,22 @@ let unify_egraph
   let t = sexp_of_program target |> t_of_sexp in
   let _ = EGraph.add_node graph t in
   if debug
-  then
-    (* print_endline ("\nTarget: \n" ^ (sexp_of_t t |> Sexp.to_string)); *)
-    EGraph.to_dot graph |> Odot.print_file "before_eqsat.txt"
+  then (
+    print_endline ("\nTarget: \n" ^ (sexp_of_t t |> Sexp.to_string));
+    EGraph.to_dot graph |> Odot.print_file "before_eqsat.txt")
   else ();
   let _ = EGraph.run_until_saturation graph rewrite_rules in
   if debug then EGraph.to_dot graph |> Odot.print_file "after_eqsat.txt" else ();
   let map, q = query_of_prog pattern in
   if debug
   then
-    ()
-    (* print_endline *)
-    (* ("Pattern:\n" ^ (Query.to_sexp string_of_op q |> Sexp.to_string)) *)
+    print_endline
+      ("Pattern:\n" ^ (Query.to_sexp string_of_op q |> Sexp.to_string))
   else ();
   let matches = EGraph.find_matches (EGraph.freeze graph) q in
+  if debug
+  then
+    print_endline
+      ("Number of matches: " ^ (Iter.length matches |> string_of_int))
+  else ();
   extract_matches graph matches map

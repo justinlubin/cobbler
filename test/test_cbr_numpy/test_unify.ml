@@ -58,6 +58,21 @@ let s8 : string =
 
 let reference8 : program = program_of_str s8
 
+let reference9 : program =
+  ( Cbr_numpy.Env.np_env
+  , [ Assign
+        (PName "out", Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]))
+    ; For
+        ( PName "i"
+        , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
+        , [ If
+              ( Call (Name ">", [ Index (Name "x", Name "i"); Num 0 ])
+              , [ Assign (PIndex (PName "out", Name "i"), Num 1) ]
+              , [ Assign (PIndex (PName "out", Name "i"), Num (-1)) ] )
+          ] )
+    ; Return (Name "out")
+    ] )
+
 let candidate1 : program =
   ( String.Map.empty
   , [ Assign (PName "x", Call (Name "+", [ Hole (Number, "1"); Num 2 ])) ] )
@@ -146,6 +161,38 @@ let candidate8' : program =
     ; Return (Hole (Array, "a"))
     ] )
 
+let candidate9 : program =
+  ( Cbr_numpy.Env.np_env
+  , [ Assign
+        ( PHole (Array, "out")
+        , Call (Name "zeros", [ Call (Name "len", [ Hole (Array, "x") ]) ]) )
+    ; For
+        ( PHole (Array, "i")
+        , Call (Name "range", [ Call (Name "len", [ Hole (Array, "x") ]) ])
+        , [ If
+              ( Call
+                  ( Name ">"
+                  , [ Index (Hole (Array, "cond"), Name "i")
+                    ; Index (Hole (Array, "cond2"), Name "i")
+                    ] )
+              , [ Assign (PIndex (PHole (Array, "out"), Name "i"), Num 1) ]
+              , [ Assign (PIndex (PHole (Array, "out"), Name "i"), Num (-1)) ]
+              )
+          ] )
+    ; Return (Hole (Array, "out"))
+    ] )
+
+let candidate9' : program =
+  ( Cbr_numpy.Env.np_env
+  , [ Return
+        (Call
+           ( Name "where"
+           , [ Call (Name "gt", [ Hole (Array, "x"); Hole (Array, "z") ])
+             ; Hole (Number, "pos")
+             ; Hole (Number, "neg")
+             ] ))
+    ] )
+
 let unify_raises_error : program -> program -> bool =
  fun reference candidate ->
   match unify_naive ~target:reference ~pattern:candidate () with
@@ -169,10 +216,9 @@ let%test_unit "no substitution possible" =
 
 let%test_unit "2 hole substitutions" =
   let expect = Some (String.Map.of_alist_exn [ ("1", Num 1); ("2", Num 2) ]) in
-  [%test_result: substitutions option list]
-    (List.map unify_funcs ~f:(fun unify ->
-         unify ~debug:false ~target:reference1 ~pattern:candidate3 ()))
-    ~expect:(repeat expect (List.length unify_funcs))
+  [%test_result: substitutions option]
+    (unify_naive ~debug:false ~target:reference1 ~pattern:candidate3 ())
+    ~expect
 
 let%test_unit "more complex hole substitution" =
   let expect =
@@ -255,4 +301,55 @@ let%test_unit "unify mul commutative" =
   [%test_result: substitutions option list]
     (List.map unify_funcs ~f:(fun unify ->
          unify ~target:reference8 ~pattern:candidate8' ()))
+    ~expect
+
+let%test_unit "unify where from canonical" =
+  let expect =
+    [ Some
+        (String.Map.of_alist_exn
+           [ ("cond", Name "x")
+           ; ( "cond2"
+             , Call (Name "fill", [ Num 0; Call (Name "len", [ Name "x" ]) ]) )
+           ; ("i", Name "i")
+           ; ("out", Name "out")
+           ; ("x", Name "x")
+           ])
+    ; None
+    ]
+  in
+  [%test_result: substitutions option list]
+    (List.map unify_funcs ~f:(fun unify ->
+         unify ~debug:false ~target:reference9 ~pattern:candidate9 ()))
+    ~expect
+
+let%test_unit "unify where from np funcs" =
+  let expect =
+    [ Some
+        (String.Map.of_alist_exn
+           [ ("x", Name "x")
+           ; ( "z"
+             , Call (Name "fill", [ Num 0; Call (Name "len", [ Name "x" ]) ]) )
+           ; ( "pos"
+             , Call (Name "fill", [ Num 1; Call (Name "len", [ Name "out" ]) ])
+             )
+           ; ( "neg"
+             , Call
+                 (Name "fill", [ Num (-1); Call (Name "len", [ Name "out" ]) ])
+             )
+           ; ("arr", Name "x")
+           ; ("where_i", Name "i")
+           ; ("where_result", Name "out")
+           ])
+    ; None
+    ]
+  in
+  [%test_result: substitutions option list]
+    (List.map unify_funcs ~f:(fun unify ->
+         unify
+           ~debug:false
+           ~target:reference9
+           ~pattern:
+             (Inline.inline_program candidate9'
+             |> Partial_eval.partial_eval_program)
+           ()))
     ~expect

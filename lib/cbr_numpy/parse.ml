@@ -33,6 +33,8 @@ let rec stmt_of_sexp : Sexp.t -> stmt =
   | Sexp.List [ Sexp.Atom "For"; index; iter; body ] ->
       For (pat_of_sexp index, expr_of_sexp iter, block_of_sexp body)
   | Sexp.List [ Sexp.Atom "Return"; e ] -> Return (expr_of_sexp e)
+  | Sexp.List [ Sexp.Atom "If"; cond; body; orelse ] ->
+      If (expr_of_sexp cond, block_of_sexp body, block_of_sexp orelse)
   | _ -> failwith ("Invalid statement: " ^ Sexp.to_string sexp)
 
 and block_of_sexp : Sexp.t -> block =
@@ -102,6 +104,13 @@ let rec sexp_of_stmt : stmt -> Sexp.t =
         ; sexp_of_block body
         ]
   | Return e -> Sexp.List [ Sexp.Atom "Return"; sexp_of_expr e ]
+  | If (cond, body, orelse) ->
+      Sexp.List
+        [ Sexp.Atom "If"
+        ; sexp_of_expr cond
+        ; sexp_of_block body
+        ; sexp_of_block orelse
+        ]
 
 and sexp_of_block : block -> Sexp.t =
  fun b -> Sexp.List (List.map b ~f:sexp_of_stmt)

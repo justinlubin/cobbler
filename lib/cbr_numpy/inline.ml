@@ -37,6 +37,12 @@ and substitute_stmt : (id * expr) list -> stmt -> (id * expr) list * stmt =
       in
       ( new_binds
       , For (pat, substitute_expr binds e, substitute_block new_binds block) )
+  | If (cond, body, orelse) ->
+      ( binds
+      , If
+          ( substitute_expr binds cond
+          , substitute_block binds body
+          , substitute_block binds orelse ) )
   | Return e -> (binds, Return (substitute_expr binds e))
 
 and substitute_block : (id * expr) list -> block -> block =
@@ -86,6 +92,11 @@ let rec inline_stmt : env -> stmt -> block =
       let stmts, e = inline_expr env e in
       let body = inline_block env block in
       stmts @ [ For (id, e, body) ]
+  | If (cond, body, orelse) ->
+      let stmts, cond = inline_expr env cond in
+      let body = inline_block env body in
+      let orelse = inline_block env orelse in
+      stmts @ [ If (cond, body, orelse) ]
 
 and inline_block : env -> block -> block =
  fun env block -> List.concat_map (inline_stmt env) block
