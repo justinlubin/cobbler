@@ -1,6 +1,7 @@
 .PHONY: build
 build:
 	dune build
+	pip install -e .
 
 .PHONY: test
 test:
@@ -29,6 +30,7 @@ switch:
 .PHONY: deps
 deps:
 	opam install --deps-only --with-test --with-doc .
+	pip install -r requirements.txt
 
 .PHONY: dev-deps
 dev-deps:
@@ -46,3 +48,7 @@ watch:
 .PHONY: watch-test
 watch-test:
 	dune runtest --watch --terminal-persistence=clear-on-rebuild
+
+.PHONY: benchmark
+benchmark:
+	python3 lib/cbr_numpy/benchmarking.py

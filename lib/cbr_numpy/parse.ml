@@ -153,3 +153,23 @@ let pp_program : ?channel:Out_channel.t -> program -> unit =
   let formatter = Format.formatter_of_out_channel channel in
   sexp_of_program p |> Sexp.pp_hum formatter;
   Format.pp_print_flush formatter ()
+
+let rec py_str_of_sexp : Sexp.t -> string =
+ fun sexp ->
+  match sexp with
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom fn; p1 ] ->
+      "np." ^ fn ^ "(" ^ py_str_of_sexp p1 ^ ")"
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "mul"; p1; p2 ] ->
+      "np.multiply(" ^ py_str_of_sexp p1 ^ ", " ^ py_str_of_sexp p2 ^ ")"
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom fn; p1; p2 ] ->
+      "np." ^ fn ^ "(" ^ py_str_of_sexp p1 ^ ", " ^ py_str_of_sexp p2 ^ ")"
+  | Sexp.List [ Sexp.Atom "Return"; right ] -> py_str_of_sexp right
+  | Sexp.List [ right ] -> py_str_of_sexp right
+  | Sexp.Atom a -> a
+  | _ -> failwith ("Invalid expression: " ^ Sexp.to_string sexp)
+
+and py_str_of_block : block -> string =
+ fun block -> block |> sexp_of_block |> py_str_of_sexp
+
+let py_str_of_program : program -> string =
+ fun (env, block) -> py_str_of_block block

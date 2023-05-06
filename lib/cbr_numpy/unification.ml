@@ -309,9 +309,4 @@ let unify_egraph
       ("Pattern:\n" ^ (Query.to_sexp string_of_op q |> Sexp.to_string))
   else ();
   let matches = EGraph.find_matches (EGraph.freeze graph) q in
-  if debug
-  then
-    print_endline
-      ("Number of matches: " ^ (Iter.length matches |> string_of_int))
-  else ();
   extract_matches graph matches map

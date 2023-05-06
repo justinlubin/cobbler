@@ -1,0 +1,40 @@
+cell name,orig code,orig output,orig ast size,orig exec time,synthed code,synthed output,synthed ast size,synthed exec time,synth time,outputs match?,status
+,import numpy as np,,,,,,,,,,OrigExecFail
+test sum,"#test sum
+x = np.arange(5)
+#synth
+c = 0
+for i in range(len(x)):
+    c = c + x[i]
+c",10,41,0.0001161580003099516,"#test sum
+x = np.arange(5)
+np.sum(x)
+",10,18,0.0001252510119229555,0.01036698899406474,True,Success
+test sum mul,"#test sum mul
+x = np.arange(5)
+y = np.arange(5)
+#synth
+c = 0
+for j in range(len(x)):
+    c = c + (x[j] * y[j])
+c",30,58,9.144499199464917e-05,"#test sum mul
+x = np.arange(5)
+y = np.arange(5)
+np.sum(np.multiply(x, y))
+",30,34,0.000152338994666934,0.009741707006469369,True,Success
+test mul,"#test mul
+x = np.arange(5)
+y = np.arange(5)
+#synth
+z = np.zeros(len(x))
+for i in range(len(x)):
+    z[i] = x[i] * y[i]
+z",[ 0.  1.  4.  9. 16.],67,0.00013782299356535077,"#test mul
+x = np.arange(5)
+y = np.arange(5)
+np.multiply(x, y)
+",[ 0  1  4  9 16],29,9.677599882707e-05,0.009847944995271973,True,Success
+test no sol,"#test no sol
+x = 0
+x + 1",1,11,1.5954996342770755e-05,,,,,,,SynthFail
+
