@@ -14,7 +14,12 @@ include Comparator.Make (T)
 let rec show : typ -> string = function
   | TUnit -> "Unit"
   | TInt -> "Int"
-  | TDatatype x -> x
+  | TVar x -> x
+  | TDatatype (x, taus) ->
+      sprintf
+        "(%s%s)"
+        x
+        (taus |> List.map ~f:(fun t -> " " ^ show t) |> String.concat)
   | TProd (tau1, tau2) -> sprintf "(%s * %s)" (show tau1) (show tau2)
   | TArr (domain, codomain) ->
       sprintf "(%s -> %s)" (show domain) (show codomain)
@@ -22,7 +27,8 @@ let rec show : typ -> string = function
 let rec decompose_arr : typ -> typ list * typ = function
   | TUnit -> ([], TUnit)
   | TInt -> ([], TInt)
-  | TDatatype x -> ([], TDatatype x)
+  | TVar x -> ([], TVar x)
+  | TDatatype (x, taus) -> ([], TDatatype (x, taus))
   | TProd (tau1, tau2) -> ([], TProd (tau1, tau2))
   | TArr (domain, codomain) ->
       let domain', codomain' = decompose_arr codomain in
