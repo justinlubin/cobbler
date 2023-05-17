@@ -17,7 +17,7 @@ let extract_list_foldr_exn : datatype_env -> typ_env -> env -> string -> exp =
         in
         let elem_type =
           match Type_system.ctor_typ sigma "Cons" with
-          | Some (_, TProd (tau, _)) -> tau
+          | Some (_, _, TProd (tau, _)) -> tau
           | _ -> failwith "non-prod Cons arg type"
         in
         let return_type =

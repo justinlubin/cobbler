@@ -74,10 +74,10 @@ and to_unification_term'
   | EMatch (scrutinee, branches) ->
       let arguments =
         List.map (sort_tags branches) ~f:(fun (tag, (arg_name, rhs)) ->
-            EAbs
-              ( arg_name
-              , snd (Option.value_exn (Type_system.ctor_typ sigma tag))
-              , rhs ))
+            let _, _, domain =
+              Option.value_exn (Type_system.ctor_typ sigma tag)
+            in
+            EAbs (arg_name, domain, rhs))
       in
       embed' "match" "" (scrutinee :: arguments)
   | ECtor (tag, arg) -> embed' "ctor" tag [ arg ]

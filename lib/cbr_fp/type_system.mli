@@ -18,5 +18,6 @@ val check : datatype_env -> typ_env -> exp -> typ -> unit
 val well_typed : datatype_env * typ_env * env -> unit
 
 (** [ctor_typ sigma tag] looks up the type of the constructor [tag] in
-    [sigma]. *)
-val ctor_typ : datatype_env -> string -> (string * typ) option
+    [sigma], returning its datatype (with a list of parameter names) and
+    its argument type. *)
+val ctor_typ : datatype_env -> string -> (string * string list * typ) option
