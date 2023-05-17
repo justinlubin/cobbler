@@ -7,6 +7,7 @@ open Unification
 let rec to_unification_typ : Lang.typ -> Unification.typ = function
   | TUnit -> Elementary TUnit
   | TInt -> Elementary TInt
+  | TVar x -> Elementary (TVar x)
   | TDatatype (x, taus) -> Elementary (TDatatype (x, taus))
   | TProd (left, right) -> Elementary (TProd (left, right))
   | TArr (domain, codomain) ->

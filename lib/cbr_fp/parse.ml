@@ -1,6 +1,8 @@
 open Core
 open Lang
 
+let is_type_var : string -> bool = fun s -> Char.is_lowercase (String.get s 0)
+
 let is_constructor : string -> bool =
  fun s -> Char.is_uppercase (String.get s 0)
 
@@ -10,6 +12,7 @@ let is_variable : string -> bool = fun s -> Char.is_lowercase (String.get s 0)
 let rec typ_of_sexp : Sexp.t -> typ = function
   | Sexp.Atom "Unit" -> TUnit
   | Sexp.Atom "Int" -> TInt
+  | Sexp.Atom x when is_type_var x -> TVar x
   | Sexp.List [ domain; Sexp.Atom "*"; range ] ->
       TProd (typ_of_sexp domain, typ_of_sexp range)
   | Sexp.List [ domain; Sexp.Atom "->"; range ] ->

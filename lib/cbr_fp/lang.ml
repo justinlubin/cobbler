@@ -13,6 +13,7 @@ type id = string
 and typ =
   | TUnit
   | TInt
+  | TVar of string
   | TDatatype of string * typ list
   | TProd of typ * typ
   | TArr of typ * typ

@@ -14,6 +14,7 @@ include Comparator.Make (T)
 let rec show : typ -> string = function
   | TUnit -> "Unit"
   | TInt -> "Int"
+  | TVar x -> x
   | TDatatype (x, taus) ->
       sprintf
         "(%s%s)"
@@ -26,6 +27,7 @@ let rec show : typ -> string = function
 let rec decompose_arr : typ -> typ list * typ = function
   | TUnit -> ([], TUnit)
   | TInt -> ([], TInt)
+  | TVar x -> ([], TVar x)
   | TDatatype (x, taus) -> ([], TDatatype (x, taus))
   | TProd (tau1, tau2) -> ([], TProd (tau1, tau2))
   | TArr (domain, codomain) ->
