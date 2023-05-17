@@ -10,16 +10,15 @@ let is_variable : string -> bool = fun s -> Char.is_lowercase (String.get s 0)
 let rec typ_of_sexp : Sexp.t -> typ = function
   | Sexp.Atom "Unit" -> TUnit
   | Sexp.Atom "Int" -> TInt
-  | Sexp.Atom x ->
-      if is_datatype x
-      then TDatatype x
-      else failwith (sprintf "unknown atom type '%s'" x)
   | Sexp.List [ domain; Sexp.Atom "*"; range ] ->
       TProd (typ_of_sexp domain, typ_of_sexp range)
   | Sexp.List [ domain; Sexp.Atom "->"; range ] ->
       TArr (typ_of_sexp domain, typ_of_sexp range)
-  | Sexp.List _ ->
-      failwith "arrow type must have exactly domain, arrow (->), and range"
+  | Sexp.List (Sexp.Atom head :: tail) ->
+      if is_datatype head
+      then TDatatype (head, List.map ~f:typ_of_sexp tail)
+      else failwith (sprintf "unknown atom type '%s'" head)
+  | _ -> failwith "unknown type"
 
 let rec branch_of_sexp : Sexp.t -> branch = function
   | Sexp.List [ Sexp.Atom ctor_name; Sexp.Atom arg_name; Sexp.Atom "->"; rhs ]
@@ -56,6 +55,10 @@ let variant_of_sexp : Sexp.t -> string * typ = function
   | Sexp.List [ Sexp.Atom tag; arg_typ ] -> (tag, typ_of_sexp arg_typ)
   | _ -> failwith "malformatted datatype variant"
 
+let parameter_of_sexp : Sexp.t -> string = function
+  | Sexp.Atom param -> param
+  | _ -> failwith "malformatted datatype parameter"
+
 let definitions : string -> datatype_env * typ_env * env =
  fun text ->
   text
@@ -64,11 +67,16 @@ let definitions : string -> datatype_env * typ_env * env =
        ~init:(String.Map.empty, String.Map.empty, String.Map.empty)
        ~f:(fun (sigma, gamma, env) sexp ->
          match sexp with
-         | Sexp.List (Sexp.Atom "type" :: Sexp.Atom dt :: variants) ->
+         | Sexp.List
+             (Sexp.Atom "type"
+             :: Sexp.List (Sexp.Atom dt :: parameters)
+             :: variants) ->
              ( String.Map.add_exn
                  sigma
                  ~key:dt
-                 ~data:(List.map ~f:variant_of_sexp variants)
+                 ~data:
+                   ( List.map ~f:parameter_of_sexp parameters
+                   , List.map ~f:variant_of_sexp variants )
              , gamma
              , env )
          | Sexp.List

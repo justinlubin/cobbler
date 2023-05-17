@@ -3,9 +3,12 @@ open Lang
 
 exception IllTyped of exp
 
+(* TODO (polymorphic): make constructors polymorphic *)
 let ctor_typ : datatype_env -> string -> (string * typ) option =
  fun sigma tag ->
-  List.find_map (String.Map.to_alist sigma) ~f:(fun (dt, dt_info) ->
+  List.find_map
+    (String.Map.to_alist sigma)
+    ~f:(fun (dt, (_dt_params, dt_info)) ->
       Option.map
         (List.Assoc.find dt_info ~equal:String.equal tag)
         ~f:(fun domain -> (dt, domain)))
@@ -20,15 +23,18 @@ let rec infer : datatype_env -> typ_env -> exp -> typ =
   | EApp (ERScheme (RListFoldr (b, f)), arg) ->
       let return_type = infer sigma gamma b in
       (match infer sigma gamma arg with
-      | TDatatype dt ->
+      | TDatatype (dt, taus) ->
           (match String.Map.find sigma dt with
-          | Some variants ->
+          (* TODO (polymorphic): make lists polymorphic *)
+          | Some ([], variants) ->
               (match
                  List.sort
                    ~compare:(fun (x1, _) (x2, _) -> String.compare x1 x2)
                    variants
                with
-              | [ ("Cons", TProd (elem_type, TDatatype dt')); ("Nil", TUnit) ]
+              | [ ("Cons", TProd (elem_type, TDatatype (dt', [])))
+                ; ("Nil", TUnit)
+                ]
                 when String.equal dt dt' ->
                   check
                     sigma
@@ -49,7 +55,8 @@ let rec infer : datatype_env -> typ_env -> exp -> typ =
       TArr (tau, infer sigma (String.Map.update gamma x ~f:(fun _ -> tau)) body)
   | EMatch (scrutinee, branches) ->
       (match infer sigma gamma scrutinee with
-      | TDatatype dt ->
+      (* TODO (polymorphic) *)
+      | TDatatype (dt, _) ->
           let ctors, return_types =
             List.unzip
               (List.map branches ~f:(fun (tag, (arg_name, rhs)) ->
@@ -67,7 +74,7 @@ let rec infer : datatype_env -> typ_env -> exp -> typ =
                [%eq: id * typ]
                (List.sort ctors ~compare:[%compare: id * typ])
                (List.sort
-                  (String.Map.find_exn sigma dt)
+                  (snd (String.Map.find_exn sigma dt))
                   ~compare:[%compare: id * typ])
           then (
             match List.all_equal return_types ~equal:[%eq: typ] with
@@ -76,10 +83,11 @@ let rec infer : datatype_env -> typ_env -> exp -> typ =
           else raise (IllTyped e)
       | _ -> raise (IllTyped e))
   | ECtor (tag, arg) ->
+      (* TODO (polymorphic)  *)
       (match ctor_typ sigma tag with
       | Some (datatype, domain) ->
           check sigma gamma arg domain;
-          TDatatype datatype
+          TDatatype (datatype, [])
       | None -> raise (IllTyped e))
   | EPair (e1, e2) -> TProd (infer sigma gamma e1, infer sigma gamma e2)
   | EFst arg ->

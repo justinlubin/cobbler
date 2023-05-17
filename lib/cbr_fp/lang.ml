@@ -13,7 +13,7 @@ type id = string
 and typ =
   | TUnit
   | TInt
-  | TDatatype of string
+  | TDatatype of string * typ list
   | TProd of typ * typ
   | TArr of typ * typ
 [@@deriving sexp, ord, eq, compare, show]
@@ -23,7 +23,7 @@ type typ_env = (id, typ, String.comparator_witness) Map.t
 
 (** An environment of datatypes (commonly called "sigma") *)
 type datatype_env =
-  (string, (string * typ) list, String.comparator_witness) Map.t
+  (string, string list * (string * typ) list, String.comparator_witness) Map.t
 
 (** Case branches *)
 type branch = string * (id * exp)

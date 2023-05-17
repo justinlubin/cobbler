@@ -30,7 +30,7 @@ let%expect_test "list1 extracted foldr for map well-typed" =
                 gamma_list1
                 env_list1
                 "map"))));
-  [%expect {| ((Peano -> Peano) -> (ListPeano -> ListPeano)) |}]
+  [%expect {| (((Peano) -> (Peano)) -> ((ListPeano) -> (ListPeano))) |}]
 
 let%expect_test "list1 extracted foldr for filter well-typed" =
   print_endline
@@ -44,4 +44,4 @@ let%expect_test "list1 extracted foldr for filter well-typed" =
                 gamma_list1
                 env_list1
                 "filter"))));
-  [%expect {| ((Peano -> Bool) -> (ListPeano -> ListPeano)) |}]
+  [%expect {| (((Peano) -> (Bool)) -> ((ListPeano) -> (ListPeano))) |}]

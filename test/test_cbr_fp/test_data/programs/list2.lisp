@@ -1,23 +1,23 @@
-(type Bool
+(type (Bool)
   (False Unit)
   (True Unit))
 
-(type Peano
+(type (Peano)
   (Zero Unit)
-  (Succ Peano))
+  (Succ (Peano)))
 
-(type ListPeano
+(type (ListPeano)
   (Nil Unit)
-  (Cons (Peano * ListPeano)))
+  (Cons ((Peano) * (ListPeano))))
 
-(define map : ((Peano -> Peano) -> (ListPeano -> ListPeano))
-  (lambda f (Peano -> Peano) (lambda xs ListPeano
+(define map : (((Peano) -> (Peano)) -> ((ListPeano) -> (ListPeano)))
+  (lambda f ((Peano) -> (Peano)) (lambda xs (ListPeano)
     (match xs
       (Nil n -> (Nil n))
       (Cons p -> (Cons ((f (fst p)) , (map f (snd p)))))))))
 
-(define filter : ((Peano -> Bool) -> (ListPeano -> ListPeano))
-  (lambda pred (Peano -> Bool) (lambda xs ListPeano
+(define filter : (((Peano) -> (Bool)) -> ((ListPeano) -> (ListPeano)))
+  (lambda pred ((Peano) -> (Bool)) (lambda xs (ListPeano)
     (match xs
       (Nil n ->
         (Nil n))
@@ -26,17 +26,17 @@
           (False n -> (filter pred (snd p)))
           (True n -> (Cons ((fst p) , (filter pred (snd p)))))))))))
 
-(define mapmap : ((Peano -> Peano) -> ((Peano -> Peano) -> (ListPeano -> ListPeano)))
-  (lambda f (Peano -> Peano) (lambda g (Peano -> Peano) (lambda xs ListPeano
+(define mapmap : (((Peano) -> (Peano)) -> (((Peano) -> (Peano)) -> ((ListPeano) -> (ListPeano))))
+  (lambda f ((Peano) -> (Peano)) (lambda g ((Peano) -> (Peano)) (lambda xs (ListPeano)
     (map f (map g xs))))))
 
-(define mapfilter : ((Peano -> Peano) -> ((Peano -> Bool) -> (ListPeano -> ListPeano)))
-  (lambda f (Peano -> Peano) (lambda pred (Peano -> Bool) (lambda xs ListPeano
+(define mapfilter : (((Peano) -> (Peano)) -> (((Peano) -> (Bool)) -> ((ListPeano) -> (ListPeano))))
+  (lambda f ((Peano) -> (Peano)) (lambda pred ((Peano) -> (Bool)) (lambda xs (ListPeano)
     (map f (filter pred xs))))))
 
 (define main :
-  ((Peano -> Bool) -> ((Peano -> Peano) -> (ListPeano -> ListPeano)))
-  (lambda pred (Peano -> Bool) (lambda f (Peano -> Peano) (lambda xs ListPeano
+  (((Peano) -> (Bool)) -> (((Peano) -> (Peano)) -> ((ListPeano) -> (ListPeano))))
+  (lambda pred ((Peano) -> (Bool)) (lambda f ((Peano) -> (Peano)) (lambda xs (ListPeano)
     (match xs
       (Nil n ->
         (Nil n))

@@ -7,7 +7,7 @@ open Unification
 let rec to_unification_typ : Lang.typ -> Unification.typ = function
   | TUnit -> Elementary TUnit
   | TInt -> Elementary TInt
-  | TDatatype x -> Elementary (TDatatype x)
+  | TDatatype (x, taus) -> Elementary (TDatatype (x, taus))
   | TProd (left, right) -> Elementary (TProd (left, right))
   | TArr (domain, codomain) ->
       Arrow (to_unification_typ domain, to_unification_typ codomain)
@@ -114,12 +114,13 @@ let rec from_unification_term
             let branch_terms = List.tl_exn arguments in
             let datatype =
               match from_unification_typ (Unification.typ scrutinee_term) with
-              | TDatatype x -> x
+              | TDatatype (x, _) -> x
               | _ -> failwith "ill-typed scrutinee"
             in
             let tags =
               datatype
               |> String.Map.find_exn sigma
+              |> snd
               |> sort_tags
               |> List.map ~f:(fun (tag, _) -> tag)
             in
