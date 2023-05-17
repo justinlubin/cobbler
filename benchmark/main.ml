@@ -17,7 +17,3 @@ let () =
   match Cbr_numpy.Np_synthesis.solve 4 ~debug:false target_type target true with
   | None -> print_endline "no solution found"
   | Some e -> print_endline (py_str_of_program e)
-
-
-
-
