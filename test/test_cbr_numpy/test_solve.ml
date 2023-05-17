@@ -128,6 +128,54 @@ let target7 : program =
     ; Return (Name "out")
     ] )
 
+let target8 : program =
+  ( Cbr_numpy.Env.np_env
+  , [ Assign
+        ( PName "y"
+        , Call
+            ( Name "zeros"
+            , [ Call
+                  ( Name "+"
+                  , [ Call
+                        ( Name "-"
+                        , [ Call (Name "len", [ Name "x" ])
+                          ; Name "window_size"
+                          ] )
+                    ; Num 1
+                    ] )
+              ] ) )
+    ; For
+        ( PName "i"
+        , Call
+            ( Name "range"
+            , [ Call
+                  ( Name "+"
+                  , [ Call
+                        ( Name "-"
+                        , [ Call (Name "len", [ Name "x" ])
+                          ; Name "window_size"
+                          ] )
+                    ; Num 1
+                    ] )
+              ] )
+        , [ Assign (PName "s", Num 0)
+          ; For
+              ( PName "j"
+              , Call (Name "range", [ Name "window_size" ])
+              , [ Assign
+                    ( PName "s"
+                    , Call
+                        ( Name "+"
+                        , [ Name "s"
+                          ; Index
+                              (Name "x", Call (Name "+", [ Name "i"; Name "j" ]))
+                          ] ) )
+                ] )
+          ; Assign (PIndex (PName "y", Name "i"), Name "s")
+          ] )
+    ; Return (Name "y")
+    ] )
+
 let solution1 : program =
   (Cbr_numpy.Env.np_env, [ Return (Call (Name "sum", [ Name "x" ])) ])
 
@@ -165,6 +213,14 @@ let solution7 : program =
              ; Call (Name "fill", [ Num 1; Call (Name "len", [ Name "x" ]) ])
              ; Call (Name "fill", [ Num (-1); Call (Name "len", [ Name "x" ]) ])
              ] ))
+    ] )
+
+let solution8 : program =
+  ( Env.np_env
+  , [ Return
+        (Call
+           ( Name "convolve_valid"
+           , [ Name "x"; Call (Name "ones", [ Name "window_size" ]) ] ))
     ] )
 
 let egraph_bools = [ true; false ]
@@ -236,3 +292,9 @@ let%test_unit "np_solve where" =
     (List.map egraph_bools ~f:(fun use_egraphs ->
          solve 2 ~debug:false Array target7 use_egraphs))
     ~expect:[ Some solution7; None ]
+
+let%test_unit "np_solve rolling sum" =
+  [%test_result: program option list]
+    (List.map egraph_bools ~f:(fun use_egraphs ->
+         solve 2 ~debug:false Array target8 use_egraphs))
+    ~expect:[ Some solution8; None ]

@@ -9,11 +9,13 @@ let rec partial_eval_expr : expr -> expr =
       (match fn with
       | Name "len" ->
           (match partial_eval_expr (List.hd args) with
-          | Call (Name "mul", mul_args) ->
-              Call (Name "len", [ List.hd mul_args ])
-          | Call (Name "add", add_args) ->
-              Call (Name "len", [ List.hd add_args ])
-          | Call (Name "eq", eq_args) -> Call (Name "len", [ List.hd eq_args ])
+          | Call (Name "mul", args)
+          | Call (Name "div", args)
+          | Call (Name "add", args)
+          | Call (Name "eq", args) -> Call (Name "len", [ List.hd args ])
+          | Call (Name "ones", args)
+          | Call (Name "zeros", args)
+          | Call (Name "fill", _ :: args) -> List.hd args
           | _ -> Call (Name "len", args))
       | _ -> Call (fn, List.map partial_eval_expr args))
   | Index (e1, e2) ->
@@ -21,6 +23,12 @@ let rec partial_eval_expr : expr -> expr =
       | Call (Name "mul", [ x; y ]), e2 ->
           Call
             ( Name "*"
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "div", [ x; y ]), e2 ->
+          Call
+            ( Name "/"
             , [ partial_eval_expr (Index (x, e2))
               ; partial_eval_expr (Index (y, e2))
               ] )

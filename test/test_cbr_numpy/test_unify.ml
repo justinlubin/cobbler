@@ -73,6 +73,54 @@ let reference9 : program =
     ; Return (Name "out")
     ] )
 
+let reference10 : program =
+  ( Cbr_numpy.Env.np_env
+  , [ Assign
+        ( PName "y"
+        , Call
+            ( Name "zeros"
+            , [ Call
+                  ( Name "+"
+                  , [ Call
+                        ( Name "-"
+                        , [ Call (Name "len", [ Name "x" ])
+                          ; Name "window_size"
+                          ] )
+                    ; Num 1
+                    ] )
+              ] ) )
+    ; For
+        ( PName "i"
+        , Call
+            ( Name "range"
+            , [ Call
+                  ( Name "+"
+                  , [ Call
+                        ( Name "-"
+                        , [ Call (Name "len", [ Name "x" ])
+                          ; Name "window_size"
+                          ] )
+                    ; Num 1
+                    ] )
+              ] )
+        , [ Assign (PName "s", Num 0)
+          ; For
+              ( PName "j"
+              , Call (Name "range", [ Name "window_size" ])
+              , [ Assign
+                    ( PName "s"
+                    , Call
+                        ( Name "+"
+                        , [ Name "s"
+                          ; Index
+                              (Name "x", Call (Name "+", [ Name "i"; Name "j" ]))
+                          ] ) )
+                ] )
+          ; Assign (PIndex (PName "y", Name "i"), Name "s")
+          ] )
+    ; Return (Name "y")
+    ] )
+
 let candidate1 : program =
   ( String.Map.empty
   , [ Assign (PName "x", Call (Name "+", [ Hole (Number, "1"); Num 2 ])) ] )
@@ -193,13 +241,24 @@ let candidate9' : program =
              ] ))
     ] )
 
+let candidate10 : program =
+  ( Env.np_env
+  , [ Return
+        (Call
+           ( Name "convolve_valid"
+           , [ Hole (Array, "x"); Call (Name "ones", [ Hole (Number, "w") ]) ]
+           ))
+    ] )
+  |> Inline.inline_program
+  |> Partial_eval.partial_eval_program
+
 let unify_raises_error : program -> program -> bool =
  fun reference candidate ->
   match unify_naive ~target:reference ~pattern:candidate () with
   | exception s -> true
   | _ -> false
 
-let unify_funcs = [ unify_egraph; unify_naive ]
+let unify_funcs = [ unify_egraph_full; unify_naive ]
 
 let%test_unit "simple hole substitution" =
   let expect = Some (String.Map.of_alist_exn [ ("1", Num 1) ]) in
@@ -352,4 +411,23 @@ let%test_unit "unify where from np funcs" =
              (Inline.inline_program candidate9'
              |> Partial_eval.partial_eval_program)
            ()))
+    ~expect
+
+let%test_unit "unify rolling sum via convolve" =
+  let expect =
+    [ Some
+        (String.Map.of_alist_exn
+           [ ("conv_i", Name "i")
+           ; ("conv_j", Name "j")
+           ; ("conv_result", Name "y")
+           ; ("conv_sum", Name "s")
+           ; ("w", Name "window_size")
+           ; ("x", Name "x")
+           ])
+    ; None
+    ]
+  in
+  [%test_result: substitutions option list]
+    (List.map unify_funcs ~f:(fun unify ->
+         unify ~debug:false ~target:reference10 ~pattern:candidate10 ()))
     ~expect

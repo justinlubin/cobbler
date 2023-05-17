@@ -157,14 +157,38 @@ let pp_program : ?channel:Out_channel.t -> program -> unit =
 let rec py_str_of_sexp : Sexp.t -> string =
  fun sexp ->
   match sexp with
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom fn; p1 ] ->
-      "np." ^ fn ^ "(" ^ py_str_of_sexp p1 ^ ")"
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "len"; p1 ] ->
+      Printf.sprintf "len(%s)" (py_str_of_sexp p1)
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "mul"; p1; p2 ] ->
       "np.multiply(" ^ py_str_of_sexp p1 ^ ", " ^ py_str_of_sexp p2 ^ ")"
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom fn; p1; p2 ] ->
-      "np." ^ fn ^ "(" ^ py_str_of_sexp p1 ^ ", " ^ py_str_of_sexp p2 ^ ")"
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "convolve_valid"; p1; p2 ] ->
+      "np.convolve("
+      ^ py_str_of_sexp p1
+      ^ ", "
+      ^ py_str_of_sexp p2
+      ^ ",'valid')"
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "fill"; value; size ] ->
+      (match value with
+      | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "0" ] ->
+          Printf.sprintf "np.zeros(%s)" (py_str_of_sexp size)
+      | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "1" ] ->
+          Printf.sprintf "np.ones(%s)" (py_str_of_sexp size)
+      | _ ->
+          Printf.sprintf
+            "np.empty(%s).fill(%s)"
+            (py_str_of_sexp size)
+            (py_str_of_sexp value))
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "gt"; p1; p2 ] ->
+      Printf.sprintf "np.greater(%s,%s)" (py_str_of_sexp p1) (py_str_of_sexp p2)
+  | Sexp.List (Sexp.Atom "Call" :: Sexp.Atom fn :: args) ->
+      "np."
+      ^ fn
+      ^ "("
+      ^ (List.map ~f:py_str_of_sexp args |> String.concat ~sep:", ")
+      ^ ")"
   | Sexp.List [ Sexp.Atom "Return"; right ] -> py_str_of_sexp right
   | Sexp.List [ right ] -> py_str_of_sexp right
+  | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] -> n
   | Sexp.Atom a -> a
   | _ -> failwith ("Invalid expression: " ^ Sexp.to_string sexp)
 

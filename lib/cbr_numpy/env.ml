@@ -65,6 +65,28 @@ let add_defn =
     ; Return (Hole (Array, "add_result"))
     ] )
 
+let div_body =
+  [ Assign
+      ( PIndex (PHole (Array, "div_result"), Hole (Number, "div_i"))
+      , Call
+          ( Name "/"
+          , [ Index (Name "div_1", Hole (Number, "div_i"))
+            ; Index (Name "div_2", Hole (Number, "div_i"))
+            ] ) )
+  ]
+
+let div_defn =
+  ( [ "div_1"; "div_2" ]
+  , [ Assign
+        ( PHole (Array, "div_result")
+        , Call (Name "zeros", [ Call (Name "len", [ Name "div_1" ]) ]) )
+    ; For
+        ( PHole (Number, "div_i")
+        , Call (Name "range", [ Call (Name "len", [ Name "div_1" ]) ])
+        , div_body )
+    ; Return (Hole (Array, "div_result"))
+    ] )
+
 let ones_defn =
   ( [ "n" ]
   , [ Assign (PHole (Array, "ones_result"), Call (Name "zeros", [ Name "n" ]))
@@ -212,18 +234,20 @@ let convolve_valid_defn =
         ( PHole (Number, "conv_i")
         , Call
             ( Name "range"
-            , [ Call (Name "-", [ Call (Name "len", [ Name "h" ]); Num 1 ])
-              ; Call (Name "len", [ Name "x" ])
+            , [ Call
+                  ( Name "+"
+                  , [ Call
+                        ( Name "-"
+                        , [ Call (Name "len", [ Name "x" ])
+                          ; Call (Name "len", [ Name "h" ])
+                          ] )
+                    ; Num 1
+                    ] )
               ] )
         , [ Assign (PHole (Number, "conv_sum"), Num 0)
           ; For
               ( PHole (Number, "conv_j")
-              , Call
-                  ( Name "range"
-                  , [ Call (Name "-", [ Call (Name "len", [ Name "h" ]); Num 1 ])
-                    ; Num (-1)
-                    ; Num (-1)
-                    ] )
+              , Call (Name "range", [ Call (Name "len", [ Name "h" ]) ])
               , [ Assign
                     ( PHole (Number, "conv_sum")
                     , Call
@@ -234,26 +258,26 @@ let convolve_valid_defn =
                               , [ Index
                                     ( Name "x"
                                     , Call
-                                        ( Name "-"
+                                        ( Name "+"
                                         , [ Hole (Number, "conv_i")
                                           ; Hole (Number, "conv_j")
                                           ] ) )
-                                ; Index (Name "h", Hole (Number, "conv_j"))
+                                ; Index
+                                    ( Name "h"
+                                    , Call
+                                        ( Name "-"
+                                        , [ Call
+                                              ( Name "-"
+                                              , [ Call (Name "len", [ Name "h" ])
+                                                ; Hole (Number, "conv_j")
+                                                ] )
+                                          ; Num 1
+                                          ] ) )
                                 ] )
                           ] ) )
                 ] )
           ; Assign
-              ( PIndex
-                  ( PHole (Number, "conv_result")
-                  , Call
-                      ( Name "+"
-                      , [ Call
-                            ( Name "-"
-                            , [ Hole (Number, "conv_i")
-                              ; Call (Name "len", [ Name "h" ])
-                              ] )
-                        ; Num 1
-                        ] ) )
+              ( PIndex (PHole (Number, "conv_result"), Hole (Number, "conv_i"))
               , Hole (Number, "conv_sum") )
           ] )
     ; Return (Hole (Number, "conv_result"))
@@ -263,6 +287,7 @@ let np_env : env =
   String.Map.of_alist_exn
     [ ("sum", sum_defn)
     ; ("mul", mul_defn)
+    ; ("div", div_defn)
     ; ("add", add_defn)
     ; ("ones", ones_defn)
     ; ("eq", eq_defn)

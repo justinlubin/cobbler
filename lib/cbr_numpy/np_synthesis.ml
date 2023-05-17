@@ -22,10 +22,16 @@ let expand : int -> expr -> expr list =
               ; Hole (Array, Util.gensym "hole")
               ] )
         ; Call
+            ( Name "div"
+            , [ Hole (Array, Util.gensym "hole")
+              ; Hole (Array, Util.gensym "hole")
+              ] )
+        ; Call
             ( Name "eq"
             , [ Hole (Array, Util.gensym "hole")
               ; Hole (Array, Util.gensym "hole")
               ] )
+        ; Call (Name "ones", [ Hole (Number, Util.gensym "hole") ])
         ; Call
             ( Name "gt"
             , [ Hole (Array, Util.gensym "hole")
@@ -41,6 +47,11 @@ let expand : int -> expr -> expr list =
             ( Name "roll"
             , [ Hole (Array, Util.gensym "hole")
               ; Hole (Number, Util.gensym "hole")
+              ] )
+        ; Call
+            ( Name "convolve_valid"
+            , [ Hole (Array, Util.gensym "hole")
+              ; Hole (Array, Util.gensym "hole")
               ] )
         ]
     | Index (head, index) ->
@@ -131,19 +142,23 @@ let canonicalize : program -> program =
 let solve : int -> ?debug:bool -> hole_type -> program -> bool -> program option
   =
  fun depth ?(debug = false) program_type target use_egraphs ->
+  let unify : pattern:program -> substitutions option =
+    if use_egraphs
+    then (
+      let graph = Unification.construct_egraph ~target ~debug () in
+      Unification.unify_egraph ~graph ~debug ())
+    else Unification.unify_naive ~target ~debug ()
+  in
   let correct : expr -> expr option =
    fun e ->
-    if debug then print_endline (Parse.sexp_of_expr e |> Sexp.to_string) else ();
+    (* if debug then print_endline (Parse.sexp_of_expr e |> Sexp.to_string) else (); *)
     let canonical = canonicalize (np_env, [ Return e ]) in
-    let unify =
-      if use_egraphs then Unification.unify_egraph else Unification.unify_naive
-    in
-    match unify ~debug ~target:(canonicalize target) ~pattern:canonical () with
+    match unify ~pattern:canonical with
     | Some sub ->
         let eMap = buildExprMap (canonicalize target) in
-        if debug
+        (* if debug
         then print_endline (Map.Poly.length eMap |> string_of_int)
-        else ();
+        else (); *)
         Some (substitute_expr e sub |> postprocess eMap)
     | None -> None
   in

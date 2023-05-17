@@ -8,7 +8,7 @@ type exprType =
   | EIndex
   | ECall
   | EStr of string
-  | EName of string
+  | EName
   | EHole of hole_type * string
 [@@deriving ord, hash]
 
@@ -36,7 +36,7 @@ module L = struct
    fun f fmt shape ->
     match shape with
     | Prog _ -> Format.fprintf fmt "Program"
-    | Block _ -> Format.fprintf fmt "Block"
+    | Block (h, _) -> Format.fprintf fmt "Block %d" h
     | Stmt (s, stmt) ->
         (match (s, stmt) with
         | SFor, [ index; iter; body ] ->
@@ -49,7 +49,7 @@ module L = struct
     | Expr (e, children) ->
         (match (e, children) with
         | ENum, [ num ] -> Format.fprintf fmt "Num %a" f num
-        | EName n, [] -> Format.fprintf fmt "%s" n
+        | EName, [ n ] -> Format.fprintf fmt "Name %a" f n
         | ECall, func :: args ->
             Format.fprintf fmt "%a" f func;
             List.iter args ~f:(function arg -> Format.fprintf fmt "%a" f arg)
@@ -80,13 +80,13 @@ module L = struct
     let rec t_of_pat : pat -> 'a =
      fun pat ->
       match pat with
-      | PName n -> Mk (Expr (EName n, []))
+      | PName n -> Mk (Expr (EName, [ Mk (Id n) ]))
       | PIndex (l, expr) -> Mk (Expr (EIndex, [ t_of_pat l; t_of_expr expr ]))
       | PHole (t, h) -> Mk (Expr (EHole (t, h), []))
     and t_of_expr : expr -> 'a =
      fun expr ->
       match expr with
-      | Name n -> Mk (Expr (EName n, []))
+      | Name n -> Mk (Expr (EName, [ Mk (Id n) ]))
       | Num n -> Mk (Expr (ENum, [ Mk (Id (string_of_int n)) ]))
       | Hole (t, h) -> Mk (Expr (EHole (t, h), []))
       | Str s -> Mk (Expr (EStr s, []))
@@ -130,11 +130,16 @@ module L = struct
             (Printf.sprintf
                "Index expression with %d children"
                (List.length children))
-      | Mk (Expr (EName n, _)) -> PName n
+      | Mk (Expr (EName, [ Mk (Id n) ])) -> PName n
       | Mk (Expr (EHole (h, t), _)) -> PHole (h, t)
       | _ -> failwith "Invalid pattern when converting e-graph to s-expression"
     and expr_of_t : t -> expr = function
-      | Mk (Expr (EName n, _)) -> Name n
+      | Mk (Expr (EName, [ Mk (Id n) ])) -> Name n
+      | Mk (Expr (EName, children)) ->
+          failwith
+            (Printf.sprintf
+               "Invalid name node: %d children"
+               (List.length children))
       | Mk (Expr (ENum, [ n ])) -> Num (id_of_t n |> int_of_string)
       | Mk (Expr (ENum, n)) ->
           failwith ("Invalid num child: " ^ (List.length n |> string_of_int))
@@ -192,7 +197,7 @@ module L = struct
     | HoleOp of hole_type * string
     | CallOp
     | IndexOp
-    | NameOp of string
+    | NameOp
     | IfOp
   [@@deriving eq]
 
@@ -204,7 +209,7 @@ module L = struct
     | Stmt (SReturn, _) -> ReturnOp
     | Stmt (SIf, _) -> IfOp
     | Expr (ENum, _) -> NumOp
-    | Expr (EName n, _) -> NameOp n
+    | Expr (EName, _) -> NameOp
     | Expr (EHole (t, h), _) -> HoleOp (t, h)
     | Expr (EStr s, _) -> StrOp s
     | Expr (EIndex, _) -> IndexOp
@@ -213,8 +218,11 @@ module L = struct
 
   let make : op -> 'a list -> 'a shape =
    fun op ls ->
-    match[@warning "-8"] (op, ls) with
+    match (op, ls) with
     | ProgOp, [ block ] -> Prog block
+    | ProgOp, children ->
+        failwith
+          (Printf.sprintf "Invalid program: %d children" (List.length children))
     | BlockOp, block ->
         let h = Hashtbl.hash block in
         Block (h, block)
@@ -223,11 +231,12 @@ module L = struct
     | ReturnOp, stmt -> Stmt (SReturn, stmt)
     | IndexOp, expr -> Expr (EIndex, expr)
     | CallOp, expr -> Expr (ECall, expr)
-    | NameOp n, _ -> Expr (EName n, [])
+    | NameOp, n -> Expr (EName, n)
     | NumOp, n -> Expr (ENum, n)
     | StrOp s, _ -> Expr (EStr s, [])
     | HoleOp (t, h), _ -> Expr (EHole (t, h), [])
     | IdOp id, _ -> Id id
+    | IfOp, stmt -> Stmt (SIf, stmt)
 
   let op_of_string : string -> op =
    fun s ->
@@ -241,6 +250,7 @@ module L = struct
     | "Index" -> IndexOp
     | "If" -> IfOp
     | "Num" -> NumOp
+    | "Name" -> NameOp
     | s when String.is_prefix ~prefix:"Hole_" s ->
         let hole_type, name =
           match String.split ~on:'_' s with
@@ -254,8 +264,6 @@ module L = struct
           | _ -> failwith ("Invalid hole type: " ^ hole_type)
         in
         HoleOp (t, name)
-    | s when String.is_prefix ~prefix:"Name_" s ->
-        NameOp (String.chop_prefix_exn s ~prefix:"Name_")
     | s when String.is_prefix ~prefix:"Str_" s ->
         StrOp (String.chop_prefix_exn s ~prefix:"Str_")
     | _ -> IdOp s
@@ -271,7 +279,7 @@ module L = struct
     | IfOp -> "If"
     | IndexOp -> "Index"
     | CallOp -> "Call"
-    | NameOp n -> "Name_" ^ n
+    | NameOp -> "Name"
     | NumOp -> "Num"
     | StrOp s -> "Str_" ^ s
     | HoleOp (t, h) ->
