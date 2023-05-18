@@ -4,11 +4,9 @@ open Lang
 
 let expected_datatype_env1 =
   String.Map.of_alist_exn
-    [ ( "Peano"
-      , ([], [ ("Zero", [ TUnit ]); ("Succ", [ TDatatype ("Peano", []) ]) ]) )
+    [ ("Peano", ([], [ ("Zero", []); ("Succ", [ TDatatype ("Peano", []) ]) ]))
     ; ( "MaybePeano"
-      , ([], [ ("Nothing", [ TUnit ]); ("Just", [ TDatatype ("Peano", []) ]) ])
-      )
+      , ([], [ ("Nothing", []); ("Just", [ TDatatype ("Peano", []) ]) ]) )
     ]
 
 let expected_typ_env1 =
@@ -31,7 +29,7 @@ let expected_typ_env1 =
 
 let expected_env1 =
   String.Map.of_alist_exn
-    [ ("zero", ECtor ("Zero", [ EUnit ]))
+    [ ("zero", ECtor ("Zero", []))
     ; ( "map"
       , EAbs
           ( "f"
@@ -41,7 +39,7 @@ let expected_env1 =
               , TDatatype ("MaybePeano", [])
               , EMatch
                   ( EVar "mx"
-                  , [ ("Nothing", ([ "n" ], ECtor ("Nothing", [ EVar "n" ])))
+                  , [ ("Nothing", ([], ECtor ("Nothing", [])))
                     ; ( "Just"
                       , ([ "x" ], ECtor ("Just", [ EApp (EVar "f", EVar "x") ]))
                       )
@@ -55,7 +53,7 @@ let expected_env1 =
               , TDatatype ("MaybePeano", [])
               , EMatch
                   ( EVar "mx"
-                  , [ ("Nothing", ([ "n" ], EVar "default"))
+                  , [ ("Nothing", ([], EVar "default"))
                     ; ("Just", ([ "x" ], EVar "x"))
                     ] ) ) ) )
     ; ( "main"

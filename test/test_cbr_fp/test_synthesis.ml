@@ -9,7 +9,7 @@ let%test_unit "classic synth 1" =
   let problem = Synthesis.problem_of_definitions classic in
   let expected_solution =
     EApp
-      ( EApp (EVar "withDefault", ECtor ("Zero", [ EUnit ]))
+      ( EApp (EVar "withDefault", ECtor ("Zero", []))
       , EApp (EApp (EVar "map", EVar "f"), EVar "mx") )
   in
   let actual_solution =
@@ -29,7 +29,7 @@ let%test_unit "list2 mapfilter" =
       , EApp (EApp (EVar "filter", EVar "pred"), EVar "xs") )
   in
   let actual_solution =
-    Synthesis.solve ~use_unification:true ~depth:5 problem
+    Synthesis.solve ~use_unification:true ~depth:6 problem
     |> Option.value_exn
     |> Exp.decompose_abs
     |> snd

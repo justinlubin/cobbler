@@ -12,11 +12,8 @@ let is_variable : string -> bool = fun s -> Char.is_lowercase (String.get s 0)
 let rec typ_of_sexp : Sexp.t -> typ =
  fun s ->
   match s with
-  | Sexp.Atom "Unit" -> TUnit
   | Sexp.Atom "Int" -> TInt
   | Sexp.Atom x when is_type_var x -> TVar x
-  | Sexp.List [ domain; Sexp.Atom "*"; range ] ->
-      TProd (typ_of_sexp domain, typ_of_sexp range)
   | Sexp.List [ domain; Sexp.Atom "->"; range ] ->
       TArr (typ_of_sexp domain, typ_of_sexp range)
   | Sexp.List (Sexp.Atom head :: tail) ->
@@ -46,13 +43,9 @@ and exp_of_sexp : Sexp.t -> exp = function
           if is_variable x
           then EVar x
           else failwith (sprintf "unknown atom expression '%s'" x))
-  | Sexp.List [] -> EUnit
+  | Sexp.List [] -> failwith "unit syntax not supported"
   | Sexp.List [ Sexp.Atom "??"; Sexp.Atom name; tau ] ->
       EHole (name, typ_of_sexp tau)
-  | Sexp.List [ left; Sexp.Atom ","; right ] ->
-      EPair (exp_of_sexp left, exp_of_sexp right)
-  | Sexp.List [ Sexp.Atom "fst"; arg ] -> EFst (exp_of_sexp arg)
-  | Sexp.List [ Sexp.Atom "snd"; arg ] -> ESnd (exp_of_sexp arg)
   | Sexp.List [ Sexp.Atom "lambda"; Sexp.Atom param; tau; body ] ->
       EAbs (param, typ_of_sexp tau, exp_of_sexp body)
   | Sexp.List [ Sexp.Atom "list_foldr"; b; f; arg ] ->

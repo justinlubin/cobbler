@@ -37,10 +37,6 @@ let rec show_single : exp -> string =
         "(%s%s)"
         ctor_name
         (List.map ~f:(fun a -> " " ^ show_single a) args |> String.concat)
-  | EPair (e1, e2) -> sprintf "(%s , %s)" (show_single e1) (show_single e2)
-  | EFst arg -> sprintf "(fst %s)" (show_single arg)
-  | ESnd arg -> sprintf "(snd %s)" (show_single arg)
-  | EUnit -> "()"
   | EInt n -> string_of_int n
   | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
   | ERScheme (RListFoldr (b, f)) ->
@@ -82,10 +78,6 @@ let rec show_multi : int -> exp -> string =
         "(%s%s)"
         ctor_name
         (List.map ~f:(fun a -> " " ^ show_single a) args |> String.concat)
-  | EPair (e1, e2) -> sprintf "(%s , %s)" (show_single e1) (show_single e2)
-  | EFst arg -> sprintf "(fst %s)" (show_single arg)
-  | ESnd arg -> sprintf "(snd %s)" (show_single arg)
-  | EUnit -> "()"
   | EInt n -> string_of_int n
   | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
   | ERScheme (RListFoldr (b, f)) ->
@@ -132,12 +124,9 @@ let rec free_variables : exp -> String.Set.t = function
                Set.diff (free_variables rhs) (String.Set.of_list arg_names))
              branches)
   | ECtor (_, arg) -> String.Set.union_list (List.map ~f:free_variables arg)
-  | EPair (e1, e2) -> String.Set.union (free_variables e1) (free_variables e2)
-  | EFst arg -> free_variables arg
-  | ESnd arg -> free_variables arg
   | ERScheme (RListFoldr (b, f)) ->
       String.Set.union (free_variables b) (free_variables f)
-  | EUnit | EInt _ | EHole (_, _) -> String.Set.empty
+  | EInt _ | EHole (_, _) -> String.Set.empty
 
 let replace : id * id -> exp -> exp =
  fun (lhs, rhs) e ->
@@ -159,10 +148,6 @@ let replace : id * id -> exp -> exp =
                       arg_names
                   , replace' branch_rhs ) )) )
     | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:replace' args)
-    | EPair (e1, e2) -> EPair (replace' e1, replace' e2)
-    | EFst arg -> EFst (replace' arg)
-    | ESnd arg -> ESnd (replace' arg)
-    | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
     | ERScheme (RListFoldr (b, f)) ->
@@ -210,10 +195,6 @@ let substitute : id * exp -> exp -> exp =
                     , substitute' (replace_all replacements branch_rhs) ) )))
               branches )
     | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:substitute' args)
-    | EPair (e1, e2) -> EPair (substitute' e1, substitute' e2)
-    | EFst arg -> EFst (substitute' arg)
-    | ESnd arg -> ESnd (substitute' arg)
-    | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
     | ERScheme (RListFoldr (b, f)) ->
@@ -245,10 +226,6 @@ let freshen_with : (id -> id) -> exp -> exp =
                   , freshen_with' (replace_all replacements rhs) ) )) )
     | ECtor (ctor_name, args) ->
         ECtor (ctor_name, List.map ~f:freshen_with' args)
-    | EPair (e1, e2) -> EPair (freshen_with' e1, freshen_with' e2)
-    | EFst arg -> EFst (freshen_with' arg)
-    | ESnd arg -> ESnd (freshen_with' arg)
-    | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
     | ERScheme (RListFoldr (b, f)) ->
@@ -275,10 +252,10 @@ let rec normalize : exp -> exp = function
   | EApp (head, arg) ->
       (match (normalize head, normalize arg) with
       | EAbs (param, _, body), arg' -> substitute (param, arg') body
-      | ERScheme (RListFoldr (b, f)), ECtor ("Nil", [ EUnit ]) -> b
-      | ERScheme (RListFoldr (b, f)), ECtor ("Cons", [ EPair (hd, tl) ]) ->
+      | ERScheme (RListFoldr (b, f)), ECtor ("Nil", []) -> b
+      | ERScheme (RListFoldr (b, f)), ECtor ("Cons", [ hd; tl ]) ->
           normalize
-            (EApp (f, EPair (hd, EApp (ERScheme (RListFoldr (b, f)), tl))))
+            (EApp (EApp (f, hd), EApp (ERScheme (RListFoldr (b, f)), tl)))
       | head', arg' -> EApp (head', arg'))
   | EAbs (param, tau, body) -> EAbs (param, tau, normalize body)
   | EMatch (scrutinee, branches) ->
@@ -290,16 +267,6 @@ let rec normalize : exp -> exp = function
           normalize (substitute_all (List.zip_exn arg_names args) rhs)
       | scrutinee' -> EMatch (scrutinee', map_branches ~f:normalize branches))
   | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:normalize args)
-  | EPair (e1, e2) -> EPair (normalize e1, normalize e2)
-  | EFst arg ->
-      (match normalize arg with
-      | EPair (e1, _) -> e1
-      | arg' -> EFst arg')
-  | ESnd arg ->
-      (match normalize arg with
-      | EPair (_, e2) -> e2
-      | arg' -> ESnd arg')
-  | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)
   | ERScheme (RListFoldr (b, f)) ->
@@ -317,10 +284,6 @@ let replace_subexp : old_subexp:exp -> new_subexp:exp -> exp -> exp =
           , map_branches ~f:check_and_replace branches )
     | ECtor (ctor_name, args) ->
         ECtor (ctor_name, List.map ~f:check_and_replace args)
-    | EPair (e1, e2) -> EPair (check_and_replace e1, check_and_replace e2)
-    | EFst arg -> EFst (check_and_replace arg)
-    | ESnd arg -> ESnd (check_and_replace arg)
-    | EUnit -> EUnit
     | EInt n -> EInt n
     | EHole (name, typ) -> EHole (name, typ)
     | ERScheme (RListFoldr (b, f)) ->
@@ -345,10 +308,6 @@ let fill_holes : (string * exp) list -> exp -> exp =
     | EMatch (scrutinee, branches) ->
         EMatch (recurse scrutinee, map_branches ~f:recurse branches)
     | ECtor (ctor_name, arg) -> ECtor (ctor_name, List.map ~f:recurse arg)
-    | EPair (e1, e2) -> EPair (recurse e1, recurse e2)
-    | EFst arg -> EFst (recurse arg)
-    | ESnd arg -> ESnd (recurse arg)
-    | EUnit -> EUnit
     | EInt n -> EInt n
     | ERScheme (RListFoldr (b, f)) ->
         ERScheme (RListFoldr (recurse b, recurse f))
@@ -366,10 +325,6 @@ let rec clean : exp -> exp = function
   | EMatch (scrutinee, branches) ->
       EMatch (clean scrutinee, map_branches ~f:clean branches)
   | ECtor (ctor_name, arg) -> ECtor (ctor_name, List.map ~f:clean arg)
-  | EPair (e1, e2) -> EPair (clean e1, clean e2)
-  | EFst arg -> EFst (clean arg)
-  | ESnd arg -> ESnd (clean arg)
-  | EUnit -> EUnit
   | EInt n -> EInt n
   | EHole (name, typ) -> EHole (name, typ)
   | ERScheme (RListFoldr (b, f)) -> ERScheme (RListFoldr (clean b, clean f))
