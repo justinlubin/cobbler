@@ -236,11 +236,13 @@ let freshen_with : (id -> id) -> exp -> exp =
     | EMatch (scrutinee, branches) ->
         EMatch
           ( freshen_with' scrutinee
-          , List.map branches ~f:(fun (ctor_name, (arg_name, rhs)) ->
-                let new_arg_name = renamer arg_name in
+          , List.map branches ~f:(fun (ctor_name, (arg_names, rhs)) ->
+                let replacements =
+                  List.map ~f:(fun a -> (a, renamer a)) arg_names
+                in
                 ( ctor_name
-                , ( new_arg_name
-                  , freshen_with' (replace (arg_name, new_arg_name) rhs) ) )) )
+                , ( List.map ~f:snd replacements
+                  , freshen_with' (replace_all replacements rhs) ) )) )
     | ECtor (ctor_name, args) ->
         ECtor (ctor_name, List.map ~f:freshen_with' args)
     | EPair (e1, e2) -> EPair (freshen_with' e1, freshen_with' e2)
@@ -285,7 +287,7 @@ let rec normalize : exp -> exp = function
           let arg_names, rhs =
             List.Assoc.find_exn ~equal:String.equal branches ctor_name
           in
-          normalize (substitute (arg_name, arg) rhs)
+          normalize (substitute_all (List.zip_exn arg_names args) rhs)
       | scrutinee' -> EMatch (scrutinee', map_branches ~f:normalize branches))
   | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:normalize args)
   | EPair (e1, e2) -> EPair (normalize e1, normalize e2)
@@ -313,7 +315,8 @@ let replace_subexp : old_subexp:exp -> new_subexp:exp -> exp -> exp =
         EMatch
           ( check_and_replace scrutinee
           , map_branches ~f:check_and_replace branches )
-    | ECtor (ctor_name, arg) -> ECtor (ctor_name, check_and_replace arg)
+    | ECtor (ctor_name, args) ->
+        ECtor (ctor_name, List.map ~f:check_and_replace args)
     | EPair (e1, e2) -> EPair (check_and_replace e1, check_and_replace e2)
     | EFst arg -> EFst (check_and_replace arg)
     | ESnd arg -> ESnd (check_and_replace arg)
@@ -341,7 +344,7 @@ let fill_holes : (string * exp) list -> exp -> exp =
     | EAbs (param, tau, body) -> EAbs (param, tau, recurse body)
     | EMatch (scrutinee, branches) ->
         EMatch (recurse scrutinee, map_branches ~f:recurse branches)
-    | ECtor (ctor_name, arg) -> ECtor (ctor_name, recurse arg)
+    | ECtor (ctor_name, arg) -> ECtor (ctor_name, List.map ~f:recurse arg)
     | EPair (e1, e2) -> EPair (recurse e1, recurse e2)
     | EFst arg -> EFst (recurse arg)
     | ESnd arg -> ESnd (recurse arg)
@@ -362,7 +365,7 @@ let rec clean : exp -> exp = function
   | EAbs (param, tau, body) -> EAbs (param, tau, clean body)
   | EMatch (scrutinee, branches) ->
       EMatch (clean scrutinee, map_branches ~f:clean branches)
-  | ECtor (ctor_name, arg) -> ECtor (ctor_name, clean arg)
+  | ECtor (ctor_name, arg) -> ECtor (ctor_name, List.map ~f:clean arg)
   | EPair (e1, e2) -> EPair (clean e1, clean e2)
   | EFst arg -> EFst (clean arg)
   | ESnd arg -> ESnd (clean arg)

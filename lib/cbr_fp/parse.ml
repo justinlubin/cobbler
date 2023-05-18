@@ -9,7 +9,9 @@ let is_constructor : string -> bool =
 let is_datatype : string -> bool = fun s -> Char.is_uppercase (String.get s 0)
 let is_variable : string -> bool = fun s -> Char.is_lowercase (String.get s 0)
 
-let rec typ_of_sexp : Sexp.t -> typ = function
+let rec typ_of_sexp : Sexp.t -> typ =
+ fun s ->
+  match s with
   | Sexp.Atom "Unit" -> TUnit
   | Sexp.Atom "Int" -> TInt
   | Sexp.Atom x when is_type_var x -> TVar x
@@ -21,19 +23,21 @@ let rec typ_of_sexp : Sexp.t -> typ = function
       if is_datatype head
       then TDatatype (head, List.map ~f:typ_of_sexp tail)
       else failwith (sprintf "unknown atom type '%s'" head)
-  | _ -> failwith "unknown type"
+  | _ -> failwith (sprintf "unknown type: %s" ([%show: Sexp.t] s))
 
 let branch_pattern_of_sexp : Sexp.t -> string = function
   | Sexp.Atom x -> x
   | _ -> failwith "malformatted branch pattern"
 
-let rec branch_of_sexp : Sexp.t -> branch = function
+let rec branch_of_sexp : Sexp.t -> branch =
+ fun s ->
+  match s with
   | Sexp.List
       [ Sexp.List (Sexp.Atom ctor_name :: arg_names); Sexp.Atom "->"; rhs ]
     when is_constructor ctor_name ->
       ( ctor_name
       , (List.map ~f:branch_pattern_of_sexp arg_names, exp_of_sexp rhs) )
-  | _ -> failwith "malformed branch"
+  | _ -> failwith (sprintf "malformed branch: %s" ([%show: Sexp.t] s))
 
 and exp_of_sexp : Sexp.t -> exp = function
   | Sexp.Atom x ->

@@ -23,8 +23,8 @@
         (Nil n))
       ((Cons p) ->
         (match (pred (fst p))
-          (False n -> (filter pred (snd p)))
-          (True n -> (Cons ((fst p) , (filter pred (snd p)))))))))))
+          ((False n) -> (filter pred (snd p)))
+          ((True n) -> (Cons ((fst p) , (filter pred (snd p)))))))))))
 
 (define mapmap : (((Peano) -> (Peano)) -> (((Peano) -> (Peano)) -> ((ListPeano) -> (ListPeano))))
   (lambda f ((Peano) -> (Peano)) (lambda g ((Peano) -> (Peano)) (lambda xs (ListPeano)
@@ -42,5 +42,5 @@
         (Nil n))
       ((Cons p) ->
         (match (pred (fst p))
-          (False n -> (main pred f (snd p)))
-          (True n -> (Cons ((f (fst p)) , (main pred f (snd p))))))))))))
+          ((False n) -> (main pred f (snd p)))
+          ((True n) -> (Cons ((f (fst p)) , (main pred f (snd p))))))))))))

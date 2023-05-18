@@ -7,9 +7,11 @@ open Expect_test_common.File.Location
 
 let test1 = Common.parse_file "programs/test1.lisp"
 let test2 = Common.parse_file "programs/test2.lisp"
+let long_ctors = Common.parse_file "programs/long_ctors.lisp"
 
 let%test_unit "test1 well-typed" = Type_system.well_typed test1
 let%test_unit "test2 well-typed" = Type_system.well_typed test2
+let%test_unit "long_ctors well-typed" = Type_system.well_typed long_ctors
 
 let sigma_list1, gamma_list1, env_list1 =
   Common.parse_file "programs/list1.lisp"

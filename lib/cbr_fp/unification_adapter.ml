@@ -73,11 +73,11 @@ and to_unification_term'
             body )
   | EMatch (scrutinee, branches) ->
       let arguments =
-        List.map (sort_tags branches) ~f:(fun (tag, (arg_name, rhs)) ->
-            let _, _, domain =
+        List.map (sort_tags branches) ~f:(fun (tag, (arg_names, rhs)) ->
+            let _, domains =
               Option.value_exn (Type_system.ctor_typ sigma tag)
             in
-            EAbs (arg_name, domain, rhs))
+            Exp.build_abs (List.zip_exn arg_names domains) rhs)
       in
       embed' "match" "" (scrutinee :: arguments)
   | ECtor (tag, args) -> embed' "ctor" tag args
@@ -128,10 +128,9 @@ let rec from_unification_term
             EMatch
               ( from_unification_term sigma scrutinee_term
               , List.map2_exn tags branch_terms ~f:(fun tag t ->
-                    match t with
-                    | Abstraction (x, _, body) ->
-                        (tag, (x, from_unification_term sigma body))
-                    | _ -> failwith "malformatted match") )
+                    let xs, body = Unification.strip_abstractions t in
+                    (tag, (List.map ~f:fst xs, from_unification_term sigma body)))
+              )
         | Some ("ctor", tag) ->
             ECtor (tag, List.map ~f:(from_unification_term sigma) arguments)
         | Some ("pair", "") ->

@@ -7,17 +7,23 @@ let extract_list_foldr_exn : datatype_env -> typ_env -> env -> string -> exp =
   match Exp.decompose_abs (String.Map.find_exn env name) with
   | params, EMatch (scrutinee, branches) ->
       let nil_param, nil_rhs =
-        List.Assoc.find_exn ~equal:String.equal branches "Nil"
+        match List.Assoc.find ~equal:String.equal branches "Nil" with
+        | Some ([ nil_param ], nil_rhs) -> (nil_param, nil_rhs)
+        | Some (_, _) -> failwith "malformatted Nil branch"
+        | None -> failwith "missing Nil branch"
       in
       if String.Set.mem (Exp.free_variables nil_rhs) name
-      then failwith "recursive nil case"
+      then failwith "recursive Nil case"
       else (
         let cons_param, cons_rhs =
-          List.Assoc.find_exn ~equal:String.equal branches "Cons"
+          match List.Assoc.find ~equal:String.equal branches "Cons" with
+          | Some ([ cons_param ], cons_rhs) -> (cons_param, cons_rhs)
+          | Some (_, _) -> failwith "malformatted Cons branch"
+          | None -> failwith "missing Cons branch"
         in
         let elem_type =
           match Type_system.ctor_typ sigma "Cons" with
-          | Some (_, _, TProd (tau, _)) -> tau
+          | Some (_, [ TProd (tau, _) ]) -> tau
           | _ -> failwith "non-prod Cons arg type"
         in
         let return_type =
@@ -37,7 +43,7 @@ let extract_list_foldr_exn : datatype_env -> typ_env -> env -> string -> exp =
             cons_rhs
         in
         if String.Set.mem (Exp.free_variables new_cons_rhs) name
-        then failwith "could not parameterize recursion in cons case"
+        then failwith "could not parameterize recursion in Cons case"
         else
           Exp.build_abs
             params
