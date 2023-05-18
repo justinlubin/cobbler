@@ -12,7 +12,9 @@ let is_variable : string -> bool = fun s -> Char.is_lowercase (String.get s 0)
 let rec typ_of_sexp : Sexp.t -> typ =
  fun s ->
   match s with
-  | Sexp.Atom "Int" -> TInt
+  | Sexp.Atom "Int" -> TBase BTInt
+  | Sexp.Atom "Float" -> TBase BTFloat
+  | Sexp.Atom "String" -> TBase BTString
   | Sexp.Atom x when is_type_var x -> TVar x
   | Sexp.List [ domain; Sexp.Atom "->"; range ] ->
       TArr (typ_of_sexp domain, typ_of_sexp range)
@@ -38,7 +40,7 @@ let rec branch_of_sexp : Sexp.t -> branch =
 
 and exp_of_sexp : Sexp.t -> exp = function
   | Sexp.Atom x ->
-      (try EInt (Int.of_string x) with
+      (try EBase (BEInt (Int.of_string x)) with
       | _ ->
           if is_variable x
           then EVar x
