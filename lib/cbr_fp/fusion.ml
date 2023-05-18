@@ -15,7 +15,7 @@ let rec pull_out_cases : exp -> exp = function
                 ~f:(fun rhs -> EMatch (rhs, outer_branches'))
                 inner_branches )
       | outer_scrutinee' -> EMatch (outer_scrutinee', outer_branches'))
-  | ECtor (ctor_name, arg) -> ECtor (ctor_name, pull_out_cases arg)
+  | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:pull_out_cases args)
   | EPair (e1, e2) -> EPair (pull_out_cases e1, pull_out_cases e2)
   | EFst arg -> EFst (pull_out_cases arg)
   | ESnd arg -> ESnd (pull_out_cases arg)
@@ -68,7 +68,8 @@ let rec fuse' : datatype_env -> typ_env -> exp -> exp =
       EMatch
         ( fuse' sigma gamma scrutinee
         , Exp.map_branches branches ~f:(fuse' sigma gamma) )
-  | ECtor (ctor_name, arg) -> ECtor (ctor_name, fuse' sigma gamma arg)
+  | ECtor (ctor_name, args) ->
+      ECtor (ctor_name, List.map ~f:(fuse' sigma gamma) args)
   | EPair (e1, e2) -> EPair (fuse' sigma gamma e1, fuse' sigma gamma e2)
   | EFst arg -> EFst (fuse' sigma gamma arg)
   | ESnd arg -> ESnd (fuse' sigma gamma arg)

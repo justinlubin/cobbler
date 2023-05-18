@@ -35,7 +35,7 @@ let%expect_test "list1 filter" =
                 env_list1
                 "filter"))));
   [%expect
-    {| (lambda var0 ((Peano) -> (Bool)) (lambda var1 (ListPeano) ((list_foldr (Nil ()) (lambda var2 ((Peano) * (ListPeano)) (match (var0 (fst var2)) (False var3 -> (snd var2)) (True var4 -> (Cons ((fst var2) , (snd var2))))))) var1))) |}]
+    {| (lambda var0 ((Peano) -> (Bool)) (lambda var1 (ListPeano) ((list_foldr (Nil ()) (lambda var2 ((Peano) * (ListPeano)) (match (var0 (fst var2)) ((False var3) -> (snd var2)) ((True var4) -> (Cons ((fst var2) , (snd var2))))))) var1))) |}]
 
 let%expect_test "list2 filter" =
   print_endline
@@ -48,7 +48,7 @@ let%expect_test "list2 filter" =
                 env_list2
                 "filter"))));
   [%expect
-    {| (lambda var0 ((Peano) -> (Bool)) (lambda var1 (ListPeano) ((list_foldr (Nil ()) (lambda var2 ((Peano) * (ListPeano)) (match (var0 (fst var2)) (False var3 -> (snd var2)) (True var4 -> (Cons ((fst var2) , (snd var2))))))) var1))) |}]
+    {| (lambda var0 ((Peano) -> (Bool)) (lambda var1 (ListPeano) ((list_foldr (Nil ()) (lambda var2 ((Peano) * (ListPeano)) (match (var0 (fst var2)) ((False var3) -> (snd var2)) ((True var4) -> (Cons ((fst var2) , (snd var2))))))) var1))) |}]
 
 let%expect_test "list2 main" =
   print_endline
@@ -61,4 +61,4 @@ let%expect_test "list2 main" =
                 env_list2
                 "main"))));
   [%expect
-    {| (lambda var0 ((Peano) -> (Bool)) (lambda var1 ((Peano) -> (Peano)) (lambda var2 (ListPeano) ((list_foldr (Nil ()) (lambda var3 ((Peano) * (ListPeano)) (match (var0 (fst var3)) (False var4 -> (snd var3)) (True var5 -> (Cons ((var1 (fst var3)) , (snd var3))))))) var2)))) |}]
+    {| (lambda var0 ((Peano) -> (Bool)) (lambda var1 ((Peano) -> (Peano)) (lambda var2 (ListPeano) ((list_foldr (Nil ()) (lambda var3 ((Peano) * (ListPeano)) (match (var0 (fst var3)) ((False var4) -> (snd var3)) ((True var5) -> (Cons ((var1 (fst var3)) , (snd var3))))))) var2)))) |}]

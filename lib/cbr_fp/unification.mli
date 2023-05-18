@@ -39,6 +39,10 @@ val substitute_recursively : (string * term) list -> term -> term
 (** [normalize t] recursively reduces all beta redexes in [t]. *)
 val normalize : term -> term
 
+(** [strip_abstractions bindings t] does the same thing to terms as
+    {!val:Exp.decompose_abs} does to language expressions. *)
+val strip_abstractions : term -> (string * typ) list * term
+
 (** [build_abstractions bindings t] does the same thing to terms as
     {!val:Exp.build_abs} does to language expressions. *)
 val build_abstractions : (string * typ) list -> term -> term

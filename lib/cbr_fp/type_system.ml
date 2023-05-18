@@ -17,14 +17,16 @@ let rec free_vars : typ -> String.Set.t =
   | TProd (left, right) -> String.Set.union (free_vars left) (free_vars right)
   | TArr (dom, cod) -> String.Set.union (free_vars dom) (free_vars cod)
 
-let ctor_typ : datatype_env -> string -> (string * string list * typ) option =
+let ctor_typ
+    : datatype_env -> string -> ((string * string list) * typ list) option
+  =
  fun sigma tag ->
   List.find_map
     (String.Map.to_alist sigma)
     ~f:(fun (dt, (dt_params, dt_info)) ->
       Option.map
         (List.Assoc.find dt_info ~equal:String.equal tag)
-        ~f:(fun domain -> (dt, dt_params, domain)))
+        ~f:(fun domains -> ((dt, dt_params), domains)))
 
 let fresh_type_var : unit -> typ = fun () -> TVar (Util.gensym "__typevar")
 
@@ -91,21 +93,26 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
       | [] -> raise (IllTyped e)
       | (first_ctor, _) :: _ ->
           (match ctor_typ sigma first_ctor with
-          | Some (dt, dt_params, _) ->
+          | Some ((dt, dt_params), _) ->
               let dt_sub_list =
                 List.map ~f:(fun p -> (p, fresh_type_var ())) dt_params
               in
               let dt_sub = String.Map.of_alist_exn dt_sub_list in
               let ctors, rhs_types, rhs_constraints =
                 List.unzip3
-                  (List.map branches ~f:(fun (tag, (arg_name, rhs)) ->
+                  (List.map branches ~f:(fun (tag, (arg_names, rhs)) ->
                        match ctor_typ sigma tag with
-                       | Some (_, _, domain) ->
+                       | Some (_, domains) ->
                            let t_rhs, c_rhs =
                              constraint_type
                                sigma
-                               (String.Map.update gamma arg_name ~f:(fun _ ->
-                                    apply_sub dt_sub domain))
+                               (List.fold2_exn
+                                  arg_names
+                                  domains
+                                  ~init:gamma
+                                  ~f:(fun acc a d ->
+                                    String.Map.update acc a ~f:(fun _ ->
+                                        apply_sub dt_sub d)))
                                rhs
                            in
                            (tag, t_rhs, c_rhs)
@@ -129,14 +136,17 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
                   @ List.concat rhs_constraints ))
               else raise (IllTyped e)
           | None -> raise (IllTyped e)))
-  | ECtor (tag, body) ->
-      let t_body, c_body = constraint_type sigma gamma body in
+  | ECtor (tag, args) ->
+      let ts_args, cs_args =
+        List.unzip (List.map ~f:(constraint_type sigma gamma) args)
+      in
       (match ctor_typ sigma tag with
-      | Some (dt, params, domain) ->
+      | Some ((dt, params), domains) ->
           let sub_list = List.map ~f:(fun p -> (p, fresh_type_var ())) params in
           let sub = String.Map.of_alist_exn sub_list in
           ( TDatatype (dt, List.map ~f:snd sub_list)
-          , (apply_sub sub domain, t_body) :: c_body )
+          , List.map2_exn domains ts_args ~f:(fun d t -> (apply_sub sub d, t))
+            @ List.concat cs_args )
       | None -> raise (IllTyped e))
   | EPair (e1, e2) ->
       let t1, c1 = constraint_type sigma gamma e1 in

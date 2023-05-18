@@ -25,10 +25,18 @@ let rec show_single : exp -> string =
         (String.concat
            ~sep:" "
            (List.map
-              ~f:(fun (ctor_name, (arg_name, rhs)) ->
-                sprintf "(%s %s -> %s)" ctor_name arg_name (show_single rhs))
+              ~f:(fun (ctor_name, (arg_names, rhs)) ->
+                sprintf
+                  "((%s%s) -> %s)"
+                  ctor_name
+                  (List.map ~f:(fun a -> " " ^ a) arg_names |> String.concat)
+                  (show_single rhs))
               branches))
-  | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show_single arg)
+  | ECtor (ctor_name, args) ->
+      sprintf
+        "(%s%s)"
+        ctor_name
+        (List.map ~f:(fun a -> " " ^ show_single a) args |> String.concat)
   | EPair (e1, e2) -> sprintf "(%s , %s)" (show_single e1) (show_single e2)
   | EFst arg -> sprintf "(fst %s)" (show_single arg)
   | ESnd arg -> sprintf "(snd %s)" (show_single arg)
@@ -60,16 +68,20 @@ let rec show_multi : int -> exp -> string =
         (String.concat
            ~sep:"\n"
            (List.map
-              ~f:(fun (ctor_name, (arg_name, rhs)) ->
+              ~f:(fun (ctor_name, (arg_names, rhs)) ->
                 sprintf
-                  "%s%s(%s %s ->\n%s)"
+                  "%s%s((%s%s) ->\n%s)"
                   indent
                   single_indent
                   ctor_name
-                  arg_name
+                  (List.map ~f:(fun a -> " " ^ a) arg_names |> String.concat)
                   (show_multi (depth + 2) rhs))
               branches))
-  | ECtor (ctor_name, arg) -> sprintf "(%s %s)" ctor_name (show_single arg)
+  | ECtor (ctor_name, args) ->
+      sprintf
+        "(%s%s)"
+        ctor_name
+        (List.map ~f:(fun a -> " " ^ show_single a) args |> String.concat)
   | EPair (e1, e2) -> sprintf "(%s , %s)" (show_single e1) (show_single e2)
   | EFst arg -> sprintf "(fst %s)" (show_single arg)
   | ESnd arg -> sprintf "(snd %s)" (show_single arg)
@@ -116,10 +128,10 @@ let rec free_variables : exp -> String.Set.t = function
       String.Set.union_list
         (free_variables scrutinee
         :: List.map
-             ~f:(fun (_, (arg_name, rhs)) ->
-               Set.remove (free_variables rhs) arg_name)
+             ~f:(fun (_, (arg_names, rhs)) ->
+               Set.diff (free_variables rhs) (String.Set.of_list arg_names))
              branches)
-  | ECtor (_, arg) -> free_variables arg
+  | ECtor (_, arg) -> String.Set.union_list (List.map ~f:free_variables arg)
   | EPair (e1, e2) -> String.Set.union (free_variables e1) (free_variables e2)
   | EFst arg -> free_variables arg
   | ESnd arg -> free_variables arg
@@ -139,11 +151,14 @@ let replace : id * id -> exp -> exp =
     | EMatch (scrutinee, branches) ->
         EMatch
           ( replace' scrutinee
-          , List.map branches ~f:(fun (ctor_name, (arg_name, branch_rhs)) ->
-                if String.equal lhs arg_name
-                then (ctor_name, (rhs, replace' branch_rhs))
-                else (ctor_name, (arg_name, replace' branch_rhs))) )
-    | ECtor (ctor_name, arg) -> ECtor (ctor_name, replace' arg)
+          , List.map branches ~f:(fun (ctor_name, (arg_names, branch_rhs)) ->
+                ( ctor_name
+                , ( List.map
+                      ~f:(fun arg_name ->
+                        if String.equal lhs arg_name then rhs else arg_name)
+                      arg_names
+                  , replace' branch_rhs ) )) )
+    | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:replace' args)
     | EPair (e1, e2) -> EPair (replace' e1, replace' e2)
     | EFst arg -> EFst (replace' arg)
     | ESnd arg -> ESnd (replace' arg)
@@ -154,6 +169,9 @@ let replace : id * id -> exp -> exp =
         ERScheme (RListFoldr (replace' b, replace' f))
   in
   replace' e
+
+let replace_all : (id * id) list -> exp -> exp =
+ fun subs e -> List.fold_left ~f:(fun acc sub -> replace sub acc) ~init:e subs
 
 let gensym_prefix : string = "var"
 
@@ -175,19 +193,23 @@ let substitute : id * exp -> exp -> exp =
         EMatch
           ( substitute' scrutinee
           , List.map
-              ~f:(fun (ctor_name, (arg_name, branch_rhs)) ->
-                if String.equal lhs arg_name
-                then (ctor_name, (arg_name, branch_rhs))
-                else if not (Set.mem rhs_fv arg_name)
-                then (ctor_name, (arg_name, substitute' branch_rhs))
+              ~f:(fun (ctor_name, (arg_names, branch_rhs)) ->
+                if List.mem ~equal:[%eq: id] arg_names lhs
+                then (ctor_name, (arg_names, branch_rhs))
+                else if List.for_all arg_names ~f:(fun arg_name ->
+                            not (Set.mem rhs_fv arg_name))
+                then (ctor_name, (arg_names, substitute' branch_rhs))
                 else (
-                  let new_arg_name = Util.gensym gensym_prefix in
+                  let replacements =
+                    List.map
+                      ~f:(fun a -> (a, Util.gensym gensym_prefix))
+                      arg_names
+                  in
                   ( ctor_name
-                  , ( new_arg_name
-                    , substitute' (replace (arg_name, new_arg_name) branch_rhs)
-                    ) )))
+                  , ( List.map ~f:snd replacements
+                    , substitute' (replace_all replacements branch_rhs) ) )))
               branches )
-    | ECtor (ctor_name, arg) -> ECtor (ctor_name, substitute' arg)
+    | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:substitute' args)
     | EPair (e1, e2) -> EPair (substitute' e1, substitute' e2)
     | EFst arg -> EFst (substitute' arg)
     | ESnd arg -> ESnd (substitute' arg)
@@ -198,6 +220,10 @@ let substitute : id * exp -> exp -> exp =
         ERScheme (RListFoldr (substitute' b, substitute' f))
   in
   substitute' e
+
+let substitute_all : (id * exp) list -> exp -> exp =
+ fun subs e ->
+  List.fold_left ~f:(fun acc sub -> substitute sub acc) ~init:e subs
 
 let freshen_with : (id -> id) -> exp -> exp =
  fun renamer e ->
@@ -210,12 +236,15 @@ let freshen_with : (id -> id) -> exp -> exp =
     | EMatch (scrutinee, branches) ->
         EMatch
           ( freshen_with' scrutinee
-          , List.map branches ~f:(fun (ctor_name, (arg_name, rhs)) ->
-                let new_arg_name = renamer arg_name in
+          , List.map branches ~f:(fun (ctor_name, (arg_names, rhs)) ->
+                let replacements =
+                  List.map ~f:(fun a -> (a, renamer a)) arg_names
+                in
                 ( ctor_name
-                , ( new_arg_name
-                  , freshen_with' (replace (arg_name, new_arg_name) rhs) ) )) )
-    | ECtor (ctor_name, arg) -> ECtor (ctor_name, freshen_with' arg)
+                , ( List.map ~f:snd replacements
+                  , freshen_with' (replace_all replacements rhs) ) )) )
+    | ECtor (ctor_name, args) ->
+        ECtor (ctor_name, List.map ~f:freshen_with' args)
     | EPair (e1, e2) -> EPair (freshen_with' e1, freshen_with' e2)
     | EFst arg -> EFst (freshen_with' arg)
     | ESnd arg -> ESnd (freshen_with' arg)
@@ -246,21 +275,21 @@ let rec normalize : exp -> exp = function
   | EApp (head, arg) ->
       (match (normalize head, normalize arg) with
       | EAbs (param, _, body), arg' -> substitute (param, arg') body
-      | ERScheme (RListFoldr (b, f)), ECtor ("Nil", EUnit) -> b
-      | ERScheme (RListFoldr (b, f)), ECtor ("Cons", EPair (hd, tl)) ->
+      | ERScheme (RListFoldr (b, f)), ECtor ("Nil", [ EUnit ]) -> b
+      | ERScheme (RListFoldr (b, f)), ECtor ("Cons", [ EPair (hd, tl) ]) ->
           normalize
             (EApp (f, EPair (hd, EApp (ERScheme (RListFoldr (b, f)), tl))))
       | head', arg' -> EApp (head', arg'))
   | EAbs (param, tau, body) -> EAbs (param, tau, normalize body)
   | EMatch (scrutinee, branches) ->
       (match normalize scrutinee with
-      | ECtor (ctor_name, arg) ->
-          let arg_name, rhs =
+      | ECtor (ctor_name, args) ->
+          let arg_names, rhs =
             List.Assoc.find_exn ~equal:String.equal branches ctor_name
           in
-          normalize (substitute (arg_name, arg) rhs)
+          normalize (substitute_all (List.zip_exn arg_names args) rhs)
       | scrutinee' -> EMatch (scrutinee', map_branches ~f:normalize branches))
-  | ECtor (ctor_name, arg) -> ECtor (ctor_name, normalize arg)
+  | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:normalize args)
   | EPair (e1, e2) -> EPair (normalize e1, normalize e2)
   | EFst arg ->
       (match normalize arg with
@@ -286,7 +315,8 @@ let replace_subexp : old_subexp:exp -> new_subexp:exp -> exp -> exp =
         EMatch
           ( check_and_replace scrutinee
           , map_branches ~f:check_and_replace branches )
-    | ECtor (ctor_name, arg) -> ECtor (ctor_name, check_and_replace arg)
+    | ECtor (ctor_name, args) ->
+        ECtor (ctor_name, List.map ~f:check_and_replace args)
     | EPair (e1, e2) -> EPair (check_and_replace e1, check_and_replace e2)
     | EFst arg -> EFst (check_and_replace arg)
     | ESnd arg -> ESnd (check_and_replace arg)
@@ -314,7 +344,7 @@ let fill_holes : (string * exp) list -> exp -> exp =
     | EAbs (param, tau, body) -> EAbs (param, tau, recurse body)
     | EMatch (scrutinee, branches) ->
         EMatch (recurse scrutinee, map_branches ~f:recurse branches)
-    | ECtor (ctor_name, arg) -> ECtor (ctor_name, recurse arg)
+    | ECtor (ctor_name, arg) -> ECtor (ctor_name, List.map ~f:recurse arg)
     | EPair (e1, e2) -> EPair (recurse e1, recurse e2)
     | EFst arg -> EFst (recurse arg)
     | ESnd arg -> ESnd (recurse arg)
@@ -335,7 +365,7 @@ let rec clean : exp -> exp = function
   | EAbs (param, tau, body) -> EAbs (param, tau, clean body)
   | EMatch (scrutinee, branches) ->
       EMatch (clean scrutinee, map_branches ~f:clean branches)
-  | ECtor (ctor_name, arg) -> ECtor (ctor_name, clean arg)
+  | ECtor (ctor_name, arg) -> ECtor (ctor_name, List.map ~f:clean arg)
   | EPair (e1, e2) -> EPair (clean e1, clean e2)
   | EFst arg -> EFst (clean arg)
   | ESnd arg -> ESnd (clean arg)
