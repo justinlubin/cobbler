@@ -9,12 +9,10 @@ open Lang
 let rec free_vars : typ -> String.Set.t =
  fun tau ->
   match tau with
-  | TUnit -> String.Set.empty
   | TInt -> String.Set.empty
   | TVar x -> String.Set.singleton x
   | TDatatype (_, args) ->
       args |> List.map ~f:free_vars |> String.Set.union_list
-  | TProd (left, right) -> String.Set.union (free_vars left) (free_vars right)
   | TArr (dom, cod) -> String.Set.union (free_vars dom) (free_vars cod)
 
 let ctor_typ
@@ -38,14 +36,12 @@ type sub = typ String.Map.t
 let rec apply_sub : sub -> typ -> typ =
  fun sigma tau ->
   match tau with
-  | TUnit -> TUnit
   | TInt -> TInt
   | TVar x ->
       (match Map.find sigma x with
       | None -> TVar x
       | Some t -> t)
   | TDatatype (dt, args) -> TDatatype (dt, List.map ~f:(apply_sub sigma) args)
-  | TProd (left, right) -> TProd (apply_sub sigma left, apply_sub sigma right)
   | TArr (dom, cod) -> TArr (apply_sub sigma dom, apply_sub sigma cod)
 
 let apply_sub_env : sub -> typ_env -> typ_env =
@@ -148,21 +144,6 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
           , List.map2_exn domains ts_args ~f:(fun d t -> (apply_sub sub d, t))
             @ List.concat cs_args )
       | None -> raise (IllTyped e))
-  | EPair (e1, e2) ->
-      let t1, c1 = constraint_type sigma gamma e1 in
-      let t2, c2 = constraint_type sigma gamma e2 in
-      (TProd (t1, t2), c1 @ c2)
-  | EFst arg ->
-      let t_arg, c_arg = constraint_type sigma gamma arg in
-      let x = fresh_type_var () in
-      let y = fresh_type_var () in
-      (x, (TProd (x, y), t_arg) :: c_arg)
-  | ESnd arg ->
-      let t_arg, c_arg = constraint_type sigma gamma arg in
-      let x = fresh_type_var () in
-      let y = fresh_type_var () in
-      (y, (TProd (x, y), t_arg) :: c_arg)
-  | EUnit -> (TUnit, [])
   | EInt _ -> (TInt, [])
   | EHole (_, t) -> (t, [])
   | ERScheme (RListFoldr (b, f)) ->
@@ -184,7 +165,7 @@ let rec unify : constraint_set -> sub =
       let fvs = free_vars s in
       let fvt = free_vars t in
       (match (s, t) with
-      | TUnit, TUnit | TInt, TInt -> unify tail
+      | TInt, TInt -> unify tail
       | TVar x, _ when not (String.Set.mem fvt x) ->
           let sub = String.Map.singleton x t in
           compose_subs (unify (apply_sub_constraints sub tail)) sub
@@ -197,16 +178,10 @@ let rec unify : constraint_set -> sub =
           | List.Or_unequal_lengths.Unequal_lengths -> raise (CannotUnify cs)
           | List.Or_unequal_lengths.Ok arg_constraints ->
               unify (arg_constraints @ tail))
-      | TProd (left1, right1), TProd (left2, right2) ->
-          unify ((left1, left2) :: (right1, right2) :: tail)
       | TArr (dom1, cod1), TArr (dom2, cod2) ->
           unify ((dom1, dom2) :: (cod1, cod2) :: tail)
-      | TUnit, _
-      | TInt, _
-      | TVar _, _
-      | TDatatype (_, _), _
-      | TArr (_, _), _
-      | TProd (_, _), _ -> raise (CannotUnify cs))
+      | TInt, _ | TVar _, _ | TDatatype (_, _), _ | TArr (_, _), _ ->
+          raise (CannotUnify cs))
 
 (* Type system interface *)
 

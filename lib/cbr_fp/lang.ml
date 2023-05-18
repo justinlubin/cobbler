@@ -11,11 +11,9 @@ type id = string
 
 (** Types *)
 and typ =
-  | TUnit
   | TInt
   | TVar of string
   | TDatatype of string * typ list
-  | TProd of typ * typ
   | TArr of typ * typ
 [@@deriving sexp, ord, eq, compare, show]
 
@@ -42,10 +40,6 @@ and exp =
   | EAbs of id * typ * exp
   | EMatch of exp * branch list
   | ECtor of string * exp list
-  | EPair of exp * exp
-  | EFst of exp
-  | ESnd of exp
-  | EUnit
   | EInt of int
   | EHole of string * typ
   | ERScheme of rscheme

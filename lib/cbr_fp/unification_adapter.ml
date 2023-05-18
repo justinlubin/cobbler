@@ -5,11 +5,9 @@ open Unification
 (* Types *)
 
 let rec to_unification_typ : Lang.typ -> Unification.typ = function
-  | TUnit -> Elementary TUnit
   | TInt -> Elementary TInt
   | TVar x -> Elementary (TVar x)
   | TDatatype (x, taus) -> Elementary (TDatatype (x, taus))
-  | TProd (left, right) -> Elementary (TProd (left, right))
   | TArr (domain, codomain) ->
       Arrow (to_unification_typ domain, to_unification_typ codomain)
 
@@ -81,10 +79,6 @@ and to_unification_term'
       in
       embed' "match" "" (scrutinee :: arguments)
   | ECtor (tag, args) -> embed' "ctor" tag args
-  | EPair (e1, e2) -> embed' "pair" "" [ e1; e2 ]
-  | EFst arg -> embed' "fst" "" [ arg ]
-  | ESnd arg -> embed' "snd" "" [ arg ]
-  | EUnit -> embed' "unit" "" []
   | EInt n -> embed' "int" (Int.to_string n) []
   | EHole (name, typ) -> Atom (Variable (name, to_unification_typ typ))
   | ERScheme _ -> failwith "cannot embed unapplied recursion scheme"
@@ -133,15 +127,6 @@ let rec from_unification_term
               )
         | Some ("ctor", tag) ->
             ECtor (tag, List.map ~f:(from_unification_term sigma) arguments)
-        | Some ("pair", "") ->
-            EPair
-              ( from_unification_term sigma (List.nth_exn arguments 0)
-              , from_unification_term sigma (List.nth_exn arguments 1) )
-        | Some ("fst", "") ->
-            EFst (from_unification_term sigma (List.hd_exn arguments))
-        | Some ("snd", "") ->
-            ESnd (from_unification_term sigma (List.hd_exn arguments))
-        | Some ("unit", "") -> EUnit
         | Some ("int", n) -> EInt (Int.of_string n)
         | Some ("list_foldr", "") ->
             EApp

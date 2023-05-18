@@ -3,8 +3,7 @@ open Cbr_fp
 open Lang
 open Unification
 
-let datatype_env1 =
-  String.Map.of_alist_exn [ ("Gamma", ([], [ ("B", [ TUnit ]) ])) ]
+let datatype_env1 = String.Map.of_alist_exn [ ("Gamma", ([], [ ("B", []) ])) ]
 
 let%test_unit "unification 1" =
   let f = "(?? f ((Gamma) -> (Gamma)))" in
