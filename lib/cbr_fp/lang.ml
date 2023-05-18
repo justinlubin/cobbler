@@ -24,10 +24,13 @@ type typ_env = (id, typ, String.comparator_witness) Map.t
 
 (** An environment of datatypes (commonly called "sigma") *)
 type datatype_env =
-  (string, string list * (string * typ) list, String.comparator_witness) Map.t
+  ( string
+  , string list * (string * typ list) list
+  , String.comparator_witness )
+  Map.t
 
 (** Case branches *)
-type branch = string * (id * exp)
+type branch = string * (id list * exp)
 
 (** Recursion schemes *)
 and rscheme = RListFoldr of exp * exp
@@ -38,7 +41,7 @@ and exp =
   | EApp of exp * exp
   | EAbs of id * typ * exp
   | EMatch of exp * branch list
-  | ECtor of string * exp
+  | ECtor of string * exp list
   | EPair of exp * exp
   | EFst of exp
   | ESnd of exp

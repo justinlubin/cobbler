@@ -30,8 +30,8 @@ let%test_unit "normalizes cases 1" =
   [%test_eq: exp]
     (Exp.normalize
        (EMatch
-          ( ECtor ("Just", EVar "x")
-          , [ ("Nothing", ("y", EVar "zero"))
-            ; ("Just", ("z", ECtor ("Ok", EVar "z")))
+          ( ECtor ("Just", [ EVar "x" ])
+          , [ ("Nothing", ([ "y" ], EVar "zero"))
+            ; ("Just", ([ "z" ], ECtor ("Ok", [ EVar "z" ])))
             ] )))
-    (ECtor ("Ok", EVar "x"))
+    (ECtor ("Ok", [ EVar "x" ]))

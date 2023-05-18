@@ -17,14 +17,14 @@ let rec free_vars : typ -> String.Set.t =
   | TProd (left, right) -> String.Set.union (free_vars left) (free_vars right)
   | TArr (dom, cod) -> String.Set.union (free_vars dom) (free_vars cod)
 
-let ctor_typ : datatype_env -> string -> (string * string list * typ) option =
+let ctor_typ : datatype_env -> string -> ((string * string list) * typ) option =
  fun sigma tag ->
   List.find_map
     (String.Map.to_alist sigma)
     ~f:(fun (dt, (dt_params, dt_info)) ->
       Option.map
         (List.Assoc.find dt_info ~equal:String.equal tag)
-        ~f:(fun domain -> (dt, dt_params, domain)))
+        ~f:(fun domains -> ((dt, dt_params), domains)))
 
 let fresh_type_var : unit -> typ = fun () -> TVar (Util.gensym "__typevar")
 

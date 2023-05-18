@@ -9,7 +9,7 @@ let%test_unit "classic synth 1" =
   let problem = Synthesis.problem_of_definitions classic in
   let expected_solution =
     EApp
-      ( EApp (EVar "withDefault", ECtor ("Zero", EUnit))
+      ( EApp (EVar "withDefault", ECtor ("Zero", [ EUnit ]))
       , EApp (EApp (EVar "map", EVar "f"), EVar "mx") )
   in
   let actual_solution =

@@ -80,7 +80,7 @@ and to_unification_term'
             EAbs (arg_name, domain, rhs))
       in
       embed' "match" "" (scrutinee :: arguments)
-  | ECtor (tag, arg) -> embed' "ctor" tag [ arg ]
+  | ECtor (tag, args) -> embed' "ctor" tag args
   | EPair (e1, e2) -> embed' "pair" "" [ e1; e2 ]
   | EFst arg -> embed' "fst" "" [ arg ]
   | ESnd arg -> embed' "snd" "" [ arg ]
@@ -133,7 +133,7 @@ let rec from_unification_term
                         (tag, (x, from_unification_term sigma body))
                     | _ -> failwith "malformatted match") )
         | Some ("ctor", tag) ->
-            ECtor (tag, from_unification_term sigma (List.hd_exn arguments))
+            ECtor (tag, List.map ~f:(from_unification_term sigma) arguments)
         | Some ("pair", "") ->
             EPair
               ( from_unification_term sigma (List.nth_exn arguments 0)
