@@ -32,10 +32,10 @@ let rec fuse' : datatype_env -> typ_env -> exp -> exp =
   (* List foldr fusion *)
   | EApp (head, EApp (ERScheme (RListFoldr (b1, f1)), arg)) ->
       (match Typ.decompose_arr (Type_system.infer sigma gamma f1) with
-      | [ TProd (elem_type, _) ], _ ->
+      | [ elem_type; _ ], _ ->
           let return_type = Type_system.infer sigma gamma e in
           let u y = Exp.normalize (EApp (head, y)) in
-          let f y = Exp.normalize (EApp (f1, y)) in
+          let f y z = Exp.normalize (EApp (EApp (f1, y), z)) in
           (match
              compute_list_foldr_h sigma gamma ~elem_type ~return_type ~u ~f
            with
@@ -86,30 +86,31 @@ and fuse_normalize : datatype_env -> typ_env -> exp -> exp =
 
 and compute_list_foldr_h
     :  datatype_env -> typ_env -> elem_type:typ -> return_type:typ
-    -> u:(exp -> exp) -> f:(exp -> exp) -> exp option
+    -> u:(exp -> exp) -> f:(exp -> exp -> exp) -> exp option
   =
  fun sigma gamma ~elem_type ~return_type ~u ~f ->
   let x = Util.gensym "fuse_list_foldr_x" in
   let acc = Util.gensym "fuse_list_foldr_acc" in
-  let p = Util.gensym "fuse_list_foldr_p" in
+  let p_hd = Util.gensym "fuse_list_foldr_p_hd" in
+  let p_tl = Util.gensym "fuse_list_foldr_p_tl" in
   let h_rhs =
     Exp.replace_subexp
       ~old_subexp:(EVar x)
-      ~new_subexp:(EFst (EVar p))
+      ~new_subexp:(EVar p_hd)
       (Exp.replace_subexp
          ~old_subexp:(u (EVar acc))
-         ~new_subexp:(ESnd (EVar p))
+         ~new_subexp:(EVar p_tl)
          (fuse_normalize
             sigma
             (String.Map.add_exn
                (String.Map.add_exn gamma ~key:x ~data:elem_type)
                ~key:acc
                ~data:return_type)
-            (u (f (EPair (EVar x, EVar acc))))))
+            (u (f (EVar x) (EVar acc)))))
   in
   if String.Set.mem (Exp.free_variables h_rhs) acc
   then None
-  else Some (EAbs (p, TProd (elem_type, return_type), h_rhs))
+  else Some (EAbs (p_hd, elem_type, EAbs (p_tl, return_type, h_rhs)))
 
 let fuse : datatype_env -> typ_env -> exp -> exp =
  fun sigma gamma e -> fuse' sigma gamma (Exp.freshen e)

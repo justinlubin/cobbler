@@ -56,7 +56,7 @@ let%expect_test "list2 mapmap fusion" =
   ignore (Type_system.infer sigma_list2 gamma_list2 fused_mapmap);
   print_endline (Exp.show_single (Exp.alpha_normalize fused_mapmap));
   [%expect
-    {| (lambda var0 ((Peano) -> (Peano)) (lambda var1 ((Peano) -> (Peano)) (lambda var2 (ListPeano) ((list_foldr (Nil ()) (lambda var3 ((Peano) * (ListPeano)) (Cons ((var0 (var1 (fst var3))) , (snd var3))))) var2)))) |}]
+    {| (lambda var0 ((Peano) -> (Peano)) (lambda var1 ((Peano) -> (Peano)) (lambda var2 (ListPeano) ((list_foldr (Nil) (lambda var3 (Peano) (lambda var4 (ListPeano) (Cons (var0 (var1 var3)) var4)))) var2)))) |}]
 
 let%expect_test "list2 mapfilter fusion" =
   let map_foldr =
@@ -80,4 +80,4 @@ let%expect_test "list2 mapfilter fusion" =
   ignore (Type_system.infer sigma_list2 gamma_list2 fused_mapfilter);
   print_endline (Exp.show_single (Exp.alpha_normalize fused_mapfilter));
   [%expect
-    {| (lambda var0 ((Peano) -> (Peano)) (lambda var1 ((Peano) -> (Bool)) (lambda var2 (ListPeano) ((list_foldr (Nil ()) (lambda var3 ((Peano) * (ListPeano)) (match (var1 (fst var3)) ((False var4) -> (snd var3)) ((True var5) -> (Cons ((var0 (fst var3)) , (snd var3))))))) var2)))) |}]
+    {| (lambda var0 ((Peano) -> (Peano)) (lambda var1 ((Peano) -> (Bool)) (lambda var2 (ListPeano) ((list_foldr (Nil) (lambda var3 (Peano) (lambda var4 (ListPeano) (match (var1 var3) ((False) -> var4) ((True) -> (Cons (var0 var3) var4)))))) var2)))) |}]

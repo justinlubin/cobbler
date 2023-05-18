@@ -275,10 +275,10 @@ let rec normalize : exp -> exp = function
   | EApp (head, arg) ->
       (match (normalize head, normalize arg) with
       | EAbs (param, _, body), arg' -> substitute (param, arg') body
-      | ERScheme (RListFoldr (b, f)), ECtor ("Nil", [ EUnit ]) -> b
-      | ERScheme (RListFoldr (b, f)), ECtor ("Cons", [ EPair (hd, tl) ]) ->
+      | ERScheme (RListFoldr (b, f)), ECtor ("Nil", []) -> b
+      | ERScheme (RListFoldr (b, f)), ECtor ("Cons", [ hd; tl ]) ->
           normalize
-            (EApp (f, EPair (hd, EApp (ERScheme (RListFoldr (b, f)), tl))))
+            (EApp (EApp (f, hd), EApp (ERScheme (RListFoldr (b, f)), tl)))
       | head', arg' -> EApp (head', arg'))
   | EAbs (param, tau, body) -> EAbs (param, tau, normalize body)
   | EMatch (scrutinee, branches) ->
