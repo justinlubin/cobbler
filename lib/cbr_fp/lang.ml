@@ -9,9 +9,15 @@ open Core
 (** Identifiers *)
 type id = string
 
+(** Base types *)
+and base_typ =
+  | BTInt
+  | BTString
+  | BTFloat
+
 (** Types *)
 and typ =
-  | TInt
+  | TBase of base_typ
   | TVar of string
   | TDatatype of string * typ list
   | TArr of typ * typ
@@ -33,6 +39,12 @@ type branch = string * (id list * exp)
 (** Recursion schemes *)
 and rscheme = RListFoldr of exp * exp
 
+(** Base expressions *)
+and base_exp =
+  | BEInt of int
+  | BEString of string
+  | BEFloat of float
+
 (** Expressions *)
 and exp =
   | EVar of id
@@ -40,7 +52,7 @@ and exp =
   | EAbs of id * typ * exp
   | EMatch of exp * branch list
   | ECtor of string * exp list
-  | EInt of int
+  | EBase of base_exp
   | EHole of string * typ
   | ERScheme of rscheme
 [@@deriving sexp, ord, eq, compare, show]

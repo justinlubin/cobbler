@@ -12,7 +12,9 @@ include T
 include Comparator.Make (T)
 
 let rec show : typ -> string = function
-  | TInt -> "Int"
+  | TBase BTInt -> "Int"
+  | TBase BTFloat -> "Float"
+  | TBase BTString -> "String"
   | TVar x -> x
   | TDatatype (x, taus) ->
       sprintf
@@ -23,7 +25,7 @@ let rec show : typ -> string = function
       sprintf "(%s -> %s)" (show domain) (show codomain)
 
 let rec decompose_arr : typ -> typ list * typ = function
-  | TInt -> ([], TInt)
+  | TBase b -> ([], TBase b)
   | TVar x -> ([], TVar x)
   | TDatatype (x, taus) -> ([], TDatatype (x, taus))
   | TArr (domain, codomain) ->

@@ -5,7 +5,7 @@ open Unification
 (* Types *)
 
 let rec to_unification_typ : Lang.typ -> Unification.typ = function
-  | TInt -> Elementary TInt
+  | TBase b -> Elementary (TBase b)
   | TVar x -> Elementary (TVar x)
   | TDatatype (x, taus) -> Elementary (TDatatype (x, taus))
   | TArr (domain, codomain) ->
@@ -79,7 +79,9 @@ and to_unification_term'
       in
       embed' "match" "" (scrutinee :: arguments)
   | ECtor (tag, args) -> embed' "ctor" tag args
-  | EInt n -> embed' "int" (Int.to_string n) []
+  | EBase (BEInt n) -> embed' "base_int" (Int.to_string n) []
+  | EBase (BEFloat f) -> embed' "base_float" (Float.to_string f) []
+  | EBase (BEString s) -> embed' "base_string" s []
   | EHole (name, typ) -> Atom (Variable (name, to_unification_typ typ))
   | ERScheme _ -> failwith "cannot embed unapplied recursion scheme"
 
@@ -127,7 +129,9 @@ let rec from_unification_term
               )
         | Some ("ctor", tag) ->
             ECtor (tag, List.map ~f:(from_unification_term sigma) arguments)
-        | Some ("int", n) -> EInt (Int.of_string n)
+        | Some ("base_int", n) -> EBase (BEInt (Int.of_string n))
+        | Some ("base_float", f) -> EBase (BEFloat (Float.of_string f))
+        | Some ("base_string", s) -> EBase (BEString s)
         | Some ("list_foldr", "") ->
             EApp
               ( ERScheme
