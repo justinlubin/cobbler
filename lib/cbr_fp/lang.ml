@@ -23,6 +23,9 @@ and typ =
   | TArr of typ * typ
 [@@deriving sexp, ord, eq, compare, show]
 
+(** Type schemes (e.g. forall x, y, z . tau) *)
+(* type typ_scheme = id list * typ *)
+
 (** An environment of types (commonly called "gamma") *)
 type typ_env = (id, typ, String.comparator_witness) Map.t
 
@@ -49,7 +52,7 @@ and base_exp =
 and exp =
   | EVar of id
   | EApp of exp * exp
-  | EAbs of id * typ * exp
+  | EAbs of id * exp
   | EMatch of exp * branch list
   | ECtor of string * exp list
   | EBase of base_exp

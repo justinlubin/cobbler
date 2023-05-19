@@ -6,18 +6,18 @@
   (Zero)
   (Succ (Peano)))
 
-(type (ListPeano)
+(type (List a)
   (Nil)
-  (Cons (Peano) (ListPeano)))
+  (Cons a (List a)))
 
-(define map : (((Peano) -> (Peano)) -> ((ListPeano) -> (ListPeano)))
-  (lambda f ((Peano) -> (Peano)) (lambda xs (ListPeano)
+(define map : (((Peano) -> (Peano)) -> ((List (Peano)) -> (List (Peano))))
+  (lambda f (lambda xs
     (match xs
       ((Nil) -> (Nil))
       ((Cons hd tl) -> (Cons (f hd) (map f tl)))))))
 
-(define filter : (((Peano) -> (Bool)) -> ((ListPeano) -> (ListPeano)))
-  (lambda pred ((Peano) -> (Bool)) (lambda xs (ListPeano)
+(define filter : (((Peano) -> (Bool)) -> ((List (Peano)) -> (List (Peano))))
+  (lambda pred (lambda xs
     (match xs
       ((Nil) ->
         (Nil))
@@ -27,8 +27,8 @@
           ((True) -> (Cons hd (filter pred tl)))))))))
 
 (define main :
-  (((Peano) -> (Bool)) -> (((Peano) -> (Peano)) -> ((ListPeano) -> (ListPeano))))
-  (lambda pred ((Peano) -> (Bool)) (lambda f ((Peano) -> (Peano)) (lambda xs (ListPeano)
+  (((Peano) -> (Bool)) -> (((Peano) -> (Peano)) -> ((List (Peano)) -> (List (Peano)))))
+  (lambda pred (lambda f (lambda xs
     (match xs
       ((Nil) ->
         (Nil))

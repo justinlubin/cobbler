@@ -8,7 +8,7 @@
 
 (define main :
   (((Peano) -> (Peano)) -> ((LongList (Peano)) -> (LongList (Peano))))
-  (lambda f ((Peano) -> (Peano)) (lambda xs (LongList (Peano))
+  (lambda f (lambda xs
     (match xs
       ((LongNil) ->
         (LongNil))

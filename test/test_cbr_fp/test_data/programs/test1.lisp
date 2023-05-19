@@ -10,17 +10,17 @@
   (Zero))
 
 (define map : (((Peano) -> (Peano)) -> ((MaybePeano) -> (MaybePeano)))
-  (lambda f ((Peano) -> (Peano)) (lambda mx (MaybePeano)
+  (lambda f (lambda mx
     (match mx
       ((Nothing) -> (Nothing))
       ((Just x) -> (Just (f x)))))))
 
 (define withDefault : ((Peano) -> ((MaybePeano) -> (Peano)))
-  (lambda default (Peano) (lambda mx (MaybePeano)
+  (lambda default (lambda mx
     (match mx
       ((Nothing) -> default)
       ((Just x) -> x)))))
 
 (define main : (((Peano) -> (Peano)) -> ((MaybePeano) -> (Peano)))
-  (lambda f ((Peano) -> (Peano)) (lambda mx (MaybePeano)
+  (lambda f (lambda mx
     (withDefault zero (map f mx)))))

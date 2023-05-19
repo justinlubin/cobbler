@@ -13,7 +13,7 @@ let norm : datatype_env -> typ_env -> env -> exp -> exp =
   e
   |> inline env
   |> Exp.normalize
-  |> Fusion.fuse sigma gamma
+  |> Fusion.fuse
   |> Fusion.pull_out_cases
   |> Exp.normalize
 
@@ -94,16 +94,20 @@ let problem_of_definitions : datatype_env * typ_env * env -> problem =
 let solve : use_unification:bool -> depth:int -> problem -> exp option =
  fun ~use_unification ~depth { sigma; gamma; env; name } ->
   let reference = String.Map.find_exn env "main" in
+  let reference_domain, reference_codomain =
+    Typ.decompose_arr (String.Map.find_exn gamma "main")
+  in
   let reference_params, _ = Exp.decompose_abs reference in
   let normalized_reference = norm sigma gamma env reference in
   let normalized_reference_params, normalized_reference_body =
     Exp.decompose_abs normalized_reference
   in
   let stdlib =
-    List.fold_left
+    List.fold2_exn
       normalized_reference_params
+      reference_domain
       ~init:gamma
-      ~f:(fun acc (x, tau) -> String.Map.update acc x ~f:(fun _ -> tau))
+      ~f:(fun acc x tau -> String.Map.update acc x ~f:(fun _ -> tau))
   in
   let normalized_reference_body_uniterm =
     Unification_adapter.to_unification_term
@@ -111,14 +115,13 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
       stdlib
       normalized_reference_body
   in
-  let _, reference_codomain =
-    Typ.decompose_arr (String.Map.find_exn gamma "main")
-  in
   let grammar =
     make_grammar
       (String.Map.remove gamma "main")
       (String.Map.remove env "main")
-      (if use_unification then [] else reference_params)
+      (if use_unification
+      then []
+      else List.zip_exn reference_params reference_domain)
   in
   Option.map
     (Cbr_framework.Enumerative_search.top_down
@@ -167,4 +170,4 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
            reference_params
            (Exp.build_app
               messy_solution
-              (List.map ~f:(fun (x, _) -> EVar x) reference_params))))
+              (List.map ~f:(fun x -> EVar x) reference_params))))

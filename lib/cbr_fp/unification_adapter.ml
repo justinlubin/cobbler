@@ -60,22 +60,22 @@ and to_unification_term'
       Application
         ( to_unification_term' sigma stdlib gamma e1
         , to_unification_term' sigma stdlib gamma e2 )
-  | EAbs (x, tau, body) ->
-      Abstraction
-        ( x
-        , to_unification_typ tau
-        , to_unification_term'
-            sigma
-            (String.Set.remove stdlib x)
-            (String.Map.update gamma x ~f:(fun _ -> tau))
-            body )
+  | EAbs (x, body) ->
+      (match result_type with
+      | TArr (dom, _) ->
+          Abstraction
+            ( x
+            , to_unification_typ dom
+            , to_unification_term'
+                sigma
+                (String.Set.remove stdlib x)
+                (String.Map.update gamma x ~f:(fun _ -> dom))
+                body )
+      | _ -> failwith "improper abstraction type")
   | EMatch (scrutinee, branches) ->
       let arguments =
         List.map (sort_tags branches) ~f:(fun (tag, (arg_names, rhs)) ->
-            let _, domains =
-              Option.value_exn (Type_system.ctor_typ sigma tag)
-            in
-            Exp.build_abs (List.zip_exn arg_names domains) rhs)
+            Exp.build_abs arg_names rhs)
       in
       embed' "match" "" (scrutinee :: arguments)
   | ECtor (tag, args) -> embed' "ctor" tag args
@@ -141,9 +141,7 @@ let rec from_unification_term
               , from_unification_term sigma (List.nth_exn arguments 2) )
         | _ -> build_arguments (EVar x))
   in
-  Exp.build_abs
-    (List.map ~f:(fun (x, tau) -> (x, from_unification_typ tau)) heading)
-    body
+  Exp.build_abs (List.map ~f:fst heading) body
 
 let simplify_solution
     :  datatype_env -> (string * Unification.term) list

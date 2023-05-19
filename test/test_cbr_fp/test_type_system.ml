@@ -19,30 +19,33 @@ let sigma_list1, gamma_list1, env_list1 =
 let%test_unit "list1 well-typed" =
   Type_system.well_typed (sigma_list1, gamma_list1, env_list1)
 
-let%expect_test "list1 extracted foldr for map well-typed" =
-  print_endline
-    (Typ.show
-       (Type_system.infer
-          sigma_list1
-          gamma_list1
-          (Option.value_exn
-             (Recursion_scheme.extract_list_foldr
-                sigma_list1
-                gamma_list1
-                env_list1
-                "map"))));
-  [%expect {| (((Peano) -> (Peano)) -> ((ListPeano) -> (ListPeano))) |}]
+let%test_unit "list1 map correct type" =
+  Type_system.check
+    sigma_list1
+    gamma_list1
+    (Map.find_exn env_list1 "map")
+    (Parse.typ "(((Peano) -> (Peano)) -> ((List (Peano)) -> (List (Peano))))")
 
-let%expect_test "list1 extracted foldr for filter well-typed" =
-  print_endline
-    (Typ.show
-       (Type_system.infer
+let%test_unit "list1 extracted foldr for map well-typed" =
+  Type_system.check
+    sigma_list1
+    gamma_list1
+    (Option.value_exn
+       (Recursion_scheme.extract_list_foldr
           sigma_list1
           gamma_list1
-          (Option.value_exn
-             (Recursion_scheme.extract_list_foldr
-                sigma_list1
-                gamma_list1
-                env_list1
-                "filter"))));
-  [%expect {| (((Peano) -> (Bool)) -> ((ListPeano) -> (ListPeano))) |}]
+          env_list1
+          "map"))
+    (Parse.typ "(((Peano) -> (Peano)) -> ((List (Peano)) -> (List (Peano))))")
+
+let%test_unit "list1 extracted foldr for filter well-typed" =
+  Type_system.check
+    sigma_list1
+    gamma_list1
+    (Option.value_exn
+       (Recursion_scheme.extract_list_foldr
+          sigma_list1
+          gamma_list1
+          env_list1
+          "filter"))
+    (Parse.typ "(((Peano) -> (Bool)) -> ((List (Peano)) -> (List (Peano))))")

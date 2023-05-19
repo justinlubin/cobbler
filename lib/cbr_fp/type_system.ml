@@ -79,11 +79,12 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
       let t2, c2 = constraint_type sigma gamma e2 in
       let x = fresh_type_var () in
       (x, ((t1, TArr (t2, x)) :: c1) @ c2)
-  | EAbs (param, t1, body) ->
+  | EAbs (param, body) ->
+      let x = fresh_type_var () in
       let t2, c =
-        constraint_type sigma (Map.update gamma param ~f:(fun _ -> t1)) body
+        constraint_type sigma (Map.update gamma param ~f:(fun _ -> x)) body
       in
-      (TArr (t1, t2), c)
+      (TArr (x, t2), c)
   | EMatch (scrutinee, branches) ->
       (match branches with
       | [] -> raise (IllTyped e)
@@ -149,11 +150,11 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
   | EBase (BEString _) -> (TBase BTString, [])
   | EHole (_, t) -> (t, [])
   | ERScheme (RListFoldr (b, f)) ->
-      (* TODO: assumes arguments are correct *)
       let t_b, c_b = constraint_type sigma gamma b in
-      let _t_f, c_f = constraint_type sigma gamma f in
+      let t_f, c_f = constraint_type sigma gamma f in
       let x = fresh_type_var () in
-      (TArr (x, t_b), c_b @ c_f)
+      ( TArr (TDatatype ("List", [ x ]), t_b)
+      , ((TArr (x, TArr (t_b, t_b)), t_f) :: c_b) @ c_f )
 
 (* Constraint unification *)
 
@@ -167,13 +168,17 @@ let rec unify : constraint_set -> sub =
       let fvs = free_vars s in
       let fvt = free_vars t in
       (match (s, t) with
+      (* Base cases *)
       | TBase b1, TBase b2 when [%eq: base_typ] b1 b2 -> unify tail
+      | TVar x1, TVar x2 when String.equal x1 x2 -> unify tail
+      (* Free variable cases *)
       | TVar x, _ when not (String.Set.mem fvt x) ->
           let sub = String.Map.singleton x t in
           compose_subs (unify (apply_sub_constraints sub tail)) sub
       | _, TVar x when not (String.Set.mem fvs x) ->
           let sub = String.Map.singleton x s in
           compose_subs (unify (apply_sub_constraints sub tail)) sub
+      (* Recursive cases*)
       | TDatatype (dt1, args1), TDatatype (dt2, args2) when String.equal dt1 dt2
         ->
           (match List.map2 ~f:(fun a1 a2 -> (a1, a2)) args1 args2 with
@@ -182,6 +187,7 @@ let rec unify : constraint_set -> sub =
               unify (arg_constraints @ tail))
       | TArr (dom1, cod1), TArr (dom2, cod2) ->
           unify ((dom1, dom2) :: (cod1, cod2) :: tail)
+      (* Failure cases *)
       | TBase _, _ | TVar _, _ | TDatatype (_, _), _ | TArr (_, _), _ ->
           raise (CannotUnify cs))
 

@@ -33,10 +33,8 @@ let expected_env1 =
     ; ( "map"
       , EAbs
           ( "f"
-          , TArr (TDatatype ("Peano", []), TDatatype ("Peano", []))
           , EAbs
               ( "mx"
-              , TDatatype ("MaybePeano", [])
               , EMatch
                   ( EVar "mx"
                   , [ ("Nothing", ([], ECtor ("Nothing", [])))
@@ -47,10 +45,8 @@ let expected_env1 =
     ; ( "withDefault"
       , EAbs
           ( "default"
-          , TDatatype ("Peano", [])
           , EAbs
               ( "mx"
-              , TDatatype ("MaybePeano", [])
               , EMatch
                   ( EVar "mx"
                   , [ ("Nothing", ([], EVar "default"))
@@ -59,10 +55,8 @@ let expected_env1 =
     ; ( "main"
       , EAbs
           ( "f"
-          , TArr (TDatatype ("Peano", []), TDatatype ("Peano", []))
           , EAbs
               ( "mx"
-              , TDatatype ("MaybePeano", [])
               , EApp
                   ( EApp (EVar "withDefault", EVar "zero")
                   , EApp (EApp (EVar "map", EVar "f"), EVar "mx") ) ) ) )

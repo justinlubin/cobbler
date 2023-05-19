@@ -21,14 +21,6 @@ let extract_list_foldr_exn : datatype_env -> typ_env -> env -> string -> exp =
           | Some (_, _) -> failwith "malformatted Cons branch"
           | None -> failwith "missing Cons branch"
         in
-        let elem_type =
-          match Type_system.ctor_typ sigma "Cons" with
-          | Some (_, [ tau; _ ]) -> tau
-          | _ -> failwith "incorrect Cons arg type"
-        in
-        let return_type =
-          snd (Typ.decompose_arr (String.Map.find_exn gamma name))
-        in
         (* TODO: Only supports exact same arguments except for recursive call on
                  final argument *)
         let new_cons_rhs =
@@ -36,7 +28,7 @@ let extract_list_foldr_exn : datatype_env -> typ_env -> env -> string -> exp =
             ~old_subexp:
               (Exp.build_app
                  (EVar name)
-                 (List.drop_last_exn (List.map ~f:(fun (x, _) -> EVar x) params)
+                 (List.drop_last_exn (List.map ~f:(fun x -> EVar x) params)
                  @ [ EVar cons_tl_param ]))
             ~new_subexp:(EVar cons_tl_param)
             cons_rhs
@@ -50,10 +42,8 @@ let extract_list_foldr_exn : datatype_env -> typ_env -> env -> string -> exp =
                ( ERScheme
                    (RListFoldr
                       ( nil_rhs
-                      , EAbs
-                          ( cons_hd_param
-                          , elem_type
-                          , EAbs (cons_tl_param, return_type, new_cons_rhs) ) ))
+                      , EAbs (cons_hd_param, EAbs (cons_tl_param, new_cons_rhs))
+                      ))
                , scrutinee )))
   | _ -> failwith "non-match under top-level abstractions"
 
