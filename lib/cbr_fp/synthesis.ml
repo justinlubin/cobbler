@@ -34,8 +34,12 @@ let make_grammar : typ_env -> env -> (id * typ) list -> grammar =
       match data with
       | `Right _ -> failwith "env contains key gamma does not"
       | `Left _ -> failwith "gamma contains key env does not"
-      | `Both (typ, exp) ->
-          let domain, codomain = Typ.decompose_arr typ in
+      | `Both (ts, exp) ->
+          let domain, codomain =
+            (* TODO: this does NOT support polymorphism correctly for
+               synthesis! *)
+            Typ.decompose_arr (Type_system.instantiate ts)
+          in
           Map.add_multi acc ~key:codomain ~data:(key, domain))
 
 (* Expansion *)
@@ -95,7 +99,8 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
  fun ~use_unification ~depth { sigma; gamma; env; name } ->
   let reference = String.Map.find_exn env "main" in
   let reference_domain, reference_codomain =
-    Typ.decompose_arr (String.Map.find_exn gamma "main")
+    Typ.decompose_arr
+      (Type_system.instantiate (String.Map.find_exn gamma "main"))
   in
   let reference_params, _ = Exp.decompose_abs reference in
   let normalized_reference = norm sigma gamma env reference in
@@ -107,7 +112,7 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
       normalized_reference_params
       reference_domain
       ~init:gamma
-      ~f:(fun acc x tau -> String.Map.update acc x ~f:(fun _ -> tau))
+      ~f:(fun acc x tau -> String.Map.update acc x ~f:(fun _ -> ([], tau)))
   in
   let normalized_reference_body_uniterm =
     Unification_adapter.to_unification_term

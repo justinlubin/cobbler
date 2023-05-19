@@ -44,9 +44,6 @@ let rec apply_sub : sub -> typ -> typ =
   | TDatatype (dt, args) -> TDatatype (dt, List.map ~f:(apply_sub sigma) args)
   | TArr (dom, cod) -> TArr (apply_sub sigma dom, apply_sub sigma cod)
 
-let apply_sub_env : sub -> typ_env -> typ_env =
- fun sigma gamma -> Map.map ~f:(apply_sub sigma) gamma
-
 let compose_subs : sub -> sub -> sub =
  fun sigma1 sigma2 ->
   Map.merge sigma1 sigma2 ~f:(fun ~key el ->
@@ -62,6 +59,19 @@ let apply_sub_constraints : sub -> constraint_set -> constraint_set =
  fun sigma cs ->
   List.map ~f:(fun (s, t) -> (apply_sub sigma s, apply_sub sigma t)) cs
 
+(* Type schemes *)
+
+let instantiate : typ_scheme -> typ =
+ fun (xs, t) ->
+  apply_sub
+    (String.Map.of_alist_exn (List.map ~f:(fun x -> (x, fresh_type_var ())) xs))
+    t
+
+let generalize : typ -> typ_scheme =
+ fun t ->
+  let fvs = free_vars t in
+  (Set.to_list fvs, t)
+
 (* Constraint typing *)
 
 exception IllTyped of exp [@@deriving sexp]
@@ -73,7 +83,7 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
   | EVar x ->
       (match Map.find gamma x with
       | None -> raise (IllTyped e)
-      | Some t -> (t, []))
+      | Some t -> (instantiate t, []))
   | EApp (e1, e2) ->
       let t1, c1 = constraint_type sigma gamma e1 in
       let t2, c2 = constraint_type sigma gamma e2 in
@@ -82,7 +92,10 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
   | EAbs (param, body) ->
       let x = fresh_type_var () in
       let t2, c =
-        constraint_type sigma (Map.update gamma param ~f:(fun _ -> x)) body
+        constraint_type
+          sigma
+          (Map.update gamma param ~f:(fun _ -> ([], x)))
+          body
       in
       (TArr (x, t2), c)
   | EMatch (scrutinee, branches) ->
@@ -109,7 +122,7 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
                                   ~init:gamma
                                   ~f:(fun acc a d ->
                                     String.Map.update acc a ~f:(fun _ ->
-                                        apply_sub dt_sub d)))
+                                        ([], apply_sub dt_sub d))))
                                rhs
                            in
                            (tag, t_rhs, c_rhs)
@@ -211,5 +224,7 @@ let well_typed : datatype_env * typ_env * env -> unit =
         sigma
         gamma
         body
-        (Option.value_or_thunk (String.Map.find gamma name) ~default:(fun _ ->
-             raise (IllTyped body))))
+        (name
+        |> Map.find gamma
+        |> Option.value_or_thunk ~default:(fun _ -> raise (IllTyped body))
+        |> instantiate))

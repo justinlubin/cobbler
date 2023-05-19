@@ -35,9 +35,10 @@ let rec embed
        gamma
        ~key:head
        ~data:
-         (Typ.build_arr
-            (List.map ~f:(Type_system.infer sigma gamma) arguments)
-            result_type))
+         ( []
+         , Typ.build_arr
+             (List.map ~f:(Type_system.infer sigma gamma) arguments)
+             result_type ))
     (Exp.build_app (EVar head) arguments)
 
 and to_unification_term'
@@ -69,7 +70,7 @@ and to_unification_term'
             , to_unification_term'
                 sigma
                 (String.Set.remove stdlib x)
-                (String.Map.update gamma x ~f:(fun _ -> dom))
+                (String.Map.update gamma x ~f:(fun _ -> ([], dom)))
                 body )
       | _ -> failwith "improper abstraction type")
   | EMatch (scrutinee, branches) ->

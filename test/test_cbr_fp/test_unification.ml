@@ -12,8 +12,8 @@ let%test_unit "unification 1" =
   let e0' = Parse.exp (sprintf "(a (a b))") in
   let stdlib =
     String.Map.of_alist_exn
-      [ ("a", TArr (TDatatype ("Gamma", []), TDatatype ("Gamma", [])))
-      ; ("b", TDatatype ("Gamma", []))
+      [ ("a", ([], TArr (TDatatype ("Gamma", []), TDatatype ("Gamma", []))))
+      ; ("b", ([], TDatatype ("Gamma", [])))
       ]
   in
   match

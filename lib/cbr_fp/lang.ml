@@ -7,16 +7,17 @@
 open Core
 
 (** Identifiers *)
-type id = string
+type id = string [@@deriving sexp, ord, eq, compare, show]
 
 (** Base types *)
-and base_typ =
+type base_typ =
   | BTInt
   | BTString
   | BTFloat
+[@@deriving sexp, ord, eq, compare, show]
 
 (** Types *)
-and typ =
+type typ =
   | TBase of base_typ
   | TVar of string
   | TDatatype of string * typ list
@@ -24,10 +25,10 @@ and typ =
 [@@deriving sexp, ord, eq, compare, show]
 
 (** Type schemes (e.g. forall x, y, z . tau) *)
-(* type typ_scheme = id list * typ *)
+type typ_scheme = id list * typ [@@deriving sexp, ord, eq, compare, show]
 
 (** An environment of types (commonly called "gamma") *)
-type typ_env = (id, typ, String.comparator_witness) Map.t
+type typ_env = typ_scheme String.Map.t
 
 (** An environment of datatypes (commonly called "sigma") *)
 type datatype_env =
@@ -61,4 +62,4 @@ and exp =
 [@@deriving sexp, ord, eq, compare, show]
 
 (** An environment of expressions *)
-type env = (id, exp, String.comparator_witness) Map.t
+type env = exp String.Map.t

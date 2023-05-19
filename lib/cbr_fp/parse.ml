@@ -92,7 +92,7 @@ let definitions : string -> datatype_env * typ_env * env =
          | Sexp.List
              [ Sexp.Atom "define"; Sexp.Atom lhs; Sexp.Atom ":"; typ; rhs ] ->
              ( sigma
-             , String.Map.add_exn gamma ~key:lhs ~data:(typ_of_sexp typ)
+             , String.Map.add_exn gamma ~key:lhs ~data:([], typ_of_sexp typ)
              , String.Map.add_exn env ~key:lhs ~data:(exp_of_sexp rhs) )
          | _ ->
              failwith
