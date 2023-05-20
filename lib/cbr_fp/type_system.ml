@@ -4,73 +4,13 @@ open Lang
 (* This module implements type inference via HM-style constraint generation
    and checking. See, for example, TAPL Chapter 22. *)
 
-(* Type helpers *)
-
-let rec free_vars : typ -> String.Set.t =
- fun tau ->
-  match tau with
-  | TBase _ -> String.Set.empty
-  | TVar x -> String.Set.singleton x
-  | TDatatype (_, args) ->
-      args |> List.map ~f:free_vars |> String.Set.union_list
-  | TArr (dom, cod) -> String.Set.union (free_vars dom) (free_vars cod)
-
-let ctor_typ
-    : datatype_env -> string -> ((string * string list) * typ list) option
-  =
- fun sigma tag ->
-  List.find_map
-    (String.Map.to_alist sigma)
-    ~f:(fun (dt, (dt_params, dt_info)) ->
-      Option.map
-        (List.Assoc.find dt_info ~equal:String.equal tag)
-        ~f:(fun domains -> ((dt, dt_params), domains)))
-
-let fresh_type_var : unit -> typ = fun () -> TVar (Util.gensym "__typevar")
-
-(* Type substitions (no need to worry about variable capture since we don't
-   have fully-fledged universal polymorphism) *)
-
-type sub = typ String.Map.t
-
-let rec apply_sub : sub -> typ -> typ =
- fun sigma tau ->
-  match tau with
-  | TBase b -> TBase b
-  | TVar x ->
-      (match Map.find sigma x with
-      | None -> TVar x
-      | Some t -> t)
-  | TDatatype (dt, args) -> TDatatype (dt, List.map ~f:(apply_sub sigma) args)
-  | TArr (dom, cod) -> TArr (apply_sub sigma dom, apply_sub sigma cod)
-
-let compose_subs : sub -> sub -> sub =
- fun sigma1 sigma2 ->
-  Map.merge sigma1 sigma2 ~f:(fun ~key el ->
-      match el with
-      | `Left t1 -> Some t1
-      | `Right t2 | `Both (_, t2) -> Some (apply_sub sigma1 t2))
-
 (* Type constraints *)
 
 type constraint_set = (typ * typ) list
 
-let apply_sub_constraints : sub -> constraint_set -> constraint_set =
+let apply_sub_constraints : Typ.sub -> constraint_set -> constraint_set =
  fun sigma cs ->
-  List.map ~f:(fun (s, t) -> (apply_sub sigma s, apply_sub sigma t)) cs
-
-(* Type schemes *)
-
-let instantiate : typ_scheme -> typ =
- fun (xs, t) ->
-  apply_sub
-    (String.Map.of_alist_exn (List.map ~f:(fun x -> (x, fresh_type_var ())) xs))
-    t
-
-let generalize : typ -> typ_scheme =
- fun t ->
-  let fvs = free_vars t in
-  (Set.to_list fvs, t)
+  List.map ~f:(fun (s, t) -> (Typ.apply_sub sigma s, Typ.apply_sub sigma t)) cs
 
 (* Constraint typing *)
 
@@ -83,14 +23,14 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
   | EVar x ->
       (match Map.find gamma x with
       | None -> raise (IllTyped e)
-      | Some t -> (instantiate t, []))
+      | Some t -> (Typ.instantiate t, []))
   | EApp (e1, e2) ->
       let t1, c1 = constraint_type sigma gamma e1 in
       let t2, c2 = constraint_type sigma gamma e2 in
-      let x = fresh_type_var () in
+      let x = Typ.fresh_type_var () in
       (x, ((t1, TArr (t2, x)) :: c1) @ c2)
   | EAbs (param, body) ->
-      let x = fresh_type_var () in
+      let x = Typ.fresh_type_var () in
       let t2, c =
         constraint_type
           sigma
@@ -102,16 +42,16 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
       (match branches with
       | [] -> raise (IllTyped e)
       | (first_ctor, _) :: _ ->
-          (match ctor_typ sigma first_ctor with
+          (match Typ.ctor_typ sigma first_ctor with
           | Some ((dt, dt_params), _) ->
               let dt_sub_list =
-                List.map ~f:(fun p -> (p, fresh_type_var ())) dt_params
+                List.map ~f:(fun p -> (p, Typ.fresh_type_var ())) dt_params
               in
               let dt_sub = String.Map.of_alist_exn dt_sub_list in
               let ctors, rhs_types, rhs_constraints =
                 List.unzip3
                   (List.map branches ~f:(fun (tag, (arg_names, rhs)) ->
-                       match ctor_typ sigma tag with
+                       match Typ.ctor_typ sigma tag with
                        | Some (_, domains) ->
                            let t_rhs, c_rhs =
                              constraint_type
@@ -122,7 +62,7 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
                                   ~init:gamma
                                   ~f:(fun acc a d ->
                                     String.Map.update acc a ~f:(fun _ ->
-                                        ([], apply_sub dt_sub d))))
+                                        ([], Typ.apply_sub dt_sub d))))
                                rhs
                            in
                            (tag, t_rhs, c_rhs)
@@ -138,7 +78,7 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
                 let t_scrutinee, c_scrutinee =
                   constraint_type sigma gamma scrutinee
                 in
-                let return_type = fresh_type_var () in
+                let return_type = Typ.fresh_type_var () in
                 ( return_type
                 , ((t_scrutinee, TDatatype (dt, List.map ~f:snd dt_sub_list))
                   :: c_scrutinee)
@@ -150,12 +90,15 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
       let ts_args, cs_args =
         List.unzip (List.map ~f:(constraint_type sigma gamma) args)
       in
-      (match ctor_typ sigma tag with
+      (match Typ.ctor_typ sigma tag with
       | Some ((dt, params), domains) ->
-          let sub_list = List.map ~f:(fun p -> (p, fresh_type_var ())) params in
+          let sub_list =
+            List.map ~f:(fun p -> (p, Typ.fresh_type_var ())) params
+          in
           let sub = String.Map.of_alist_exn sub_list in
           ( TDatatype (dt, List.map ~f:snd sub_list)
-          , List.map2_exn domains ts_args ~f:(fun d t -> (apply_sub sub d, t))
+          , List.map2_exn domains ts_args ~f:(fun d t ->
+                (Typ.apply_sub sub d, t))
             @ List.concat cs_args )
       | None -> raise (IllTyped e))
   | EBase (BEInt _) -> (TBase BTInt, [])
@@ -165,7 +108,7 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
   | ERScheme (RListFoldr (b, f)) ->
       let t_b, c_b = constraint_type sigma gamma b in
       let t_f, c_f = constraint_type sigma gamma f in
-      let x = fresh_type_var () in
+      let x = Typ.fresh_type_var () in
       ( TArr (TDatatype ("List", [ x ]), t_b)
       , ((TArr (x, TArr (t_b, t_b)), t_f) :: c_b) @ c_f )
 
@@ -173,48 +116,53 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
 
 exception CannotUnify of (typ * typ) list [@@deriving sexp]
 
-let rec unify : constraint_set -> sub =
+let rec unify_exn : constraint_set -> Typ.sub =
  fun cs ->
   match cs with
   | [] -> String.Map.empty
   | (s, t) :: tail ->
-      let fvs = free_vars s in
-      let fvt = free_vars t in
+      let fvs = Typ.free_vars s in
+      let fvt = Typ.free_vars t in
       (match (s, t) with
       (* Base cases *)
-      | TBase b1, TBase b2 when [%eq: base_typ] b1 b2 -> unify tail
-      | TVar x1, TVar x2 when String.equal x1 x2 -> unify tail
+      | TBase b1, TBase b2 when [%eq: base_typ] b1 b2 -> unify_exn tail
+      | TVar x1, TVar x2 when String.equal x1 x2 -> unify_exn tail
       (* Free variable cases *)
       | TVar x, _ when not (String.Set.mem fvt x) ->
           let sub = String.Map.singleton x t in
-          compose_subs (unify (apply_sub_constraints sub tail)) sub
+          Typ.compose_subs (unify_exn (apply_sub_constraints sub tail)) sub
       | _, TVar x when not (String.Set.mem fvs x) ->
           let sub = String.Map.singleton x s in
-          compose_subs (unify (apply_sub_constraints sub tail)) sub
+          Typ.compose_subs (unify_exn (apply_sub_constraints sub tail)) sub
       (* Recursive cases*)
       | TDatatype (dt1, args1), TDatatype (dt2, args2) when String.equal dt1 dt2
         ->
           (match List.map2 ~f:(fun a1 a2 -> (a1, a2)) args1 args2 with
           | List.Or_unequal_lengths.Unequal_lengths -> raise (CannotUnify cs)
           | List.Or_unequal_lengths.Ok arg_constraints ->
-              unify (arg_constraints @ tail))
+              unify_exn (arg_constraints @ tail))
       | TArr (dom1, cod1), TArr (dom2, cod2) ->
-          unify ((dom1, dom2) :: (cod1, cod2) :: tail)
+          unify_exn ((dom1, dom2) :: (cod1, cod2) :: tail)
       (* Failure cases *)
       | TBase _, _ | TVar _, _ | TDatatype (_, _), _ | TArr (_, _), _ ->
           raise (CannotUnify cs))
+
+let unify : (typ * typ) list -> Typ.sub option =
+ fun constraints ->
+  try Some (unify_exn constraints) with
+  | CannotUnify _ -> None
 
 (* Type system interface *)
 
 let infer : datatype_env -> typ_env -> exp -> typ =
  fun sigma gamma e ->
   let s, c = constraint_type sigma gamma e in
-  let sub = unify c in
-  apply_sub sub s
+  let sub = unify_exn c in
+  Typ.apply_sub sub s
 
 let check : datatype_env -> typ_env -> exp -> typ -> unit =
  fun sigma gamma e tau ->
-  let _ = unify [ (infer sigma gamma e, tau) ] in
+  let _ = unify_exn [ (infer sigma gamma e, tau) ] in
   ()
 
 let well_typed : datatype_env * typ_env * env -> unit =
@@ -227,4 +175,4 @@ let well_typed : datatype_env * typ_env * env -> unit =
         (name
         |> Map.find gamma
         |> Option.value_or_thunk ~default:(fun _ -> raise (IllTyped body))
-        |> instantiate))
+        |> Typ.instantiate))

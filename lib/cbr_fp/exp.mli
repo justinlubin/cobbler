@@ -81,3 +81,7 @@ val fill_holes : (string * exp) list -> exp -> exp
 (** [clean e] tidies [e] up in a semantics-preserving way (e.g. via
     eta-reduction). *)
 val clean : exp -> exp
+
+(** [apply_type_sub subst e] applies the type substitute [subst] to the
+    expression [e], modifying any relevant types that are referenced in it. *)
+val apply_type_sub : Typ.sub -> exp -> exp

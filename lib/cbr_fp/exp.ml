@@ -326,3 +326,21 @@ let rec clean : exp -> exp = function
   | EBase b -> EBase b
   | EHole (name, typ) -> EHole (name, typ)
   | ERScheme (RListFoldr (b, f)) -> ERScheme (RListFoldr (clean b, clean f))
+
+let apply_type_sub : Typ.sub -> exp -> exp =
+ fun subst e ->
+  let rec recurse = function
+    (* Main case *)
+    | EHole (name, typ) -> EHole (name, Typ.apply_sub subst typ)
+    (* Other cases *)
+    | EVar x -> EVar x
+    | EApp (head, arg) -> EApp (recurse head, recurse arg)
+    | EAbs (param, body) -> EAbs (param, recurse body)
+    | EMatch (scrutinee, branches) ->
+        EMatch (recurse scrutinee, map_branches ~f:recurse branches)
+    | ECtor (ctor_name, arg) -> ECtor (ctor_name, List.map ~f:recurse arg)
+    | EBase b -> EBase b
+    | ERScheme (RListFoldr (b, f)) ->
+        ERScheme (RListFoldr (recurse b, recurse f))
+  in
+  recurse e
