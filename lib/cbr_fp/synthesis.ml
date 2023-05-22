@@ -19,9 +19,9 @@ let norm : datatype_env -> typ_env -> env -> exp -> exp =
 
 (* Grammars *)
 
-type grammar = (typ, (id * typ list) list, Typ.comparator_witness) Map.t
+type grammar = (typ, (string * typ list) list, Typ.comparator_witness) Map.t
 
-let make_grammar : typ_env -> env -> (id * typ) list -> grammar =
+let make_grammar : typ_env -> env -> (string * typ) list -> grammar =
  fun gamma env free_vars ->
   Map.fold2
     gamma

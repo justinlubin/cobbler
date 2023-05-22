@@ -72,17 +72,17 @@ let parsed_datatype_env1, parsed_typ_env1, parsed_env1 =
   Common.parse_file "programs/test1.lisp"
 
 let%test_unit "parse program 1 (datatype_env)" =
-  [%test_result: (id * (string list * (string * typ list) list)) list]
+  [%test_result: (string * (string list * (string * typ list) list)) list]
     (Map.to_alist parsed_datatype_env1)
     ~expect:(Map.to_alist expected_datatype_env1)
 
 let%test_unit "parse program 1 (typ_env)" =
-  [%test_result: (id * typ) list]
+  [%test_result: (string * typ) list]
     (Map.to_alist parsed_typ_env1)
     ~expect:(Map.to_alist expected_typ_env1)
 
 let%test_unit "parse program 1 (env)" =
-  [%test_result: (id * exp) list]
+  [%test_result: (string * exp) list]
     (Map.to_alist parsed_env1)
     ~expect:(Map.to_alist expected_env1)
 

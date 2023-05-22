@@ -92,7 +92,7 @@ let map_branches : branch list -> f:(exp -> exp) -> branch list =
   List.map branches ~f:(fun (ctor_name, (arg_name, rhs)) ->
       (ctor_name, (arg_name, f rhs)))
 
-let decompose_abs : exp -> (id * typ) list * exp =
+let decompose_abs : exp -> (string * typ) list * exp =
  fun e ->
   let rec decompose_abs' acc = function
     | EAbs (param, tau, body) -> decompose_abs' ((param, tau) :: acc) body
@@ -108,7 +108,7 @@ let decompose_app : exp -> exp * exp list =
   in
   decompose_app' [] t
 
-let build_abs : (id * typ) list -> exp -> exp =
+let build_abs : (string * typ) list -> exp -> exp =
  fun xs t ->
   List.fold_right xs ~init:t ~f:(fun (x, tau) acc -> EAbs (x, tau, acc))
 
@@ -132,7 +132,7 @@ let rec free_variables : exp -> String.Set.t = function
       String.Set.union (free_variables b) (free_variables f)
   | EBase _ | EHole (_, _) -> String.Set.empty
 
-let replace : id * id -> exp -> exp =
+let replace : string * string -> exp -> exp =
  fun (lhs, rhs) e ->
   let rec replace' = function
     | EVar x -> if String.equal lhs x then EVar rhs else EVar x
@@ -159,12 +159,12 @@ let replace : id * id -> exp -> exp =
   in
   replace' e
 
-let replace_all : (id * id) list -> exp -> exp =
+let replace_all : (string * string) list -> exp -> exp =
  fun subs e -> List.fold_left ~f:(fun acc sub -> replace sub acc) ~init:e subs
 
 let gensym_prefix : string = "var"
 
-let substitute : id * exp -> exp -> exp =
+let substitute : string * exp -> exp -> exp =
  fun (lhs, rhs) e ->
   let rhs_fv = free_variables rhs in
   let rec substitute' = function
@@ -183,7 +183,7 @@ let substitute : id * exp -> exp -> exp =
           ( substitute' scrutinee
           , List.map
               ~f:(fun (ctor_name, (arg_names, branch_rhs)) ->
-                if List.mem ~equal:[%eq: id] arg_names lhs
+                if List.mem ~equal:[%eq: string] arg_names lhs
                 then (ctor_name, (arg_names, branch_rhs))
                 else if List.for_all arg_names ~f:(fun arg_name ->
                             not (Set.mem rhs_fv arg_name))
@@ -206,11 +206,11 @@ let substitute : id * exp -> exp -> exp =
   in
   substitute' e
 
-let substitute_all : (id * exp) list -> exp -> exp =
+let substitute_all : (string * exp) list -> exp -> exp =
  fun subs e ->
   List.fold_left ~f:(fun acc sub -> substitute sub acc) ~init:e subs
 
-let freshen_with : (id -> id) -> exp -> exp =
+let freshen_with : (string -> string) -> exp -> exp =
  fun renamer e ->
   let rec freshen_with' = function
     | EVar x -> EVar x

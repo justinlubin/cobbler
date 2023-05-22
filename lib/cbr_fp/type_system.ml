@@ -115,11 +115,11 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
                        | None -> raise (IllTyped e)))
               in
               if List.equal
-                   [%eq: id]
-                   (List.sort ctors ~compare:[%compare: id])
+                   [%eq: string]
+                   (List.sort ctors ~compare:[%compare: string])
                    (List.sort
                       (List.map ~f:fst (snd (String.Map.find_exn sigma dt)))
-                      ~compare:[%compare: id])
+                      ~compare:[%compare: string])
               then (
                 let t_scrutinee, c_scrutinee =
                   constraint_type sigma gamma scrutinee
