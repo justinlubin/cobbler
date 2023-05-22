@@ -11,20 +11,25 @@ let expected_datatype_env1 =
 
 let expected_typ_env1 =
   String.Map.of_alist_exn
-    [ ("zero", TDatatype ("Peano", []))
+    [ ("zero", ([], TDatatype ("Peano", [])))
     ; ( "map"
-      , TArr
-          ( TArr (TDatatype ("Peano", []), TDatatype ("Peano", []))
-          , TArr (TDatatype ("MaybePeano", []), TDatatype ("MaybePeano", [])) )
-      )
+      , ( []
+        , TArr
+            ( TArr (TDatatype ("Peano", []), TDatatype ("Peano", []))
+            , TArr (TDatatype ("MaybePeano", []), TDatatype ("MaybePeano", []))
+            ) ) )
     ; ( "withDefault"
-      , TArr
-          ( TDatatype ("Peano", [])
-          , TArr (TDatatype ("MaybePeano", []), TDatatype ("Peano", [])) ) )
+      , ( []
+        , TArr
+            ( TDatatype ("Peano", [])
+            , TArr (TDatatype ("MaybePeano", []), TDatatype ("Peano", [])) ) )
+      )
     ; ( "main"
-      , TArr
-          ( TArr (TDatatype ("Peano", []), TDatatype ("Peano", []))
-          , TArr (TDatatype ("MaybePeano", []), TDatatype ("Peano", [])) ) )
+      , ( []
+        , TArr
+            ( TArr (TDatatype ("Peano", []), TDatatype ("Peano", []))
+            , TArr (TDatatype ("MaybePeano", []), TDatatype ("Peano", [])) ) )
+      )
     ]
 
 let expected_env1 =
@@ -33,10 +38,8 @@ let expected_env1 =
     ; ( "map"
       , EAbs
           ( "f"
-          , TArr (TDatatype ("Peano", []), TDatatype ("Peano", []))
           , EAbs
               ( "mx"
-              , TDatatype ("MaybePeano", [])
               , EMatch
                   ( EVar "mx"
                   , [ ("Nothing", ([], ECtor ("Nothing", [])))
@@ -47,10 +50,8 @@ let expected_env1 =
     ; ( "withDefault"
       , EAbs
           ( "default"
-          , TDatatype ("Peano", [])
           , EAbs
               ( "mx"
-              , TDatatype ("MaybePeano", [])
               , EMatch
                   ( EVar "mx"
                   , [ ("Nothing", ([], EVar "default"))
@@ -59,10 +60,8 @@ let expected_env1 =
     ; ( "main"
       , EAbs
           ( "f"
-          , TArr (TDatatype ("Peano", []), TDatatype ("Peano", []))
           , EAbs
               ( "mx"
-              , TDatatype ("MaybePeano", [])
               , EApp
                   ( EApp (EVar "withDefault", EVar "zero")
                   , EApp (EApp (EVar "map", EVar "f"), EVar "mx") ) ) ) )
@@ -77,7 +76,7 @@ let%test_unit "parse program 1 (datatype_env)" =
     ~expect:(Map.to_alist expected_datatype_env1)
 
 let%test_unit "parse program 1 (typ_env)" =
-  [%test_result: (id * typ) list]
+  [%test_result: (id * typ_scheme) list]
     (Map.to_alist parsed_typ_env1)
     ~expect:(Map.to_alist expected_typ_env1)
 
