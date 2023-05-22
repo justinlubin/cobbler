@@ -6,9 +6,12 @@ import os
 import subprocess
 import sys
 from lib.cbr_numpy.parser import parse
+from lib.cbr_numpy.extractor import extract
 from timeit import default_timer as timer
 
 # benchmark cells of a single .ipynb file
+
+
 def benchmark_nb(in_filepath, out_filepath, build=True):
     # build dune executable
     if build:
@@ -23,7 +26,7 @@ def benchmark_nb(in_filepath, out_filepath, build=True):
             code = cell['source']
             stats = {}
             stats['orig code'] = code
-
+            print(code)
             try:
                 orig_ast = ast.parse(code, mode='exec')
                 orig_ast_size = num_nodes(orig_ast)
@@ -58,16 +61,22 @@ def benchmark_nb(in_filepath, out_filepath, build=True):
                 code = code[:last_ln_i] + '\nreturn ' + code[last_ln_i + 1:]
 
                 # parse synthesis target
-                env, body = code.split('#synth')
+                # env, body = code.split('#synth')
+
+                env, body = extract(code)
                 sexp = parse(body)
 
                 # call synthesis from subprocess call
                 start = timer()
-                synthed_body = subprocess.check_output('./_build/default/benchmark/main.exe', input=output_type + '\n' + str(sexp), text=True)
+                synthed_body = subprocess.check_output(
+                    './_build/default/benchmark/main.exe', input=output_type + '\n' + str(sexp), text=True)
                 end = timer()
 
                 # add env back to synthesized code
-                synthed = env + synthed_body
+                if "no solution found" in synthed_body:
+                    synthed = "no solution found"
+                else:
+                    synthed = ast.unparse(env) + '\n' + synthed_body
 
                 stats['synthed code'] = synthed
                 stats['synth time'] = end - start
@@ -88,42 +97,47 @@ def benchmark_nb(in_filepath, out_filepath, build=True):
                 if output_type == 'Number':
                     stats['outputs match?'] = synthed_output == orig_output
                 elif output_type == 'Array':
-                    stats['outputs match?'] = np.array_equal(synthed_output, orig_output)
+                    stats['outputs match?'] = np.array_equal(
+                        synthed_output, orig_output)
             except:
                 stats['status'] = 'SynthedExecFail'
                 all_stats.append(stats)
                 continue
-            
+
             stats['status'] = 'Success'
             all_stats.append(stats)
 
     # fields for csv
     fields = ['cell name',
               'orig code',
-              'orig output', 
-              'orig ast size', 
-              'orig exec time', 
+              'orig output',
+              'orig ast size',
+              'orig exec time',
               'synthed code',
-              'synthed output', 
-              'synthed ast size', 
+              'synthed output',
+              'synthed ast size',
               'synthed exec time',
               'synth time',
               'outputs match?',
               'status']
-    
+
     # write to csv
-    with open(out_filepath, 'r+', newline='') as file: 
-        writer = csv.DictWriter(file, fieldnames = fields, extrasaction='ignore')
+    with open(out_filepath, 'r+', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=fields, extrasaction='ignore')
         writer.writeheader()
         writer.writerows(all_stats)
+
 
 def is_number(x):
     return isinstance(x, int) or isinstance(x, float) or type(x) == np.dtype(int) or type(x) == np.dtype(float)
 
+
 def is_array(x):
-    return isinstance(x, np.ndarray) and (x.dtype==np.dtype(int) or x.dtype==np.dtype(float))
+    return isinstance(x, np.ndarray) and (x.dtype == np.dtype(int) or x.dtype == np.dtype(float))
 
 # NodeVisitor that counts the total number of nodes in an AST
+
+
 class NodeCounter(ast.NodeVisitor):
     def __init__(self):
         self.count = 0
@@ -133,12 +147,16 @@ class NodeCounter(ast.NodeVisitor):
         ast.NodeVisitor.generic_visit(self, node)
 
 # compute number of nodes in an AST
+
+
 def num_nodes(tree):
     counter = NodeCounter()
     counter.visit(tree)
     return counter.count
 
 # execute a Python AST and eval the last line
+
+
 def exec_eval(tree):
     last = ast.Expression(tree.body.pop().value)
     _globals, _locals = {}, {}
@@ -155,6 +173,7 @@ def exec_eval(tree):
     # return (output, execution time)
     return (output, end - start)
 
+
 def main():
     sys.path.append("../..")
     dir = os.path.dirname(os.path.abspath(__file__))
@@ -162,6 +181,7 @@ def main():
     output_csv = os.path.join(dir, "data/benchmarking/benchmarks.csv")
 
     benchmark_nb(input_ipynb, output_csv)
+
 
 if __name__ == '__main__':
     main()
