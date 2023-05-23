@@ -44,10 +44,16 @@ def benchmark_nb(in_filepath, out_filepath, build=True):
         writer.writeheader()
         writer.writerows(all_stats)
 
+# benchmark one cell
 def benchmark_cell(cell):
     code = cell['source']
     stats = {}
     stats['orig code'] = code
+
+    # set cell name
+    if code[0] == '#':
+        cell_name = code[1:code.find('\n')]
+        stats['cell name'] = cell_name
 
     # execute cell and eval last line
     try:
@@ -73,29 +79,10 @@ def benchmark_cell(cell):
     
     # perform synthesis
     try:
-        # set cell name
-        if code[0] == '#':
-            cell_name = code[1:code.find('\n')]
-            stats['cell name'] = cell_name
-
-        # convert last line to return statement
-        last_ln_i = code.rfind('\n')
-        code = code[:last_ln_i] + '\nreturn ' + code[last_ln_i + 1:]
-
-        # parse synthesis target
-        env, body = code.split('#synth')
-        sexp = parse(body)
-
-        # call synthesis from subprocess
-        start = timer()
-        synthed_body = subprocess.check_output('./_build/default/benchmark/main.exe', input=output_type + '\n' + str(sexp), text=True)
-        end = timer()
-
-        # add env back to synthesized code
-        synthed = env + synthed_body
+        synthed, synth_time = synthesize(code, output_type)
 
         stats['synthed code'] = synthed
-        stats['synth time'] = end - start
+        stats['synth time'] = synth_time
     except:
         stats['status'] = 'SynthFail'
         return stats
@@ -109,14 +96,14 @@ def benchmark_cell(cell):
         stats['synthed ast size'] = synthed_ast_size
         stats['synthed output'] = synthed_output
         stats['synthed exec time'] = synthed_exec_time
-
-        if output_type == 'Number':
-            stats['outputs match?'] = synthed_output == orig_output
-        elif output_type == 'Array':
-            stats['outputs match?'] = np.array_equal(synthed_output, orig_output)
     except:
         stats['status'] = 'SynthedExecFail'
         return stats
+    
+    if output_type == 'Number':
+            stats['outputs match?'] = synthed_output == orig_output
+    elif output_type == 'Array':
+        stats['outputs match?'] = np.array_equal(synthed_output, orig_output)
     
     stats['status'] = 'Success'
     return stats
@@ -157,7 +144,28 @@ def exec_eval(tree):
     end = timer()
 
     # return (output, execution time)
-    return (output, end - start)
+    return output, end - start
+
+# preproccess code and run synthesis
+def synthesize(code, output_type="Number"):
+    # convert last line to return statement
+    last_ln_i = code.rfind('\n')
+    code = code[:last_ln_i] + '\nreturn ' + code[last_ln_i + 1:]
+
+    # parse synthesis target
+    env, body = code.split('#synth')
+    sexp = parse(body)
+
+    # call synthesis from subprocess
+    start = timer()
+    synthed_body = subprocess.check_output('./_build/default/benchmark/main.exe', input=output_type + '\n' + str(sexp), text=True)
+    end = timer()
+
+    # add env back to synthesized code
+    synthed = env + synthed_body
+
+    # return (synthesis output, synthesis time)
+    return synthed, end - start
 
 def main():
     sys.path.append("../..")
