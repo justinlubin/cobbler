@@ -1,3 +1,9 @@
+(** Type system
+
+    This module provides functions inferring and checking types
+    ({!val:Lang.typ}) of expressions ({!val:Lang.exp}). *)
+
+open Core
 open Lang
 
 exception IllTyped of exp
@@ -17,10 +23,6 @@ val check : datatype_env -> typ_env -> exp -> typ -> unit
     [gamma] and throws the exception {!val:IllTyped} otherwise. *)
 val well_typed : datatype_env * typ_env * env -> unit
 
-(** [ctor_typ sigma tag] looks up the type of the constructor [tag] in
-    [sigma], returning its datatype (with a list of parameter names) and
-    its argument type list. *)
-val ctor_typ
-  :  datatype_env
-  -> string
-  -> ((string * string list) * typ list) option
+(** [unify constraints] returns a type substitition that unifies the left and
+    right sides of each element of [constraints], or [None] if not possible. *)
+val unify : (typ * typ) list -> Typ.sub option

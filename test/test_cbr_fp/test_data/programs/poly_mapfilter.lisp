@@ -10,13 +10,13 @@
   (Nil)
   (Cons a (List a)))
 
-(define map : (((Peano) -> (Peano)) -> ((List (Peano)) -> (List (Peano))))
+(define map : ((a -> a) -> ((List a) -> (List a)))
   (lambda f (lambda xs
     (match xs
       ((Nil) -> (Nil))
       ((Cons hd tl) -> (Cons (f hd) (map f tl)))))))
 
-(define filter : (((Peano) -> (Bool)) -> ((List (Peano)) -> (List (Peano))))
+(define filter : ((a -> (Bool)) -> ((List a) -> (List a)))
   (lambda pred (lambda xs
     (match xs
       ((Nil) ->

@@ -11,17 +11,21 @@ type base_typ =
   | BTInt
   | BTString
   | BTFloat
+[@@deriving sexp, ord, eq, compare, show]
 
 (** Types *)
-and typ =
+type typ =
   | TBase of base_typ
   | TVar of string
   | TDatatype of string * typ list
   | TArr of typ * typ
 [@@deriving sexp, ord, eq, compare, show]
 
+(** Type schemes (e.g. forall x, y, z . tau) *)
+type typ_scheme = string list * typ [@@deriving sexp, ord, eq, compare, show]
+
 (** An environment of types (commonly called "gamma") *)
-type typ_env = typ String.Map.t
+type typ_env = typ_scheme String.Map.t
 
 (** An environment of datatypes (commonly called "sigma") *)
 type datatype_env = (string list * (string * typ list) list) String.Map.t
@@ -42,7 +46,7 @@ and base_exp =
 and exp =
   | EVar of string
   | EApp of exp * exp
-  | EAbs of string * typ * exp
+  | EAbs of string * exp
   | EMatch of exp * branch list
   | ECtor of string * exp list
   | EBase of base_exp

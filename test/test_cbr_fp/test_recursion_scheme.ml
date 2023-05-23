@@ -22,7 +22,7 @@ let%expect_test "list1 map" =
                 env_list1
                 "map"))));
   [%expect
-    {| (lambda var0 ((Peano) -> (Peano)) (lambda var1 (ListPeano) ((list_foldr (Nil) (lambda var2 (Peano) (lambda var3 (ListPeano) (Cons (var0 var2) var3)))) var1))) |}]
+    {| (lambda var0 (lambda var1 ((list_foldr (Nil) (lambda var2 (lambda var3 (Cons (var0 var2) var3)))) var1))) |}]
 
 let%expect_test "list1 filter" =
   print_endline
@@ -35,7 +35,7 @@ let%expect_test "list1 filter" =
                 env_list1
                 "filter"))));
   [%expect
-    {| (lambda var0 ((Peano) -> (Bool)) (lambda var1 (ListPeano) ((list_foldr (Nil) (lambda var2 (Peano) (lambda var3 (ListPeano) (match (var0 var2) ((False) -> var3) ((True) -> (Cons var2 var3)))))) var1))) |}]
+    {| (lambda var0 (lambda var1 ((list_foldr (Nil) (lambda var2 (lambda var3 (match (var0 var2) ((False) -> var3) ((True) -> (Cons var2 var3)))))) var1))) |}]
 
 let%expect_test "list2 filter" =
   print_endline
@@ -48,7 +48,7 @@ let%expect_test "list2 filter" =
                 env_list2
                 "filter"))));
   [%expect
-    {| (lambda var0 ((Peano) -> (Bool)) (lambda var1 (ListPeano) ((list_foldr (Nil) (lambda var2 (Peano) (lambda var3 (ListPeano) (match (var0 var2) ((False) -> var3) ((True) -> (Cons var2 var3)))))) var1))) |}]
+    {| (lambda var0 (lambda var1 ((list_foldr (Nil) (lambda var2 (lambda var3 (match (var0 var2) ((False) -> var3) ((True) -> (Cons var2 var3)))))) var1))) |}]
 
 let%expect_test "list2 main" =
   print_endline
@@ -61,4 +61,4 @@ let%expect_test "list2 main" =
                 env_list2
                 "main"))));
   [%expect
-    {| (lambda var0 ((Peano) -> (Bool)) (lambda var1 ((Peano) -> (Peano)) (lambda var2 (ListPeano) ((list_foldr (Nil) (lambda var3 (Peano) (lambda var4 (ListPeano) (match (var0 var3) ((False) -> var4) ((True) -> (Cons (var1 var3) var4)))))) var2)))) |}]
+    {| (lambda var0 (lambda var1 (lambda var2 ((list_foldr (Nil) (lambda var3 (lambda var4 (match (var0 var3) ((False) -> var4) ((True) -> (Cons (var1 var3) var4)))))) var2)))) |}]

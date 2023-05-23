@@ -27,20 +27,20 @@ val map_branches : branch list -> f:(t -> t) -> branch list
 
 (** [decompose_abs e] strips the top-level lambda abstractions from [e], so that
     if [e] is [lambda x1 : tau1 ... lambda xN : tauN . body], then
-    [decompose_abs e] is [([(x1, tau1) ; ... ; (xN, tauN) ], body)]. In other
-    words, [decompose_abs] "undoes" {!val:build_abs}. *)
-val decompose_abs : exp -> (string * typ) list * exp
+    [decompose_abs e] is [([x1 ; ... ; xN], body)]. In other words,
+    [decompose_abs] "undoes" {!val:build_abs}. *)
+val decompose_abs : exp -> string list * exp
 
 (** [decompose_app e] strips the top-level applications from [e], so that
-    if [e] is [ (((head arg1) arg2) ... argN) ], then
-    [decompose_app e] is [(head, [arg1 ; arg2 ; ... ; argN])]. In other words,
-    [decompose_app] "undoes" {!val:build_app}. *)
+    if [e] is [ (((head arg1) arg2) ... argN) ], then [decompose_app e] is
+    [(head, [arg1 ; arg2 ; ... ; argN])]. In other words, [decompose_app]
+    "undoes" {!val:build_app}. *)
 val decompose_app : exp -> exp * exp list
 
-(** [build_abs [(x1, tau1) ; ... ; (xN, tauN) ] body] returns the expression
-    [lambda x1 : tau1 ... lambda xN : tauN . body]. In other words, [build_abs]
-    "undoes" {!val:decompose_abs}. *)
-val build_abs : (string * typ) list -> exp -> exp
+(** [build_abs [x1 ; ... ; xN ] body] returns the expression
+    [lambda x1 ... lambda xN . body]. In other words, [build_abs] "undoes"
+    {!val:decompose_abs}. *)
+val build_abs : string list -> exp -> exp
 
 (** [build_app head [arg1 ; arg2 ; ... ; argN]] returns the expression
      [ (((head arg1) arg2) ... argN) ]. In other words, [build_app] "undoes"
@@ -81,3 +81,7 @@ val fill_holes : (string * exp) list -> exp -> exp
 (** [clean e] tidies [e] up in a semantics-preserving way (e.g. via
     eta-reduction). *)
 val clean : exp -> exp
+
+(** [apply_type_sub subst e] applies the type substitute [subst] to the
+    expression [e], modifying any relevant types that are referenced in it. *)
+val apply_type_sub : Typ.sub -> exp -> exp
