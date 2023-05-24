@@ -66,9 +66,11 @@ val alpha_normalize : exp -> exp
     alpha equivalent. *)
 val alpha_equivalent : t -> t -> bool
 
-(** [normalize e] recursively reduces all redexes in [e], including those under
-    a lambda abstraction. *)
-val normalize : t -> t
+(** [normalize sigma e] recursively reduces all redexes in [e], including those
+    under a lambda abstraction. The [sigma] argument is used to evaluate
+    recursion schemes, whose semantics depend on the datatype passed into them
+    as an argument. *)
+val normalize : datatype_env -> t -> t
 
 (** [replace_subexp ~old_subexp ~new_subexp e] replaces all occurrences of the
     expression [old_subexp] with [new_subexp] in [e]. *)

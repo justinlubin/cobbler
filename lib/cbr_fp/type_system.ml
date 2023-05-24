@@ -105,12 +105,26 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
   | EBase (BEFloat _) -> (TBase BTFloat, [])
   | EBase (BEString _) -> (TBase BTString, [])
   | EHole (_, t) -> (t, [])
-  | ERScheme (RListFoldr (b, f)) ->
-      let t_b, c_b = constraint_type sigma gamma b in
-      let t_f, c_f = constraint_type sigma gamma f in
-      let x = Typ.fresh_type_var () in
-      ( TArr (TDatatype ("List", [ x ]), t_b)
-      , ((TArr (x, TArr (t_b, t_b)), t_f) :: c_b) @ c_f )
+  | ERScheme (RSCata, dt, args) ->
+      let dt_params, ctors = Map.find_exn sigma dt in
+      let xs = List.map ~f:(fun _ -> Typ.fresh_type_var ()) dt_params in
+      let return_type_var = Typ.fresh_type_var () in
+      let args_constraints =
+        List.map2_exn args ctors ~f:(fun arg (_, domain) ->
+            let t_arg, c_arg = constraint_type sigma gamma arg in
+            ( t_arg
+            , Typ.build_arr
+                (List.map
+                   ~f:(fun d ->
+                     match d with
+                     | TDatatype (dt', _) when String.equal dt dt' ->
+                         return_type_var
+                     | _ -> d)
+                   domain)
+                return_type_var )
+            :: c_arg)
+      in
+      (TArr (TDatatype (dt, xs), return_type_var), List.concat args_constraints)
 
 (* Constraint unification *)
 

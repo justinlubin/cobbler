@@ -34,7 +34,7 @@ type datatype_env = (string list * (string * typ list) list) String.Map.t
 type branch = string * (string list * exp)
 
 (** Recursion schemes *)
-and rscheme = RListFoldr of exp * exp
+and rscheme = RSCata
 
 (** Base expressions *)
 and base_exp =
@@ -51,7 +51,7 @@ and exp =
   | ECtor of string * exp list
   | EBase of base_exp
   | EHole of string * typ
-  | ERScheme of rscheme
+  | ERScheme of rscheme * string * exp list
 [@@deriving sexp, ord, eq, compare, show]
 
 (** An environment of expressions *)

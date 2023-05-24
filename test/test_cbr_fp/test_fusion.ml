@@ -43,16 +43,16 @@ let sigma_list2, gamma_list2, env_list2 =
 let%expect_test "list2 mapmap fusion" =
   let map_foldr =
     "map"
-    |> Recursion_scheme.extract_list_foldr sigma_list2 gamma_list2 env_list2
+    |> Recursion_scheme.extract_cata sigma_list2 gamma_list2 env_list2
     |> Option.value_exn
   in
   let mapmap =
     "mapmap"
     |> String.Map.find_exn env_list2
     |> Exp.substitute ("map", map_foldr)
-    |> Exp.normalize
+    |> Exp.normalize sigma_list2
   in
-  let fused_mapmap = Fusion.fuse mapmap in
+  let fused_mapmap = Fusion.fuse sigma_list2 mapmap in
   ignore (Type_system.infer sigma_list2 gamma_list2 fused_mapmap);
   print_endline (Exp.show_single (Exp.alpha_normalize fused_mapmap));
   [%expect
@@ -61,12 +61,12 @@ let%expect_test "list2 mapmap fusion" =
 let%expect_test "list2 mapfilter fusion" =
   let map_foldr =
     "map"
-    |> Recursion_scheme.extract_list_foldr sigma_list2 gamma_list2 env_list2
+    |> Recursion_scheme.extract_cata sigma_list2 gamma_list2 env_list2
     |> Option.value_exn
   in
   let filter_foldr =
     "filter"
-    |> Recursion_scheme.extract_list_foldr sigma_list2 gamma_list2 env_list2
+    |> Recursion_scheme.extract_cata sigma_list2 gamma_list2 env_list2
     |> Option.value_exn
   in
   let mapfilter =
@@ -74,9 +74,9 @@ let%expect_test "list2 mapfilter fusion" =
     |> String.Map.find_exn env_list2
     |> Exp.substitute ("map", map_foldr)
     |> Exp.substitute ("filter", filter_foldr)
-    |> Exp.normalize
+    |> Exp.normalize sigma_list2
   in
-  let fused_mapfilter = Fusion.fuse mapfilter in
+  let fused_mapfilter = Fusion.fuse sigma_list2 mapfilter in
   ignore (Type_system.infer sigma_list2 gamma_list2 fused_mapfilter);
   print_endline (Exp.show_single (Exp.alpha_normalize fused_mapfilter));
   [%expect

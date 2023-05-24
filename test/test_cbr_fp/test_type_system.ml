@@ -31,19 +31,16 @@ let%test_unit "list1 extracted foldr for map well-typed" =
     sigma_list1
     gamma_list1
     (Option.value_exn
-       (Recursion_scheme.extract_list_foldr
-          sigma_list1
-          gamma_list1
-          env_list1
-          "map"))
+       (Recursion_scheme.extract_cata sigma_list1 gamma_list1 env_list1 "map"))
     (Parse.typ "(((Peano) -> (Peano)) -> ((List (Peano)) -> (List (Peano))))")
 
 let%test_unit "list1 extracted foldr for filter well-typed" =
+  let _ = print_endline "HELLO!" in
   Type_system.check
     sigma_list1
     gamma_list1
     (Option.value_exn
-       (Recursion_scheme.extract_list_foldr
+       (Recursion_scheme.extract_cata
           sigma_list1
           gamma_list1
           env_list1

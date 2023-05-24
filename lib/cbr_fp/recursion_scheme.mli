@@ -5,6 +5,6 @@
 
 open Lang
 
-(** [extract_list_foldr sigma gamma env name] tries to rewrite [env[name]] using
-    a lists foldr. *)
-val extract_list_foldr : datatype_env -> typ_env -> env -> string -> exp option
+(** [extract_cata sigma gamma env name] tries to rewrite [env[name]] using
+    a catamorphism. *)
+val extract_cata : datatype_env -> typ_env -> env -> string -> exp option

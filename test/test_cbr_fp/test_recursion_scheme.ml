@@ -16,7 +16,7 @@ let%expect_test "list1 map" =
     (Exp.show_single
        (Exp.alpha_normalize
           (Option.value_exn
-             (Recursion_scheme.extract_list_foldr
+             (Recursion_scheme.extract_cata
                 sigma_list1
                 gamma_list1
                 env_list1
@@ -29,7 +29,7 @@ let%expect_test "list1 filter" =
     (Exp.show_single
        (Exp.alpha_normalize
           (Option.value_exn
-             (Recursion_scheme.extract_list_foldr
+             (Recursion_scheme.extract_cata
                 sigma_list1
                 gamma_list1
                 env_list1
@@ -42,7 +42,7 @@ let%expect_test "list2 filter" =
     (Exp.show_single
        (Exp.alpha_normalize
           (Option.value_exn
-             (Recursion_scheme.extract_list_foldr
+             (Recursion_scheme.extract_cata
                 sigma_list2
                 gamma_list2
                 env_list2
@@ -55,7 +55,7 @@ let%expect_test "list2 main" =
     (Exp.show_single
        (Exp.alpha_normalize
           (Option.value_exn
-             (Recursion_scheme.extract_list_foldr
+             (Recursion_scheme.extract_cata
                 sigma_list2
                 gamma_list2
                 env_list2

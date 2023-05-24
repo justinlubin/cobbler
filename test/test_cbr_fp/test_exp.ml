@@ -29,6 +29,7 @@ let%test_unit "alpha equivalent 1" =
 let%test_unit "normalizes cases 1" =
   [%test_eq: exp]
     (Exp.normalize
+       String.Map.empty
        (EMatch
           ( ECtor ("Just", [ EVar "x" ])
           , [ ("Nothing", ([ "y" ], EVar "zero"))
