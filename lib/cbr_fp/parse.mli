@@ -11,3 +11,6 @@ val definitions : string -> datatype_env * typ_env * env
 
 (** [exp s] parses a string [s] as an expression. *)
 val exp : string -> exp
+
+(** [typ s] parses a string [s] as a type. *)
+val typ : string -> typ

@@ -3,7 +3,7 @@ open Core
 type hole_type =
   | Number
   | Array
-[@@deriving compare, eq, show]
+[@@deriving compare, eq, show, hash]
 
 type id = string [@@deriving sexp, compare, eq, show, hash]
 
@@ -26,11 +26,13 @@ type stmt =
   | Assign of pat * expr
   | For of pat * expr * block
   | Return of expr
-[@@deriving compare, show]
+  | If of expr * block * block
+[@@deriving compare, show, eq]
 
-and block = stmt list [@@deriving compare, show]
+and block = stmt list [@@deriving compare, show, eq]
 
 type defn = id list * block [@@deriving compare]
 type env = defn String.Map.t [@@deriving compare]
 type program = env * block [@@deriving compare, ord]
 type substitutions = expr String.Map.t [@@deriving compare]
+type exprMap = (expr, expr) Map.Poly.t

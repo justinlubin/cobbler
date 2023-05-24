@@ -5,10 +5,9 @@ open Unification
 (* Types *)
 
 let rec to_unification_typ : Lang.typ -> Unification.typ = function
-  | TUnit -> Elementary TUnit
-  | TInt -> Elementary TInt
-  | TDatatype x -> Elementary (TDatatype x)
-  | TProd (left, right) -> Elementary (TProd (left, right))
+  | TBase b -> Elementary (TBase b)
+  | TVar x -> Elementary (TVar x)
+  | TDatatype (x, taus) -> Elementary (TDatatype (x, taus))
   | TArr (domain, codomain) ->
       Arrow (to_unification_typ domain, to_unification_typ codomain)
 
@@ -36,9 +35,10 @@ let rec embed
        gamma
        ~key:head
        ~data:
-         (Typ.build_arr
-            (List.map ~f:(Type_system.infer sigma gamma) arguments)
-            result_type))
+         ( []
+         , Typ.build_arr
+             (List.map ~f:(Type_system.infer sigma gamma) arguments)
+             result_type ))
     (Exp.build_app (EVar head) arguments)
 
 and to_unification_term'
@@ -55,38 +55,34 @@ and to_unification_term'
       if String.Set.mem stdlib x
       then Atom (Constant (x, to_unification_typ result_type))
       else Atom (Variable (x, to_unification_typ result_type))
-  | EApp (ERScheme (RListFoldr (b, f)), arg) ->
-      embed' "list_foldr" "" [ b; f; arg ]
   | EApp (e1, e2) ->
       Application
         ( to_unification_term' sigma stdlib gamma e1
         , to_unification_term' sigma stdlib gamma e2 )
-  | EAbs (x, tau, body) ->
-      Abstraction
-        ( x
-        , to_unification_typ tau
-        , to_unification_term'
-            sigma
-            (String.Set.remove stdlib x)
-            (String.Map.update gamma x ~f:(fun _ -> tau))
-            body )
+  | EAbs (x, body) ->
+      (match result_type with
+      | TArr (dom, _) ->
+          Abstraction
+            ( x
+            , to_unification_typ dom
+            , to_unification_term'
+                sigma
+                (String.Set.remove stdlib x)
+                (String.Map.update gamma x ~f:(fun _ -> ([], dom)))
+                body )
+      | _ -> failwith "improper abstraction type")
   | EMatch (scrutinee, branches) ->
       let arguments =
-        List.map (sort_tags branches) ~f:(fun (tag, (arg_name, rhs)) ->
-            EAbs
-              ( arg_name
-              , snd (Option.value_exn (Type_system.ctor_typ sigma tag))
-              , rhs ))
+        List.map (sort_tags branches) ~f:(fun (tag, (arg_names, rhs)) ->
+            Exp.build_abs arg_names rhs)
       in
       embed' "match" "" (scrutinee :: arguments)
-  | ECtor (tag, arg) -> embed' "ctor" tag [ arg ]
-  | EPair (e1, e2) -> embed' "pair" "" [ e1; e2 ]
-  | EFst arg -> embed' "fst" "" [ arg ]
-  | ESnd arg -> embed' "snd" "" [ arg ]
-  | EUnit -> embed' "unit" "" []
-  | EInt n -> embed' "int" (Int.to_string n) []
+  | ECtor (tag, args) -> embed' "ctor" tag args
+  | EBase (BEInt n) -> embed' "base_int" (Int.to_string n) []
+  | EBase (BEFloat f) -> embed' "base_float" (Float.to_string f) []
+  | EBase (BEString s) -> embed' "base_string" s []
   | EHole (name, typ) -> Atom (Variable (name, to_unification_typ typ))
-  | ERScheme _ -> failwith "cannot embed unapplied recursion scheme"
+  | ERScheme (RSCata, dt, args) -> embed' "cata" dt args
 
 let to_unification_term
     : Lang.datatype_env -> Lang.typ_env -> Lang.exp -> Unification.term
@@ -114,46 +110,33 @@ let rec from_unification_term
             let branch_terms = List.tl_exn arguments in
             let datatype =
               match from_unification_typ (Unification.typ scrutinee_term) with
-              | TDatatype x -> x
+              | TDatatype (x, _) -> x
               | _ -> failwith "ill-typed scrutinee"
             in
             let tags =
               datatype
               |> String.Map.find_exn sigma
+              |> snd
               |> sort_tags
               |> List.map ~f:(fun (tag, _) -> tag)
             in
             EMatch
               ( from_unification_term sigma scrutinee_term
               , List.map2_exn tags branch_terms ~f:(fun tag t ->
-                    match t with
-                    | Abstraction (x, _, body) ->
-                        (tag, (x, from_unification_term sigma body))
-                    | _ -> failwith "malformatted match") )
+                    let xs, body = Unification.strip_abstractions t in
+                    (tag, (List.map ~f:fst xs, from_unification_term sigma body)))
+              )
         | Some ("ctor", tag) ->
-            ECtor (tag, from_unification_term sigma (List.hd_exn arguments))
-        | Some ("pair", "") ->
-            EPair
-              ( from_unification_term sigma (List.nth_exn arguments 0)
-              , from_unification_term sigma (List.nth_exn arguments 1) )
-        | Some ("fst", "") ->
-            EFst (from_unification_term sigma (List.hd_exn arguments))
-        | Some ("snd", "") ->
-            ESnd (from_unification_term sigma (List.hd_exn arguments))
-        | Some ("unit", "") -> EUnit
-        | Some ("int", n) -> EInt (Int.of_string n)
-        | Some ("list_foldr", "") ->
-            EApp
-              ( ERScheme
-                  (RListFoldr
-                     ( from_unification_term sigma (List.nth_exn arguments 0)
-                     , from_unification_term sigma (List.nth_exn arguments 1) ))
-              , from_unification_term sigma (List.nth_exn arguments 2) )
+            ECtor (tag, List.map ~f:(from_unification_term sigma) arguments)
+        | Some ("base_int", n) -> EBase (BEInt (Int.of_string n))
+        | Some ("base_float", f) -> EBase (BEFloat (Float.of_string f))
+        | Some ("base_string", s) -> EBase (BEString s)
+        | Some ("cata", dt) ->
+            ERScheme
+              (RSCata, dt, List.map ~f:(from_unification_term sigma) arguments)
         | _ -> build_arguments (EVar x))
   in
-  Exp.build_abs
-    (List.map ~f:(fun (x, tau) -> (x, from_unification_typ tau)) heading)
-    body
+  Exp.build_abs (List.map ~f:fst heading) body
 
 let simplify_solution
     :  datatype_env -> (string * Unification.term) list

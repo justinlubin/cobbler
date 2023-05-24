@@ -6,46 +6,53 @@
 
 open Core
 
-(** Identifiers *)
-type id = string
+(** Base types *)
+type base_typ =
+  | BTInt
+  | BTString
+  | BTFloat
+[@@deriving sexp, ord, eq, compare, show]
 
 (** Types *)
-and typ =
-  | TUnit
-  | TInt
-  | TDatatype of string
-  | TProd of typ * typ
+type typ =
+  | TBase of base_typ
+  | TVar of string
+  | TDatatype of string * typ list
   | TArr of typ * typ
 [@@deriving sexp, ord, eq, compare, show]
 
+(** Type schemes (e.g. forall x, y, z . tau) *)
+type typ_scheme = string list * typ [@@deriving sexp, ord, eq, compare, show]
+
 (** An environment of types (commonly called "gamma") *)
-type typ_env = (id, typ, String.comparator_witness) Map.t
+type typ_env = typ_scheme String.Map.t
 
 (** An environment of datatypes (commonly called "sigma") *)
-type datatype_env =
-  (string, (string * typ) list, String.comparator_witness) Map.t
+type datatype_env = (string list * (string * typ list) list) String.Map.t
 
 (** Case branches *)
-type branch = string * (id * exp)
+type branch = string * (string list * exp)
 
 (** Recursion schemes *)
-and rscheme = RListFoldr of exp * exp
+and rscheme = RSCata
+
+(** Base expressions *)
+and base_exp =
+  | BEInt of int
+  | BEString of string
+  | BEFloat of float
 
 (** Expressions *)
 and exp =
-  | EVar of id
+  | EVar of string
   | EApp of exp * exp
-  | EAbs of id * typ * exp
+  | EAbs of string * exp
   | EMatch of exp * branch list
-  | ECtor of string * exp
-  | EPair of exp * exp
-  | EFst of exp
-  | ESnd of exp
-  | EUnit
-  | EInt of int
+  | ECtor of string * exp list
+  | EBase of base_exp
   | EHole of string * typ
-  | ERScheme of rscheme
+  | ERScheme of rscheme * string * exp list
 [@@deriving sexp, ord, eq, compare, show]
 
 (** An environment of expressions *)
-type env = (id, exp, String.comparator_witness) Map.t
+type env = exp String.Map.t

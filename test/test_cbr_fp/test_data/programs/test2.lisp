@@ -2,27 +2,25 @@
   (Zero)
   (Succ (Peano)))
 
-(type (MaybePeano)
+(type (Maybe a)
   (Nothing)
-  (Just (Peano)))
+  (Just a))
 
 (define zero : (Peano)
   (Zero))
 
-(define map : (((Peano) -> (Peano)) -> ((MaybePeano) -> (MaybePeano)))
+(define map : (((Peano) -> (Peano)) -> ((Maybe (Peano)) -> (Maybe (Peano))))
   (lambda f (lambda mx
     (match mx
       ((Nothing) -> (Nothing))
       ((Just x) -> (Just (f x)))))))
 
-(define withDefault : ((Peano) -> ((MaybePeano) -> (Peano)))
+(define withDefault : ((Peano) -> ((Maybe (Peano)) -> (Peano)))
   (lambda default (lambda mx
     (match mx
       ((Nothing) -> default)
       ((Just x) -> x)))))
 
-(define main : (((Peano) -> (Peano)) -> ((MaybePeano) -> (Peano)))
+(define main : (((Peano) -> (Peano)) -> ((Maybe (Peano)) -> (Peano)))
   (lambda f (lambda mx
-    (match mx
-      ((Nothing) -> zero)
-      ((Just x) -> (f x))))))
+    (withDefault zero (map f mx)))))

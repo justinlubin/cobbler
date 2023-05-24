@@ -18,6 +18,10 @@ class SAtom():
         return str(self.a)
 
 
+def parse_str(s: str) -> SList:
+    return parse(ast.parse(s))
+
+
 def parse(p: ast.AST) -> SList:
     parser = IRParser()
     sexp = parser.visit(p)
@@ -77,6 +81,37 @@ class IRParser(ast.NodeVisitor):
     def visit_Sub(self, node):
         return SAtom("-")
 
+    def visit_Div(self, node):
+        return SAtom("/")
+
+    def visit_Compare(self, node: ast.Compare):
+        if type(node.ops[0]) == ast.Gt:
+            op = SAtom(">")
+        elif type(node.ops[0]) == ast.Lt:
+            op = SAtom("<")
+        elif type(node.ops[0]) == ast.LtE:
+            op = SAtom("<=")
+        elif type(node.ops[0]) == ast.GtE:
+            op = SAtom(">=")
+        elif type(node.ops[0]) == ast.Eq:
+            op = SAtom("==")
+        elif type(node.ops[0]) == ast.NotEq:
+            op = SAtom("!=")
+        return SList([SAtom("Call"), op, self.visit(node.left), self.visit(node.comparators[0])])
+
+    def visit_UnaryOp(self, node: ast.UnaryOp):
+        if type(node.op) == ast.USub:
+            expr = self.visit(node.operand)
+            if type(expr) == SList and len(expr.l) > 1 and type(expr.l[0]) == SAtom and expr.l[0].a == "Num":
+                num = int(expr.l[1].a)
+                expr.l[1].a = f"{-1*num}"
+                return expr
+            else:
+                return SList([SAtom("Call"), SAtom("-"), self.visit("0"), expr])
+        if type(node.op) == ast.Not:
+            op = SAtom("not")
+        return SList([SAtom("Call"), op, self.visit(node.operand)])
+
     def visit_Subscript(self, node):
         return SList([SAtom("Index"), self.visit(
             node.value), self.visit(node.slice)])
@@ -94,6 +129,12 @@ class IRParser(ast.NodeVisitor):
             raise UnsupportedFeatureException("For-else statement")
         return SList([SAtom("For"), self.visit(node.target), self.visit(
             node.iter), SList([self.visit(stmt) for stmt in node.body])])
+
+    def visit_If(self, node):
+        cond = self.visit(node.test)
+        then = SList([self.visit(stmt) for stmt in node.body])
+        orelse = SList([self.visit(stmt) for stmt in node.orelse])
+        return SList([SAtom("If"), cond, then, orelse])
 
     def visit_Module(self, node):
         block = []
