@@ -154,25 +154,24 @@ let unify_naive
   else ();
   unify_block (Some String.Map.empty) block1 block2
 
-let commutative_add = ("(Call (Name +) ?a ?b)", "(Call (Name +) ?b ?a)")
-let commutative_mul = ("(Call (Name *) ?a ?b)", "(Call (Name *)?b ?a)")
-let identity_add = ("(Call (Name +) ?a (Num 0))", "?a")
-let identity_mul = ("(Call (Name *) ?a (Num 1))", "?a")
+let commutative_add = ("(Call3 (Name +) ?a ?b)", "(Call3 (Name +) ?b ?a)")
+let commutative_mul = ("(Call3 (Name *) ?a ?b)", "(Call3 (Name *) ?b ?a)")
+let identity_add = ("(Call3 (Name +) ?a (Num 0))", "?a")
+let identity_add2 = ("?a", "(Call3 (Name +) ?a (Num 0))")
+let identity_mul = ("(Call3 (Name *) ?a (Num 1))", "?a")
+let identity_mul2 = ("?a", "(Call3 (Name *) ?a (Num 1))")
 
 let call_expand_r =
-  ( "(Call ?a (Index ?b ?c) (Num ?d))"
-  , "(Call ?a (Index ?b ?c) (Index (Call (Name fill) (Num ?d) (Call (Name len) \
-     ?b)) ?c))" )
+  ( "(Call3 ?a (Index ?b ?c) (Num ?d))"
+  , "(Call3 ?a (Index ?b ?c) (Index (Call2 (Name broadcast) (Num ?d)) ?c))" )
 
 let call_expand_l =
-  ( "(Call ?a (Num ?b) (Index ?c ?d))"
-  , "(Call ?a (Index (Call (Name fill) (Num ?b) (Call (Name len) ?c)) ?d) \
-     (Index ?c ?d))" )
+  ( "(Call3 ?a (Num ?b) (Index ?c ?d))"
+  , "(Call3 ?a (Index (Call2 (Name broadcast) (Num ?b)) ?d) (Index ?c ?d))" )
 
 let assign_expand =
   ( "(Assign (Index ?a ?b) (Num ?c))"
-  , "(Assign (Index ?a ?b) (Index (Call (Name fill) (Num ?c) (Call (Name len) \
-     ?a)) ?b))" )
+  , "(Assign (Index ?a ?b) (Index (Call2 (Name broadcast) (Num ?c) ) ?b))" )
 
 let rewrite_rules =
   [ commutative_add
@@ -182,6 +181,8 @@ let rewrite_rules =
   ; call_expand_l
   ; call_expand_r
   ; assign_expand
+  ; identity_mul2
+  ; identity_add2
   ]
   |> List.map ~f:(fun (from, into) ->
          EGraph.Rule.make_constant
@@ -224,7 +225,12 @@ let query_of_prog : program -> hole_map * 'a Query.t =
     | Call (func, args) ->
         let map, func = replace_holes_expr map func in
         let map, args = List.fold_map args ~init:map ~f:replace_holes_expr in
-        (map, Sexp.List ([ Sexp.Atom "Call"; func ] @ args))
+        ( map
+        , Sexp.List
+            ([ Sexp.Atom ("Call" ^ (List.length args + 1 |> string_of_int))
+             ; func
+             ]
+            @ args) )
     | Str s -> (map, Sexp.Atom ("Str_" ^ s))
   in
   let rec replace_holes_stmt : hole_map -> stmt -> hole_map * Sexp.t =
@@ -306,13 +312,6 @@ let unify_egraph
     -> substitutions option
   =
  fun ?(debug = false) ~graph ~pattern () ->
-  let pat_graph = EGraph.init () in
-  let t = sexp_of_program pattern |> t_of_sexp in
-  let id = EGraph.add_node pat_graph t in
-  let _ = EGraph.run_until_saturation pat_graph rewrite_rules in
-  let pattern =
-    Extractor.extract pat_graph id |> sexp_of_t |> program_of_sexp
-  in
   let map, q = query_of_prog pattern in
   if debug
   then

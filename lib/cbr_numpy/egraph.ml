@@ -195,7 +195,7 @@ module L = struct
     | NumOp
     | StrOp of string
     | HoleOp of hole_type * string
-    | CallOp
+    | CallOp of int
     | IndexOp
     | NameOp
     | IfOp
@@ -213,7 +213,7 @@ module L = struct
     | Expr (EHole (t, h), _) -> HoleOp (t, h)
     | Expr (EStr s, _) -> StrOp s
     | Expr (EIndex, _) -> IndexOp
-    | Expr (ECall, _) -> CallOp
+    | Expr (ECall, args) -> CallOp (List.length args)
     | Id id -> IdOp id
 
   let make : op -> 'a list -> 'a shape =
@@ -230,7 +230,7 @@ module L = struct
     | AssignOp, stmt -> Stmt (SAssign, stmt)
     | ReturnOp, stmt -> Stmt (SReturn, stmt)
     | IndexOp, expr -> Expr (EIndex, expr)
-    | CallOp, expr -> Expr (ECall, expr)
+    | CallOp _, expr -> Expr (ECall, expr)
     | NameOp, n -> Expr (EName, n)
     | NumOp, n -> Expr (ENum, n)
     | StrOp s, _ -> Expr (EStr s, [])
@@ -246,11 +246,12 @@ module L = struct
     | "For" -> ForOp
     | "Assign" -> AssignOp
     | "Return" -> ReturnOp
-    | "Call" -> CallOp
     | "Index" -> IndexOp
     | "If" -> IfOp
     | "Num" -> NumOp
     | "Name" -> NameOp
+    | s when String.is_prefix ~prefix:"Call" s ->
+        CallOp (String.chop_prefix_exn s ~prefix:"Call" |> int_of_string)
     | s when String.is_prefix ~prefix:"Hole_" s ->
         let hole_type, name =
           match String.split ~on:'_' s with
@@ -278,7 +279,7 @@ module L = struct
     | ReturnOp -> "Return"
     | IfOp -> "If"
     | IndexOp -> "Index"
-    | CallOp -> "Call"
+    | CallOp n -> "Call" ^ string_of_int n
     | NameOp -> "Name"
     | NumOp -> "Num"
     | StrOp s -> "Str_" ^ s

@@ -15,6 +15,7 @@ let rec partial_eval_expr : expr -> expr =
           | Call (Name "eq", args) -> Call (Name "len", [ List.hd args ])
           | Call (Name "ones", args)
           | Call (Name "zeros", args)
+          | Call (Name "broadcast", args)
           | Call (Name "fill", _ :: args) -> List.hd args
           | _ -> Call (Name "len", args))
       | _ -> Call (fn, List.map partial_eval_expr args))

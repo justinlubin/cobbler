@@ -180,6 +180,8 @@ let rec py_str_of_sexp : Sexp.t -> string =
             (py_str_of_sexp value))
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "gt"; p1; p2 ] ->
       Printf.sprintf "np.greater(%s,%s)" (py_str_of_sexp p1) (py_str_of_sexp p2)
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "broadcast"; p1 ] ->
+      Printf.sprintf "%s" (py_str_of_sexp p1)
   | Sexp.List (Sexp.Atom "Call" :: Sexp.Atom fn :: args) ->
       "np."
       ^ fn

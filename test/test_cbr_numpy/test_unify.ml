@@ -367,8 +367,7 @@ let%test_unit "unify where from canonical" =
     [ Some
         (String.Map.of_alist_exn
            [ ("cond", Name "x")
-           ; ( "cond2"
-             , Call (Name "fill", [ Num 0; Call (Name "len", [ Name "x" ]) ]) )
+           ; ("cond2", Call (Name "broadcast", [ Num 0 ]))
            ; ("i", Name "i")
            ; ("out", Name "out")
            ; ("x", Name "x")
@@ -386,15 +385,9 @@ let%test_unit "unify where from np funcs" =
     [ Some
         (String.Map.of_alist_exn
            [ ("x", Name "x")
-           ; ( "z"
-             , Call (Name "fill", [ Num 0; Call (Name "len", [ Name "x" ]) ]) )
-           ; ( "pos"
-             , Call (Name "fill", [ Num 1; Call (Name "len", [ Name "out" ]) ])
-             )
-           ; ( "neg"
-             , Call
-                 (Name "fill", [ Num (-1); Call (Name "len", [ Name "out" ]) ])
-             )
+           ; ("z", Call (Name "broadcast", [ Num 0 ]))
+           ; ("pos", Call (Name "broadcast", [ Num 1 ]))
+           ; ("neg", Call (Name "broadcast", [ Num (-1) ]))
            ; ("arr", Name "x")
            ; ("where_i", Name "i")
            ; ("where_result", Name "out")

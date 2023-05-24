@@ -96,46 +96,6 @@ let substitute_expr : expr -> substitutions -> expr =
   in
   substitute e
 
-let buildExprMap : program -> exprMap =
- fun (_, block) ->
-  let rec mapStmt : stmt -> exprMap -> exprMap =
-   fun stmt map ->
-    match stmt with
-    | For (_, _, body) -> mapBlock map body
-    | Assign (PName n, Call (Name "zeros", [ l ])) ->
-        Map.add_exn map ~key:(Call (Name "len", [ Name n ])) ~data:l
-    | Assign _ -> map
-    | If (_, t, e) ->
-        let map = mapBlock map t in
-        let map = mapBlock map e in
-        map
-    | Return _ -> map
-  and mapBlock : exprMap -> block -> exprMap =
-   fun map block -> List.fold block ~init:map ~f:(fun map s -> mapStmt s map)
-  in
-  mapBlock Map.Poly.empty block
-
-let postprocess : exprMap -> expr -> expr =
- fun subs e ->
-  let rec sub_expr : key:expr -> data:expr -> expr -> expr =
-   fun ~key ~data e ->
-    if equal_expr key e
-    then data
-    else (
-      match e with
-      | Num n -> Num n
-      | Str s -> Str s
-      | Name id -> Name id
-      | Index (hd, index) ->
-          Index (sub_expr ~key ~data hd, sub_expr ~key ~data index)
-      | Call (fn, args) ->
-          Call (sub_expr ~key ~data fn, List.map ~f:(sub_expr ~key ~data) args)
-      | Hole (_, h) ->
-          failwith
-            ("No holes should be remaining in the expression. Hole name: " ^ h))
-  in
-  Map.fold subs ~init:e ~f:sub_expr
-
 let canonicalize : program -> program =
  fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
 
@@ -154,12 +114,7 @@ let solve : int -> ?debug:bool -> hole_type -> program -> bool -> program option
     (* if debug then print_endline (Parse.sexp_of_expr e |> Sexp.to_string) else (); *)
     let canonical = canonicalize (np_env, [ Return e ]) in
     match unify ~pattern:canonical with
-    | Some sub ->
-        let eMap = buildExprMap (canonicalize target) in
-        (* if debug
-        then print_endline (Map.Poly.length eMap |> string_of_int)
-        else (); *)
-        Some (substitute_expr e sub |> postprocess eMap)
+    | Some sub -> Some (substitute_expr e sub)
     | None -> None
   in
   match

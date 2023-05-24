@@ -204,14 +204,9 @@ let solution7 : program =
   , [ Return
         (Call
            ( Name "where"
-           , [ Call
-                 ( Name "gt"
-                 , [ Name "x"
-                   ; Call
-                       (Name "fill", [ Num 0; Call (Name "len", [ Name "x" ]) ])
-                   ] )
-             ; Call (Name "fill", [ Num 1; Call (Name "len", [ Name "x" ]) ])
-             ; Call (Name "fill", [ Num (-1); Call (Name "len", [ Name "x" ]) ])
+           , [ Call (Name "gt", [ Name "x"; Call (Name "broadcast", [ Num 0 ]) ])
+             ; Call (Name "broadcast", [ Num 1 ])
+             ; Call (Name "broadcast", [ Num (-1) ])
              ] ))
     ] )
 
