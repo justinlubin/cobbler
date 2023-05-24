@@ -12,16 +12,16 @@ let norm : datatype_env -> typ_env -> env -> exp -> exp =
  fun sigma gamma env e ->
   e
   |> inline env
-  |> Exp.normalize
-  |> Fusion.fuse
+  |> Exp.normalize sigma
+  |> Fusion.fuse sigma
   |> Fusion.pull_out_cases
-  |> Exp.normalize
+  |> Exp.normalize sigma
 
 (* Grammar and expansion *)
 
-type grammar = (id * typ_scheme) list
+type grammar = (string * typ_scheme) list
 
-let make_grammar : typ_env -> (id * typ) list -> grammar =
+let make_grammar : typ_env -> (string * typ) list -> grammar =
  fun gamma free_vars ->
   Map.to_alist gamma @ List.map ~f:(fun (x, tau) -> (x, ([], tau))) free_vars
 
@@ -86,7 +86,7 @@ let problem_of_definitions : datatype_env * typ_env * env -> problem =
   ; gamma
   ; env =
       String.Map.mapi env ~f:(fun ~key:name ~data:old_rhs ->
-          match Recursion_scheme.extract_list_foldr sigma gamma env name with
+          match Recursion_scheme.extract_cata sigma gamma env name with
           | Some new_rhs -> new_rhs
           | None -> old_rhs)
   ; name = "main"
@@ -168,6 +168,7 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
            else None))
     ~f:(fun messy_solution ->
       Exp.normalize
+        sigma
         (Exp.build_abs
            reference_params
            (Exp.build_app

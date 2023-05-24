@@ -6,9 +6,6 @@
 
 open Core
 
-(** Identifiers *)
-type id = string [@@deriving sexp, ord, eq, compare, show]
-
 (** Base types *)
 type base_typ =
   | BTInt
@@ -25,23 +22,19 @@ type typ =
 [@@deriving sexp, ord, eq, compare, show]
 
 (** Type schemes (e.g. forall x, y, z . tau) *)
-type typ_scheme = id list * typ [@@deriving sexp, ord, eq, compare, show]
+type typ_scheme = string list * typ [@@deriving sexp, ord, eq, compare, show]
 
 (** An environment of types (commonly called "gamma") *)
 type typ_env = typ_scheme String.Map.t
 
 (** An environment of datatypes (commonly called "sigma") *)
-type datatype_env =
-  ( string
-  , string list * (string * typ list) list
-  , String.comparator_witness )
-  Map.t
+type datatype_env = (string list * (string * typ list) list) String.Map.t
 
 (** Case branches *)
-type branch = string * (id list * exp)
+type branch = string * (string list * exp)
 
 (** Recursion schemes *)
-and rscheme = RListFoldr of exp * exp
+and rscheme = RSCata
 
 (** Base expressions *)
 and base_exp =
@@ -51,14 +44,14 @@ and base_exp =
 
 (** Expressions *)
 and exp =
-  | EVar of id
+  | EVar of string
   | EApp of exp * exp
-  | EAbs of id * exp
+  | EAbs of string * exp
   | EMatch of exp * branch list
   | ECtor of string * exp list
   | EBase of base_exp
   | EHole of string * typ
-  | ERScheme of rscheme
+  | ERScheme of rscheme * string * exp list
 [@@deriving sexp, ord, eq, compare, show]
 
 (** An environment of expressions *)

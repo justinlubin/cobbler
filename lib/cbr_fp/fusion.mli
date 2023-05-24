@@ -12,8 +12,8 @@ open Lang
     trees" (Wadler 1988).*)
 val pull_out_cases : exp -> exp
 
-(** [fuse e] performs recursion scheme fusion in all applicable  subexpressions
-    of [e]. For example, the list foldr fusion law is:
+(** [fuse sigma e] performs recursion scheme fusion in all applicable
+    subexpressions of [e]. For example, the list foldr fusion law is:
       For all x, acc,
         u . foldr b f = foldr (u b) h
       where
@@ -21,4 +21,4 @@ val pull_out_cases : exp -> exp
     So this function will try to replace instances of the left-hand side above
     with the right-hand side (note that this specification does not provide a
     constructive definition for [h]). *)
-val fuse : exp -> exp
+val fuse : datatype_env -> exp -> exp

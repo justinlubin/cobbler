@@ -55,8 +55,6 @@ and to_unification_term'
       if String.Set.mem stdlib x
       then Atom (Constant (x, to_unification_typ result_type))
       else Atom (Variable (x, to_unification_typ result_type))
-  | EApp (ERScheme (RListFoldr (b, f)), arg) ->
-      embed' "list_foldr" "" [ b; f; arg ]
   | EApp (e1, e2) ->
       Application
         ( to_unification_term' sigma stdlib gamma e1
@@ -84,7 +82,7 @@ and to_unification_term'
   | EBase (BEFloat f) -> embed' "base_float" (Float.to_string f) []
   | EBase (BEString s) -> embed' "base_string" s []
   | EHole (name, typ) -> Atom (Variable (name, to_unification_typ typ))
-  | ERScheme _ -> failwith "cannot embed unapplied recursion scheme"
+  | ERScheme (RSCata, dt, args) -> embed' "cata" dt args
 
 let to_unification_term
     : Lang.datatype_env -> Lang.typ_env -> Lang.exp -> Unification.term
@@ -133,13 +131,9 @@ let rec from_unification_term
         | Some ("base_int", n) -> EBase (BEInt (Int.of_string n))
         | Some ("base_float", f) -> EBase (BEFloat (Float.of_string f))
         | Some ("base_string", s) -> EBase (BEString s)
-        | Some ("list_foldr", "") ->
-            EApp
-              ( ERScheme
-                  (RListFoldr
-                     ( from_unification_term sigma (List.nth_exn arguments 0)
-                     , from_unification_term sigma (List.nth_exn arguments 1) ))
-              , from_unification_term sigma (List.nth_exn arguments 2) )
+        | Some ("cata", dt) ->
+            ERScheme
+              (RSCata, dt, List.map ~f:(from_unification_term sigma) arguments)
         | _ -> build_arguments (EVar x))
   in
   Exp.build_abs (List.map ~f:fst heading) body
