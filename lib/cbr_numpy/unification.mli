@@ -4,6 +4,8 @@
 
 open Lang
 open Core
+open Egraph
+open Ego.Generic
 
 (* [unify_naive program1 program2] takes in 2 program and returns a list of mappings from holes in [program2] to values in [program1]. 
  *  Returns None if no substitutions can be made. Note: this assumes that [program1] contains no holes. 
@@ -18,6 +20,15 @@ val unify_naive
 (* [unify_egraph program1 program2] takes in 2 programs and returns a list of mappings from holes in [program2] to values in [program1].
  * Returns None if no substitutions can be made. Note: this assumes that [program1] contains no holes. Performs unification using e-graphs. *)
 val unify_egraph
+  :  ?debug:bool
+  -> graph:rw EGraph.t
+  -> pattern:program
+  -> unit
+  -> substitutions option
+
+val construct_egraph : ?debug:bool -> target:program -> unit -> rw EGraph.t
+
+val unify_egraph_full
   :  ?debug:bool
   -> target:program
   -> pattern:program

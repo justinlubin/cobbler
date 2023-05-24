@@ -71,16 +71,109 @@ let target5 : program =
         , [ Assign
               ( PIndex (PName "z", Name "i")
               , Call
-                  ( Name "+"
+                  ( Name "*"
                   , [ Index (Name "w", Name "i")
                     ; Call
-                        ( Name "+"
+                        ( Name "*"
                         , [ Index (Name "x", Name "i")
                           ; Index (Name "y", Name "i")
                           ] )
                     ] ) )
           ] )
     ; Return (Name "z")
+    ] )
+
+let target6 : program =
+  ( Cbr_numpy.Env.np_env
+  , [ Assign
+        (PName "out", Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]))
+    ; For
+        ( PName "i"
+        , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
+        , [ Assign (PName "s", Num 0)
+          ; For
+              ( PName "j"
+              , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
+              , [ Assign
+                    ( PName "s"
+                    , Call
+                        ( Name "+"
+                        , [ Name "s"
+                          ; Call
+                              ( Name "*"
+                              , [ Index (Name "x", Name "j")
+                                ; Index
+                                    ( Name "y"
+                                    , Call (Name "-", [ Name "j"; Name "i" ]) )
+                                ] )
+                          ] ) )
+                ] )
+          ; Assign (PIndex (PName "out", Name "i"), Name "s")
+          ] )
+    ; Return (Name "out")
+    ] )
+
+let target7 : program =
+  ( Cbr_numpy.Env.np_env
+  , [ Assign
+        (PName "out", Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]))
+    ; For
+        ( PName "i"
+        , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
+        , [ If
+              ( Call (Name ">", [ Index (Name "x", Name "i"); Num 0 ])
+              , [ Assign (PIndex (PName "out", Name "i"), Num 1) ]
+              , [ Assign (PIndex (PName "out", Name "i"), Num (-1)) ] )
+          ] )
+    ; Return (Name "out")
+    ] )
+
+let target8 : program =
+  ( Cbr_numpy.Env.np_env
+  , [ Assign
+        ( PName "y"
+        , Call
+            ( Name "zeros"
+            , [ Call
+                  ( Name "+"
+                  , [ Call
+                        ( Name "-"
+                        , [ Call (Name "len", [ Name "x" ])
+                          ; Name "window_size"
+                          ] )
+                    ; Num 1
+                    ] )
+              ] ) )
+    ; For
+        ( PName "i"
+        , Call
+            ( Name "range"
+            , [ Call
+                  ( Name "+"
+                  , [ Call
+                        ( Name "-"
+                        , [ Call (Name "len", [ Name "x" ])
+                          ; Name "window_size"
+                          ] )
+                    ; Num 1
+                    ] )
+              ] )
+        , [ Assign (PName "s", Num 0)
+          ; For
+              ( PName "j"
+              , Call (Name "range", [ Name "window_size" ])
+              , [ Assign
+                    ( PName "s"
+                    , Call
+                        ( Name "+"
+                        , [ Name "s"
+                          ; Index
+                              (Name "x", Call (Name "+", [ Name "i"; Name "j" ]))
+                          ] ) )
+                ] )
+          ; Assign (PIndex (PName "y", Name "i"), Name "s")
+          ] )
+    ; Return (Name "y")
     ] )
 
 let solution1 : program =
@@ -98,13 +191,32 @@ let solution5 : program =
   ( Cbr_numpy.Env.np_env
   , [ Return
         (Call
-           (Name "add", [ Call (Name "add", [ Name "w"; Name "x" ]); Name "y" ]))
+           (Name "mul", [ Call (Name "mul", [ Name "x"; Name "y" ]); Name "w" ]))
     ] )
 
 let no_sol_target : program =
   ( Cbr_numpy.Env.np_env
   , [ Assign (PName "x", Num 0); Return (Call (Name "+", [ Name "x"; Num 1 ])) ]
   )
+
+let solution7 : program =
+  ( Cbr_numpy.Env.np_env
+  , [ Return
+        (Call
+           ( Name "where"
+           , [ Call (Name "gt", [ Name "x"; Call (Name "broadcast", [ Num 0 ]) ])
+             ; Call (Name "broadcast", [ Num 1 ])
+             ; Call (Name "broadcast", [ Num (-1) ])
+             ] ))
+    ] )
+
+let solution8 : program =
+  ( Env.np_env
+  , [ Return
+        (Call
+           ( Name "convolve_valid"
+           , [ Name "x"; Call (Name "ones", [ Name "window_size" ]) ] ))
+    ] )
 
 let egraph_bools = [ true; false ]
 
@@ -163,3 +275,21 @@ let%test_unit "np_solve no solution" =
     (List.map egraph_bools ~f:(fun use_egraphs ->
          solve 1 ~debug:false Number target4 use_egraphs))
     ~expect:(repeat None (List.length egraph_bools))
+
+let%test_unit "np_solve 2 muls" =
+  [%test_result: program option list]
+    (List.map egraph_bools ~f:(fun use_egraphs ->
+         solve 2 ~debug:false Array target5 use_egraphs))
+    ~expect:[ Some solution5; None ]
+
+let%test_unit "np_solve where" =
+  [%test_result: program option list]
+    (List.map egraph_bools ~f:(fun use_egraphs ->
+         solve 2 ~debug:false Array target7 use_egraphs))
+    ~expect:[ Some solution7; None ]
+
+let%test_unit "np_solve rolling sum" =
+  [%test_result: program option list]
+    (List.map egraph_bools ~f:(fun use_egraphs ->
+         solve 2 ~debug:false Array target8 use_egraphs))
+    ~expect:[ Some solution8; None ]

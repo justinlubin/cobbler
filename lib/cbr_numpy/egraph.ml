@@ -4,18 +4,19 @@ open Core
 open Parse
 
 type exprType =
-  | ENum of int
+  | ENum
   | EIndex
   | ECall
   | EStr of string
-  | EName of string
-  | EHole
+  | EName
+  | EHole of hole_type * string
 [@@deriving ord, hash]
 
 type stmtType =
   | SFor
   | SAssign
   | SReturn
+  | SIf
 [@@deriving ord, hash]
 
 module L = struct
@@ -35,24 +36,26 @@ module L = struct
    fun f fmt shape ->
     match shape with
     | Prog _ -> Format.fprintf fmt "Program"
-    | Block _ -> Format.fprintf fmt "Block"
+    | Block (h, _) -> Format.fprintf fmt "Block %d" h
     | Stmt (s, stmt) ->
         (match (s, stmt) with
         | SFor, [ index; iter; body ] ->
             Format.fprintf fmt "For %a in %a %a" f index f iter f body
         | SAssign, [ pat; rhs ] -> Format.fprintf fmt "%a = %a" f pat f rhs
         | SReturn, [ expr ] -> Format.fprintf fmt "Return %a" f expr
+        | SIf, [ cond; t; e ] ->
+            Format.fprintf fmt "If %a then %a else %a" f cond f t f e
         | _ -> failwith "Invalid statement when printing e-graph")
     | Expr (e, children) ->
         (match (e, children) with
-        | ENum n, [] -> Format.fprintf fmt "%d" n
-        | EName n, [] -> Format.fprintf fmt "%s" n
+        | ENum, [ num ] -> Format.fprintf fmt "Num %a" f num
+        | EName, [ n ] -> Format.fprintf fmt "Name %a" f n
         | ECall, func :: args ->
             Format.fprintf fmt "%a" f func;
             List.iter args ~f:(function arg -> Format.fprintf fmt "%a" f arg)
         | EStr s, [] -> Format.fprintf fmt "Str %s" s
         | EIndex, [ expr; index ] -> Format.fprintf fmt "%a[%a]" f expr f index
-        | EHole, [] -> Format.fprintf fmt "Hole"
+        | EHole (_, h), [] -> Format.fprintf fmt "Hole %s" h
         | _ -> failwith "Invalid expression when printing e-graph")
     | Id id -> Format.fprintf fmt "%s" id
 
@@ -77,15 +80,15 @@ module L = struct
     let rec t_of_pat : pat -> 'a =
      fun pat ->
       match pat with
-      | PName n -> Mk (Expr (EName n, []))
+      | PName n -> Mk (Expr (EName, [ Mk (Id n) ]))
       | PIndex (l, expr) -> Mk (Expr (EIndex, [ t_of_pat l; t_of_expr expr ]))
-      | PHole _ -> Mk (Expr (EHole, []))
+      | PHole (t, h) -> Mk (Expr (EHole (t, h), []))
     and t_of_expr : expr -> 'a =
      fun expr ->
       match expr with
-      | Name n -> Mk (Expr (EName n, []))
-      | Num n -> Mk (Expr (ENum n, []))
-      | Hole _ -> Mk (Expr (EHole, []))
+      | Name n -> Mk (Expr (EName, [ Mk (Id n) ]))
+      | Num n -> Mk (Expr (ENum, [ Mk (Id (string_of_int n)) ]))
+      | Hole (t, h) -> Mk (Expr (EHole (t, h), []))
       | Str s -> Mk (Expr (EStr s, []))
       | Index (e, i) -> Mk (Expr (EIndex, [ t_of_expr e; t_of_expr i ]))
       | Call (f, args) ->
@@ -99,6 +102,9 @@ module L = struct
           Mk (Stmt (SFor, [ t_of_pat index; t_of_expr iter; t_of_block body ]))
       | Assign (lhs, rhs) ->
           Mk (Stmt (SAssign, [ t_of_pat lhs; t_of_expr rhs ]))
+      | If (cond, body, orelse) ->
+          Mk
+            (Stmt (SIf, [ t_of_expr cond; t_of_block body; t_of_block orelse ]))
     and t_of_block : block -> 'a =
      fun block ->
       let children = List.map block ~f:t_of_stmt in
@@ -112,28 +118,55 @@ module L = struct
 
   let to_sexp : t -> Sexplib0.Sexp.t =
    fun t ->
+    let id_of_t : t -> id = function
+      | Mk (Id s) -> s
+      | _ -> failwith "Invalid id"
+    in
     let rec pat_of_t : t -> pat = function
       | Mk (Expr (EIndex, [ pat; index ])) ->
           PIndex (pat_of_t pat, expr_of_t index)
-      | Mk (Expr (EName n, _)) -> PName n
+      | Mk (Expr (EIndex, children)) ->
+          failwith
+            (Printf.sprintf
+               "Index expression with %d children"
+               (List.length children))
+      | Mk (Expr (EName, [ Mk (Id n) ])) -> PName n
+      | Mk (Expr (EHole (h, t), _)) -> PHole (h, t)
       | _ -> failwith "Invalid pattern when converting e-graph to s-expression"
     and expr_of_t : t -> expr = function
-      | Mk (Expr (EName n, _)) -> Name n
-      | Mk (Expr (ENum n, _)) -> Num n
+      | Mk (Expr (EName, [ Mk (Id n) ])) -> Name n
+      | Mk (Expr (EName, children)) ->
+          failwith
+            (Printf.sprintf
+               "Invalid name node: %d children"
+               (List.length children))
+      | Mk (Expr (ENum, [ n ])) -> Num (id_of_t n |> int_of_string)
+      | Mk (Expr (ENum, n)) ->
+          failwith ("Invalid num child: " ^ (List.length n |> string_of_int))
       | Mk (Expr (EStr s, _)) -> Str s
-      | Mk (Expr (EHole, _)) -> failwith "Hole in reference e-graph"
+      | Mk (Expr (EHole (t, h), _)) -> Hole (t, h)
       | Mk (Expr (ECall, func :: args)) ->
           Call (expr_of_t func, List.map args ~f:expr_of_t)
+      | Mk (Expr (ECall, children)) -> failwith "Invalid call expression"
       | Mk (Expr (EIndex, [ expr; index ])) ->
           Index (expr_of_t expr, expr_of_t index)
-      | _ ->
-          failwith "Invalid expression when converting e-graph to s-expression"
+      | Mk (Expr (EIndex, children)) ->
+          failwith
+            (Printf.sprintf
+               "Index expression with %d children"
+               (List.length children))
+      | Mk (Block _) -> failwith "block passed into expr_of_t"
+      | Mk (Prog _) -> failwith "program passed into expr_of_t"
+      | Mk (Stmt _) -> failwith "statement passed into expr_of_t"
+      | Mk (Id id) -> failwith ("id passed into expr_of_t:" ^ id)
     in
     let rec stmt_of_t : t -> stmt = function
       | Mk (Stmt (SFor, [ index; iter; body ])) ->
           For (pat_of_t index, expr_of_t iter, block_of_t body)
       | Mk (Stmt (SAssign, [ lhs; rhs ])) -> Assign (pat_of_t lhs, expr_of_t rhs)
       | Mk (Stmt (SReturn, [ expr ])) -> Return (expr_of_t expr)
+      | Mk (Stmt (SIf, [ c; t; e ])) ->
+          If (expr_of_t c, block_of_t t, block_of_t e)
       | _ ->
           failwith "Invalid statement when converting e-graph to s-expression"
     and block_of_t : t -> block = function
@@ -159,12 +192,13 @@ module L = struct
     | ForOp
     | AssignOp
     | ReturnOp
-    | NumOp of int
+    | NumOp
     | StrOp of string
-    | HoleOp
-    | CallOp
+    | HoleOp of hole_type * string
+    | CallOp of int
     | IndexOp
-    | NameOp of string
+    | NameOp
+    | IfOp
   [@@deriving eq]
 
   let op : 'a shape -> op = function
@@ -173,18 +207,22 @@ module L = struct
     | Stmt (SFor, _) -> ForOp
     | Stmt (SAssign, _) -> AssignOp
     | Stmt (SReturn, _) -> ReturnOp
-    | Expr (ENum n, _) -> NumOp n
-    | Expr (EName n, _) -> NameOp n
-    | Expr (EHole, _) -> HoleOp
+    | Stmt (SIf, _) -> IfOp
+    | Expr (ENum, _) -> NumOp
+    | Expr (EName, _) -> NameOp
+    | Expr (EHole (t, h), _) -> HoleOp (t, h)
     | Expr (EStr s, _) -> StrOp s
     | Expr (EIndex, _) -> IndexOp
-    | Expr (ECall, _) -> CallOp
+    | Expr (ECall, args) -> CallOp (List.length args)
     | Id id -> IdOp id
 
   let make : op -> 'a list -> 'a shape =
    fun op ls ->
-    match[@warning "-8"] (op, ls) with
+    match (op, ls) with
     | ProgOp, [ block ] -> Prog block
+    | ProgOp, children ->
+        failwith
+          (Printf.sprintf "Invalid program: %d children" (List.length children))
     | BlockOp, block ->
         let h = Hashtbl.hash block in
         Block (h, block)
@@ -192,12 +230,13 @@ module L = struct
     | AssignOp, stmt -> Stmt (SAssign, stmt)
     | ReturnOp, stmt -> Stmt (SReturn, stmt)
     | IndexOp, expr -> Expr (EIndex, expr)
-    | CallOp, expr -> Expr (ECall, expr)
-    | NameOp n, _ -> Expr (EName n, [])
-    | NumOp n, _ -> Expr (ENum n, [])
+    | CallOp _, expr -> Expr (ECall, expr)
+    | NameOp, n -> Expr (EName, n)
+    | NumOp, n -> Expr (ENum, n)
     | StrOp s, _ -> Expr (EStr s, [])
-    | HoleOp, _ -> Expr (EHole, [])
+    | HoleOp (t, h), _ -> Expr (EHole (t, h), [])
     | IdOp id, _ -> Id id
+    | IfOp, stmt -> Stmt (SIf, stmt)
 
   let op_of_string : string -> op =
    fun s ->
@@ -207,13 +246,25 @@ module L = struct
     | "For" -> ForOp
     | "Assign" -> AssignOp
     | "Return" -> ReturnOp
-    | "Call" -> CallOp
-    | "Hole" -> HoleOp
     | "Index" -> IndexOp
-    | s when String.is_prefix ~prefix:"Num_" s ->
-        NumOp (String.chop_prefix_exn s ~prefix:"Num_" |> int_of_string)
-    | s when String.is_prefix ~prefix:"Name_" s ->
-        NameOp (String.chop_prefix_exn s ~prefix:"Name_")
+    | "If" -> IfOp
+    | "Num" -> NumOp
+    | "Name" -> NameOp
+    | s when String.is_prefix ~prefix:"Call" s ->
+        CallOp (String.chop_prefix_exn s ~prefix:"Call" |> int_of_string)
+    | s when String.is_prefix ~prefix:"Hole_" s ->
+        let hole_type, name =
+          match String.split ~on:'_' s with
+          | [ _; hole_type; name ] -> (hole_type, name)
+          | _ -> failwith ("Invalid hole op:" ^ s)
+        in
+        let t =
+          match hole_type with
+          | "Number" -> Number
+          | "Arr" -> Array
+          | _ -> failwith ("Invalid hole type: " ^ hole_type)
+        in
+        HoleOp (t, name)
     | s when String.is_prefix ~prefix:"Str_" s ->
         StrOp (String.chop_prefix_exn s ~prefix:"Str_")
     | _ -> IdOp s
@@ -221,17 +272,24 @@ module L = struct
   let string_of_op : op -> string =
    fun op ->
     match op with
-    | ProgOp -> "Prog"
-    | BlockOp -> "Block"
+    | ProgOp -> ""
+    | BlockOp -> ""
     | ForOp -> "For"
     | AssignOp -> "Assign"
     | ReturnOp -> "Return"
+    | IfOp -> "If"
     | IndexOp -> "Index"
-    | CallOp -> "Call"
-    | NameOp n -> "Name_" ^ n
-    | NumOp n -> "Num_" ^ string_of_int n
+    | CallOp n -> "Call" ^ string_of_int n
+    | NameOp -> "Name"
+    | NumOp -> "Num"
     | StrOp s -> "Str_" ^ s
-    | HoleOp -> "Hole"
+    | HoleOp (t, h) ->
+        Printf.sprintf
+          "Hole_%s_%s"
+          (match t with
+          | Number -> "Number"
+          | Array -> "Arr")
+          h
     | IdOp id -> id
 end
 
