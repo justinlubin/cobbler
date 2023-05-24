@@ -5,6 +5,6 @@
 
 open Lang
 
-(** [extract_cata sigma gamma env name] tries to rewrite [env[name]] using
-    a catamorphism. *)
-val extract_cata : datatype_env -> typ_env -> env -> string -> exp option
+(** [rewrite sigma env name] tries to rewrite [env[name]] using recursion
+    schemes as much as possible. *)
+val rewrite : datatype_env -> env -> string -> exp option

@@ -6,12 +6,6 @@
 
 open Lang
 
-(** [pull_out_cases e] reorders case expressions in [e] (which must be closed)
-    such that there are no case expressions in [e] whose scrutinee is itself a
-    case expression. See "Deforestation: Transforming programs to eliminate
-    trees" (Wadler 1988).*)
-val pull_out_cases : exp -> exp
-
 (** [fuse sigma e] performs recursion scheme fusion in all applicable
     subexpressions of [e]. For example, the list foldr fusion law is:
       For all x, acc,
@@ -20,5 +14,7 @@ val pull_out_cases : exp -> exp
         h (x, u acc) = u (f (x, acc)).
     So this function will try to replace instances of the left-hand side above
     with the right-hand side (note that this specification does not provide a
-    constructive definition for [h]). *)
+    constructive definition for [h]).
+
+    This function subsumes the deforestation transformation (Wadler 1988). *)
 val fuse : datatype_env -> exp -> exp

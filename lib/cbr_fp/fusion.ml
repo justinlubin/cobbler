@@ -1,25 +1,6 @@
 open Core
 open Lang
 
-let rec pull_out_cases : exp -> exp = function
-  | EVar x -> EVar x
-  | EApp (head, arg) -> EApp (pull_out_cases head, pull_out_cases arg)
-  | EAbs (param, body) -> EAbs (param, pull_out_cases body)
-  | EMatch (outer_scrutinee, outer_branches) ->
-      let outer_branches' = Exp.map_branches ~f:pull_out_cases outer_branches in
-      (match pull_out_cases outer_scrutinee with
-      | EMatch (inner_scrutinee, inner_branches) ->
-          EMatch
-            ( inner_scrutinee
-            , Exp.map_branches
-                ~f:(fun rhs -> EMatch (rhs, outer_branches'))
-                inner_branches )
-      | outer_scrutinee' -> EMatch (outer_scrutinee', outer_branches'))
-  | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:pull_out_cases args)
-  | EBase b -> EBase b
-  | EHole (name, typ) -> EHole (name, typ)
-  | ERScheme (rs, dt, args) -> ERScheme (rs, dt, List.map ~f:pull_out_cases args)
-
 let rec fuse' : datatype_env -> exp -> exp =
  fun sigma e ->
   let rec recur = function
@@ -47,7 +28,6 @@ let rec fuse' : datatype_env -> exp -> exp =
              , Exp.map_branches branches ~f:(fun rhs -> EApp (head, rhs)) ))
     | EApp (head, arg) -> EApp (recur head, recur arg)
     | EAbs (param, body) -> EAbs (param, recur body)
-    (* TODO: put in pull_out_cases and make it work with folds too *)
     | EMatch (scrutinee, branches) ->
         EMatch (recur scrutinee, Exp.map_branches branches ~f:recur)
     | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:recur args)
