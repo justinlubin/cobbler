@@ -41,7 +41,10 @@ let rec show_single : exp -> string =
   | EBase (BEString s) -> sprintf "\"%s\"" s
   | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
   | ERScheme (RSCata, dt, args) ->
-      sprintf "(cata %s%s)" dt (args |> List.map ~f:show_single |> String.concat)
+      sprintf
+        "(cata %s%s)"
+        dt
+        (args |> List.map ~f:(fun a -> " " ^ show_single a) |> String.concat)
 
 let rec show_multi : int -> exp -> string =
  fun depth e ->
@@ -80,7 +83,10 @@ let rec show_multi : int -> exp -> string =
   | EBase (BEString s) -> sprintf "\"%s\"" s
   | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
   | ERScheme (RSCata, dt, args) ->
-      sprintf "(cata %s%s)" dt (args |> List.map ~f:show_single |> String.concat)
+      sprintf
+        "(cata %s%s)"
+        dt
+        (args |> List.map ~f:(fun a -> " " ^ show_single a) |> String.concat)
 
 let map_branches : branch list -> f:(exp -> exp) -> branch list =
  fun branches ~f ->

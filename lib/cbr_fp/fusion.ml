@@ -25,15 +25,20 @@ let rec fuse' : datatype_env -> exp -> exp =
   let rec recur = function
     | EVar x -> EVar x
     (* Catamorphism fusion *)
-    | EApp (u, EApp (ERScheme (RSCata, dt, es), arg)) -> failwith "TODO"
-    (*let u y = Exp.normalize (EApp (head, y)) in
-        let f y z = Exp.normalize (EApp (EApp (f1, y), z)) in
-        (match compute_list_foldr_h ~u ~f with
-        | Some h -> recur (EApp (ERScheme (RListFoldr (u b1, h)), arg))
+    | EApp (u, EApp (ERScheme (RSCata, dt, fs), arg)) ->
+        (match
+           Option.all
+             (List.map2_exn
+                ~f:(fun f (_, domain) ->
+                  compute_new_cata_arg sigma ~u ~f dt domain)
+                fs
+                (snd (String.Map.find_exn sigma dt)))
+         with
+        | Some new_fs -> recur (EApp (ERScheme (RSCata, dt, new_fs), arg))
         | None ->
             EApp
-              ( recur head
-              , EApp (ERScheme (RListFoldr (fuse' b1, fuse' f1)), recur arg) ))*)
+              ( recur u
+              , EApp (ERScheme (RSCata, dt, List.map ~f:recur fs), recur arg) ))
     (* Match fusion (e.g. options, booleans), a.k.a. "if lifting" *)
     | EApp (head, EMatch (scrutinee, branches)) ->
         recur
@@ -57,26 +62,43 @@ and fuse_normalize : datatype_env -> exp -> exp =
   let e' = fuse' sigma (Exp.normalize sigma e) in
   if [%eq: exp] e e' then e' else fuse_normalize sigma e'
 
-and compute_list_foldr_h
-    : datatype_env -> u:(exp -> exp) -> f:(exp -> exp -> exp) -> exp option
+and compute_new_cata_arg
+    : datatype_env -> u:exp -> f:exp -> string -> typ list -> exp option
   =
- fun sigma ~u ~f ->
-  let x = Util.gensym "fuse_list_foldr_x" in
-  let acc = Util.gensym "fuse_list_foldr_acc" in
-  let p_hd = Util.gensym "fuse_list_foldr_p_hd" in
-  let p_tl = Util.gensym "fuse_list_foldr_p_tl" in
-  let h_rhs =
-    Exp.replace_subexp
-      ~old_subexp:(EVar x)
-      ~new_subexp:(EVar p_hd)
-      (Exp.replace_subexp
-         ~old_subexp:(u (EVar acc))
-         ~new_subexp:(EVar p_tl)
-         (fuse_normalize sigma (u (f (EVar x) (EVar acc)))))
+ fun sigma ~u ~f dt domain ->
+  let xzs =
+    List.map
+      ~f:(fun tau -> (Util.gensym "cata_x", Util.gensym "cata_z", tau))
+      domain
   in
-  if String.Set.mem (Exp.free_variables h_rhs) acc
-  then None
-  else Some (EAbs (p_hd, EAbs (p_tl, h_rhs)))
+  let application =
+    fuse_normalize
+      sigma
+      (EApp (u, Exp.build_app f (List.map ~f:(fun (x, _, _) -> EVar x) xzs)))
+  in
+  let recursive_xs, rhs =
+    List.fold_right
+      ~f:(fun (x, z, tau) (acc_xs, acc_app) ->
+        match tau with
+        | TDatatype (dt', _) when String.equal dt dt' ->
+            ( String.Set.add acc_xs x
+            , Exp.replace_subexp
+                ~old_subexp:(Exp.normalize sigma (EApp (u, EVar x)))
+                ~new_subexp:(EVar z)
+                acc_app )
+        | _ ->
+            ( acc_xs
+            , Exp.replace_subexp
+                ~old_subexp:(EVar x)
+                ~new_subexp:(EVar z)
+                acc_app ))
+      ~init:(String.Set.empty, application)
+      xzs
+  in
+  if String.Set.is_empty
+       (String.Set.inter (Exp.free_variables rhs) recursive_xs)
+  then Some (Exp.build_abs (List.map ~f:(fun (_, z, _) -> z) xzs) rhs)
+  else None
 
 let fuse : datatype_env -> exp -> exp =
  fun sigma e -> fuse' sigma (Exp.freshen e)
