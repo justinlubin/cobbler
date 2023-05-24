@@ -35,7 +35,6 @@ let%test_unit "list1 extracted foldr for map well-typed" =
     (Parse.typ "(((Peano) -> (Peano)) -> ((List (Peano)) -> (List (Peano))))")
 
 let%test_unit "list1 extracted foldr for filter well-typed" =
-  let _ = print_endline "HELLO!" in
   Type_system.check
     sigma_list1
     gamma_list1

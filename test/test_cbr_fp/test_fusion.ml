@@ -56,7 +56,7 @@ let%expect_test "list2 mapmap fusion" =
   ignore (Type_system.infer sigma_list2 gamma_list2 fused_mapmap);
   print_endline (Exp.show_single (Exp.alpha_normalize fused_mapmap));
   [%expect
-    {| (lambda var0 (lambda var1 (lambda var2 ((list_foldr (Nil) (lambda var3 (lambda var4 (Cons (var0 (var1 var3)) var4)))) var2)))) |}]
+    {| (lambda var0 (lambda var1 (lambda var2 ((cata List (Nil) (lambda var3 (lambda var4 (Cons (var0 (var1 var3)) var4)))) var2)))) |}]
 
 let%expect_test "list2 mapfilter fusion" =
   let map_foldr =
@@ -80,4 +80,4 @@ let%expect_test "list2 mapfilter fusion" =
   ignore (Type_system.infer sigma_list2 gamma_list2 fused_mapfilter);
   print_endline (Exp.show_single (Exp.alpha_normalize fused_mapfilter));
   [%expect
-    {| (lambda var0 (lambda var1 (lambda var2 ((list_foldr (Nil) (lambda var3 (lambda var4 (match (var1 var3) ((False) -> var4) ((True) -> (Cons (var0 var3) var4)))))) var2)))) |}]
+    {| (lambda var0 (lambda var1 (lambda var2 ((cata List (Nil) (lambda var3 (lambda var4 (match (var1 var3) ((False) -> var4) ((True) -> (Cons (var0 var3) var4)))))) var2)))) |}]
