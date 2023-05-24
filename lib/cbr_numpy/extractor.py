@@ -5,6 +5,8 @@ def extract(p):
     tree = ast.parse(p)
     classifier = VarClassifier()
     classifier.visit(tree)
+    if not classifier.found_for:
+        raise NoSynthException
     input_vars = classifier.input_vars
     output_vars = classifier.output_vars
     extractor = Extractor(input_vars, output_vars)
@@ -12,6 +14,10 @@ def extract(p):
     env_ast = extractor.env_ast
     body_ast = extractor.body_ast
     return env_ast, body_ast
+
+
+class NoSynthException(Exception):
+    pass
 
 
 class UnsupportedNodeException(Exception):
@@ -44,9 +50,7 @@ class VarClassifier(ast.NodeVisitor):
             self.input_vars.add(var)
 
     def visit_AugAssign(self, node: ast.AugAssign):
-        if len(node.targets) > 1:
-            raise UnsupportedNodeException("Multiple targets")
-        var = node.targets[0].id
+        var = self.visit(node.target)
         if self.in_for:
             if var in self.input_vars:
                 self.output_vars.add(var)

@@ -1,0 +1,4 @@
+{
+    "body": "y = np.zeros(len(x))\nfor i in range(len(x)):\n    if x[i] > 0:\n        y[i] = 1\n    else:\n        y[i] = -1\nreturn y",
+    "env": "x = np.arange(-5, 5)"
+}

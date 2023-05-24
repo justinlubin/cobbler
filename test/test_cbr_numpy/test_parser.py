@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from lib.cbr_numpy.parser import parse
+from lib.cbr_numpy.parser import parse_str
 import unittest
 import sys
 sys.path.append("../..")
@@ -18,7 +18,7 @@ class TestParser(unittest.TestCase):
         for py_fname, sexp_fname in zip(py_fnames, sexp_fnames):
             with open(fnames_dir + py_fname, "r") as f:
                 text = f.read()
-                sexp = parse(text)
+                sexp = parse_str(text)
             with open(fnames_dir + sexp_fname, "r") as f:
                 text = f.read()
                 text = text.replace("\n", "").replace('\t', '').replace("  ", "").replace(

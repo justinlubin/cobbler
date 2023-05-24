@@ -26,7 +26,6 @@ def benchmark_nb(in_filepath, out_filepath, build=True):
             code = cell['source']
             stats = {}
             stats['orig code'] = code
-            print(code)
             try:
                 orig_ast = ast.parse(code, mode='exec')
                 orig_ast_size = num_nodes(orig_ast)
@@ -61,8 +60,6 @@ def benchmark_nb(in_filepath, out_filepath, build=True):
                 code = code[:last_ln_i] + '\nreturn ' + code[last_ln_i + 1:]
 
                 # parse synthesis target
-                # env, body = code.split('#synth')
-
                 env, body = extract(code)
                 sexp = parse(body)
 
