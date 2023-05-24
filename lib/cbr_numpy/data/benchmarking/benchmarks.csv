@@ -6,10 +6,10 @@ x = np.arange(5)
 c = 0
 for i in range(len(x)):
     c = c + x[i]
-c",10,41,0.0001161580003099516,"#test sum
+c",10,42,9.028899967233883e-05,"#test sum
 x = np.arange(5)
 np.sum(x)
-",10,18,0.0001252510119229555,0.01036698899406474,True,Success
+",10,18,0.00016443399999843678,0.008636550999653991,True,Success
 test sum mul,"#test sum mul
 x = np.arange(5)
 y = np.arange(5)
@@ -17,11 +17,11 @@ y = np.arange(5)
 c = 0
 for j in range(len(x)):
     c = c + (x[j] * y[j])
-c",30,58,9.144499199464917e-05,"#test sum mul
+c",30,60,8.726499982003588e-05,"#test sum mul
 x = np.arange(5)
 y = np.arange(5)
 np.sum(np.multiply(x, y))
-",30,34,0.000152338994666934,0.009741707006469369,True,Success
+",30,34,0.00021027500042691827,0.01074355699984153,True,Success
 test mul,"#test mul
 x = np.arange(5)
 y = np.arange(5)
@@ -29,12 +29,54 @@ y = np.arange(5)
 z = np.zeros(len(x))
 for i in range(len(x)):
     z[i] = x[i] * y[i]
-z",[ 0.  1.  4.  9. 16.],67,0.00013782299356535077,"#test mul
+z",[ 0.  1.  4.  9. 16.],70,9.315999977843603e-05,"#test mul
 x = np.arange(5)
 y = np.arange(5)
 np.multiply(x, y)
-",[ 0  1  4  9 16],29,9.677599882707e-05,0.009847944995271973,True,Success
+",[ 0  1  4  9 16],29,8.502299988322193e-05,0.010006530999817187,True,Success
 test no sol,"#test no sol
 x = 0
-x + 1",1,11,1.5954996342770755e-05,,,,,,,SynthFail
-
+x + 1",1,11,1.9363999854249414e-05,,,,,,,SynthFail
+test sign,"#test sign
+x = np.arange(-5,5)
+#synth
+y = np.zeros(len(x))
+for i in range(len(x)):
+    if x[i] > 0:
+        y[i] = 1
+    else:
+        y[i] = -1
+y",[-1. -1. -1. -1. -1. -1.  1.  1.  1.  1.],71,0.00010606699925119756,"#test sign
+x = np.arange(-5,5)
+np.where(np.greater(x,np.zeros(len(x))), np.ones(len(x)), np.empty(len(x)).fill(-1))
+",[None None None None None None 1.0 1.0 1.0 1.0],62,0.0002472589994795271,0.03700254399973346,False,Success
+test rolling sum,"#test rolling sum
+x = np.arange(6)
+window_size = 3
+#synth
+y = np.zeros(len(x)- window_size + 1)
+for i in range(len(x) - window_size + 1):
+    s = 0
+    for j in range(window_size):
+        s += x[i+j]
+    y[i] = s
+y",[ 3.  6.  9. 12.],92,0.00010742800077423453,"#test rolling sum
+x = np.arange(6)
+window_size = 3
+np.convolve(x, np.ones(window_size),'valid')
+",[ 3.  6.  9. 12.],30,0.00014947799991205102,0.04931026499980362,True,Success
+test rolling mean,"#test rolling mean
+x = np.arange(-5,5)
+window_size = 3
+#synth
+y = np.zeros(len(x)- window_size + 1)
+for i in range(len(x) - window_size + 1):
+    s = 0
+    for j in range(window_size):
+        s += x[i+j]
+    y[i] = s / window_size
+y",[-4. -3. -2. -1.  0.  1.  2.  3.],99,0.00011218600047868676,"#test rolling mean
+x = np.arange(-5,5)
+window_size = 3
+no solution found
+",,,,46.91631253399919,,SynthedExecFail

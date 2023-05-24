@@ -51,7 +51,7 @@ let () =
   print_endline "Parsing ... %!";
   let target = parse_file_np np_prog_fname in
   let pattern = parse_file_np np_pat_fname in
-  let subs = unify_egraph ~debug:true ~target ~pattern () in
+  let subs = unify_egraph_full ~debug:true ~target ~pattern () in
   (match subs with
   | None -> print_endline "failure"
   | Some subs ->
