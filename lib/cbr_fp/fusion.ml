@@ -4,7 +4,7 @@ open Lang
 let rec pull_out_cases : exp -> exp = function
   | EVar x -> EVar x
   | EApp (head, arg) -> EApp (pull_out_cases head, pull_out_cases arg)
-  | EAbs (param, tau, body) -> EAbs (param, tau, pull_out_cases body)
+  | EAbs (param, body) -> EAbs (param, pull_out_cases body)
   | EMatch (outer_scrutinee, outer_branches) ->
       let outer_branches' = Exp.map_branches ~f:pull_out_cases outer_branches in
       (match pull_out_cases outer_scrutinee with
@@ -15,100 +15,90 @@ let rec pull_out_cases : exp -> exp = function
                 ~f:(fun rhs -> EMatch (rhs, outer_branches'))
                 inner_branches )
       | outer_scrutinee' -> EMatch (outer_scrutinee', outer_branches'))
-  | ECtor (ctor_name, arg) -> ECtor (ctor_name, pull_out_cases arg)
-  | EPair (e1, e2) -> EPair (pull_out_cases e1, pull_out_cases e2)
-  | EFst arg -> EFst (pull_out_cases arg)
-  | ESnd arg -> ESnd (pull_out_cases arg)
-  | EUnit -> EUnit
-  | EInt n -> EInt n
+  | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:pull_out_cases args)
+  | EBase b -> EBase b
   | EHole (name, typ) -> EHole (name, typ)
-  | ERScheme (RListFoldr (b, f)) ->
-      ERScheme (RListFoldr (pull_out_cases b, pull_out_cases f))
+  | ERScheme (rs, dt, args) -> ERScheme (rs, dt, List.map ~f:pull_out_cases args)
 
-let rec fuse' : datatype_env -> typ_env -> exp -> exp =
- fun sigma gamma e ->
-  match e with
-  | EVar x -> EVar x
-  (* List foldr fusion *)
-  | EApp (head, EApp (ERScheme (RListFoldr (b1, f1)), arg)) ->
-      (match Typ.decompose_arr (Type_system.infer sigma gamma f1) with
-      | [ TProd (elem_type, _) ], _ ->
-          let return_type = Type_system.infer sigma gamma e in
-          let u y = Exp.normalize (EApp (head, y)) in
-          let f y = Exp.normalize (EApp (f1, y)) in
-          (match
-             compute_list_foldr_h sigma gamma ~elem_type ~return_type ~u ~f
-           with
-          | Some h ->
-              fuse' sigma gamma (EApp (ERScheme (RListFoldr (u b1, h)), arg))
-          | None ->
-              EApp
-                ( fuse' sigma gamma head
-                , EApp
-                    ( ERScheme
-                        (RListFoldr (fuse' sigma gamma b1, fuse' sigma gamma f1))
-                    , fuse' sigma gamma arg ) ))
-      | _ -> failwith "impossible list foldr type")
-  (* Match fusion (e.g. options, booleans), a.k.a. "if lifting" *)
-  | EApp (head, EMatch (scrutinee, branches)) ->
-      fuse'
-        sigma
-        gamma
-        (EMatch
-           ( scrutinee
-           , Exp.map_branches branches ~f:(fun rhs -> EApp (head, rhs)) ))
-  | EApp (head, arg) -> EApp (fuse' sigma gamma head, fuse' sigma gamma arg)
-  | EAbs (param, tau, body) ->
-      EAbs
-        ( param
-        , tau
-        , fuse' sigma (String.Map.update gamma param ~f:(fun _ -> tau)) body )
-  (* TODO: put in pull_out_cases and make it work with folds too *)
-  | EMatch (scrutinee, branches) ->
-      EMatch
-        ( fuse' sigma gamma scrutinee
-        , Exp.map_branches branches ~f:(fuse' sigma gamma) )
-  | ECtor (ctor_name, arg) -> ECtor (ctor_name, fuse' sigma gamma arg)
-  | EPair (e1, e2) -> EPair (fuse' sigma gamma e1, fuse' sigma gamma e2)
-  | EFst arg -> EFst (fuse' sigma gamma arg)
-  | ESnd arg -> ESnd (fuse' sigma gamma arg)
-  | EUnit -> EUnit
-  | EInt n -> EInt n
-  | EHole (name, typ) -> EHole (name, typ)
-  | ERScheme (RListFoldr (b, f)) ->
-      ERScheme (RListFoldr (fuse' sigma gamma b, fuse' sigma gamma f))
-
-and fuse_normalize : datatype_env -> typ_env -> exp -> exp =
- fun sigma gamma e ->
-  let e' = fuse' sigma gamma (Exp.normalize e) in
-  if [%eq: exp] e e' then e' else fuse_normalize sigma gamma e'
-
-and compute_list_foldr_h
-    :  datatype_env -> typ_env -> elem_type:typ -> return_type:typ
-    -> u:(exp -> exp) -> f:(exp -> exp) -> exp option
-  =
- fun sigma gamma ~elem_type ~return_type ~u ~f ->
-  let x = Util.gensym "fuse_list_foldr_x" in
-  let acc = Util.gensym "fuse_list_foldr_acc" in
-  let p = Util.gensym "fuse_list_foldr_p" in
-  let h_rhs =
-    Exp.replace_subexp
-      ~old_subexp:(EVar x)
-      ~new_subexp:(EFst (EVar p))
-      (Exp.replace_subexp
-         ~old_subexp:(u (EVar acc))
-         ~new_subexp:(ESnd (EVar p))
-         (fuse_normalize
-            sigma
-            (String.Map.add_exn
-               (String.Map.add_exn gamma ~key:x ~data:elem_type)
-               ~key:acc
-               ~data:return_type)
-            (u (f (EPair (EVar x, EVar acc))))))
+let rec fuse' : datatype_env -> exp -> exp =
+ fun sigma e ->
+  let rec recur = function
+    | EVar x -> EVar x
+    (* Catamorphism fusion *)
+    | EApp (u, EApp (ERScheme (RSCata, dt, fs), arg)) ->
+        (match
+           Option.all
+             (List.map2_exn
+                ~f:(fun f (_, domain) ->
+                  compute_new_cata_arg sigma ~u ~f dt domain)
+                fs
+                (snd (String.Map.find_exn sigma dt)))
+         with
+        | Some new_fs -> recur (EApp (ERScheme (RSCata, dt, new_fs), arg))
+        | None ->
+            EApp
+              ( recur u
+              , EApp (ERScheme (RSCata, dt, List.map ~f:recur fs), recur arg) ))
+    (* Match fusion (e.g. options, booleans), a.k.a. "if lifting" *)
+    | EApp (head, EMatch (scrutinee, branches)) ->
+        recur
+          (EMatch
+             ( scrutinee
+             , Exp.map_branches branches ~f:(fun rhs -> EApp (head, rhs)) ))
+    | EApp (head, arg) -> EApp (recur head, recur arg)
+    | EAbs (param, body) -> EAbs (param, recur body)
+    (* TODO: put in pull_out_cases and make it work with folds too *)
+    | EMatch (scrutinee, branches) ->
+        EMatch (recur scrutinee, Exp.map_branches branches ~f:recur)
+    | ECtor (ctor_name, args) -> ECtor (ctor_name, List.map ~f:recur args)
+    | EBase b -> EBase b
+    | EHole (name, typ) -> EHole (name, typ)
+    | ERScheme (rs, dt, args) -> ERScheme (rs, dt, List.map ~f:recur args)
   in
-  if String.Set.mem (Exp.free_variables h_rhs) acc
-  then None
-  else Some (EAbs (p, TProd (elem_type, return_type), h_rhs))
+  recur e
 
-let fuse : datatype_env -> typ_env -> exp -> exp =
- fun sigma gamma e -> fuse' sigma gamma (Exp.freshen e)
+and fuse_normalize : datatype_env -> exp -> exp =
+ fun sigma e ->
+  let e' = fuse' sigma (Exp.normalize sigma e) in
+  if [%eq: exp] e e' then e' else fuse_normalize sigma e'
+
+and compute_new_cata_arg
+    : datatype_env -> u:exp -> f:exp -> string -> typ list -> exp option
+  =
+ fun sigma ~u ~f dt domain ->
+  let xzs =
+    List.map
+      ~f:(fun tau -> (Util.gensym "cata_x", Util.gensym "cata_z", tau))
+      domain
+  in
+  let application =
+    fuse_normalize
+      sigma
+      (EApp (u, Exp.build_app f (List.map ~f:(fun (x, _, _) -> EVar x) xzs)))
+  in
+  let recursive_xs, rhs =
+    List.fold_right
+      ~f:(fun (x, z, tau) (acc_xs, acc_app) ->
+        match tau with
+        | TDatatype (dt', _) when String.equal dt dt' ->
+            ( String.Set.add acc_xs x
+            , Exp.replace_subexp
+                ~old_subexp:(Exp.normalize sigma (EApp (u, EVar x)))
+                ~new_subexp:(EVar z)
+                acc_app )
+        | _ ->
+            ( acc_xs
+            , Exp.replace_subexp
+                ~old_subexp:(EVar x)
+                ~new_subexp:(EVar z)
+                acc_app ))
+      ~init:(String.Set.empty, application)
+      xzs
+  in
+  if String.Set.is_empty
+       (String.Set.inter (Exp.free_variables rhs) recursive_xs)
+  then Some (Exp.build_abs (List.map ~f:(fun (_, z, _) -> z) xzs) rhs)
+  else None
+
+let fuse : datatype_env -> exp -> exp =
+ fun sigma e -> fuse' sigma (Exp.freshen e)
