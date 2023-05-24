@@ -1,7 +1,6 @@
 open Core
 open Lang
 
-(* TODO: Assumes no mutual recursion? *)
 let extract_cata_exn : datatype_env -> typ_env -> env -> string -> exp =
  fun sigma gamma env name ->
   match Exp.decompose_abs (String.Map.find_exn env name) with
