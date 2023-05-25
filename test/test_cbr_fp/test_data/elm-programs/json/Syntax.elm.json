@@ -1,0 +1,1673 @@
+{
+  "moduleName": "Syntax",
+  "imports": {},
+  "body": [
+    {
+      "tag": "CustomType",
+      "name": "Color",
+      "parameters": [
+        "a"
+      ],
+      "variants": [
+        {
+          "name": "Red",
+          "parameterTypes": []
+        },
+        {
+          "name": "Green",
+          "parameterTypes": []
+        },
+        {
+          "name": "Blue",
+          "parameterTypes": []
+        },
+        {
+          "name": "Custom",
+          "parameterTypes": [
+            {
+              "tag": "TypeVariable",
+              "name": "a",
+              "sourceLocation": {
+                "start": {
+                  "line": 8,
+                  "col": 14
+                },
+                "end": {
+                  "line": 8,
+                  "col": 15
+                }
+              }
+            },
+            {
+              "tag": "TypeVariable",
+              "name": "a",
+              "sourceLocation": {
+                "start": {
+                  "line": 8,
+                  "col": 16
+                },
+                "end": {
+                  "line": 8,
+                  "col": 17
+                }
+              }
+            },
+            {
+              "tag": "TypeVariable",
+              "name": "a",
+              "sourceLocation": {
+                "start": {
+                  "line": 8,
+                  "col": 18
+                },
+                "end": {
+                  "line": 8,
+                  "col": 19
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "sourceLocation": {
+        "start": {
+          "line": 4,
+          "col": 1
+        },
+        "end": {
+          "line": 8,
+          "col": 19
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "int",
+      "parameters": [],
+      "returnType": {
+        "tag": "TypeReference",
+        "name": "Int",
+        "module": null,
+        "arguments": [],
+        "sourceLocation": {
+          "start": {
+            "line": 11,
+            "col": 7
+          },
+          "end": {
+            "line": 11,
+            "col": 10
+          }
+        }
+      },
+      "expression": {
+        "tag": "IntLiteral",
+        "value": 3,
+        "display": {
+          "representation": "DecimalInt"
+        },
+        "sourceLocation": {
+          "start": {
+            "line": 13,
+            "col": 5
+          },
+          "end": {
+            "line": 13,
+            "col": 6
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 12,
+          "col": 1
+        },
+        "end": {
+          "line": 13,
+          "col": 6
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "float",
+      "parameters": [],
+      "returnType": {
+        "tag": "TypeReference",
+        "name": "Float",
+        "module": null,
+        "arguments": [],
+        "sourceLocation": {
+          "start": {
+            "line": 16,
+            "col": 9
+          },
+          "end": {
+            "line": 16,
+            "col": 14
+          }
+        }
+      },
+      "expression": {
+        "tag": "FloatLiteral",
+        "value": 3.5,
+        "display": {
+          "representation": "DecimalFloat"
+        },
+        "sourceLocation": {
+          "start": {
+            "line": 18,
+            "col": 5
+          },
+          "end": {
+            "line": 18,
+            "col": 8
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 17,
+          "col": 1
+        },
+        "end": {
+          "line": 18,
+          "col": 8
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "unit",
+      "parameters": [],
+      "returnType": {
+        "tag": "UnitType",
+        "sourceLocation": {
+          "start": {
+            "line": 21,
+            "col": 8
+          },
+          "end": {
+            "line": 21,
+            "col": 10
+          }
+        }
+      },
+      "expression": {
+        "tag": "UnitLiteral",
+        "sourceLocation": {
+          "start": {
+            "line": 23,
+            "col": 5
+          },
+          "end": {
+            "line": 23,
+            "col": 7
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 22,
+          "col": 1
+        },
+        "end": {
+          "line": 23,
+          "col": 7
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "string1",
+      "parameters": [],
+      "returnType": {
+        "tag": "TypeReference",
+        "name": "String",
+        "module": null,
+        "arguments": [],
+        "sourceLocation": {
+          "start": {
+            "line": 26,
+            "col": 11
+          },
+          "end": {
+            "line": 26,
+            "col": 17
+          }
+        }
+      },
+      "expression": {
+        "tag": "StringLiteral",
+        "value": "hello",
+        "display": {
+          "representation": "SingleQuotedString"
+        },
+        "sourceLocation": {
+          "start": {
+            "line": 28,
+            "col": 5
+          },
+          "end": {
+            "line": 28,
+            "col": 12
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 27,
+          "col": 1
+        },
+        "end": {
+          "line": 28,
+          "col": 12
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "string2",
+      "parameters": [],
+      "returnType": {
+        "tag": "TypeReference",
+        "name": "String",
+        "module": null,
+        "arguments": [],
+        "sourceLocation": {
+          "start": {
+            "line": 31,
+            "col": 11
+          },
+          "end": {
+            "line": 31,
+            "col": 17
+          }
+        }
+      },
+      "expression": {
+        "tag": "FunctionApplication",
+        "function": {
+          "tag": "VariableReference",
+          "name": "++"
+        },
+        "arguments": [
+          {
+            "tag": "VariableReference",
+            "name": "string1",
+            "sourceLocation": {
+              "start": {
+                "line": 33,
+                "col": 5
+              },
+              "end": {
+                "line": 33,
+                "col": 12
+              }
+            }
+          },
+          {
+            "tag": "StringLiteral",
+            "value": "!",
+            "display": {
+              "representation": "SingleQuotedString"
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 33,
+                "col": 16
+              },
+              "end": {
+                "line": 33,
+                "col": 19
+              }
+            }
+          }
+        ],
+        "display": {
+          "showAsInfix": true
+        },
+        "sourceLocation": {
+          "start": {
+            "line": 33,
+            "col": 5
+          },
+          "end": {
+            "line": 33,
+            "col": 19
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 32,
+          "col": 1
+        },
+        "end": {
+          "line": 33,
+          "col": 19
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "f",
+      "parameters": [
+        {
+          "pattern": {
+            "tag": "VariableDefinition",
+            "name": "x",
+            "sourceLocation": {
+              "start": {
+                "line": 37,
+                "col": 3
+              },
+              "end": {
+                "line": 37,
+                "col": 4
+              }
+            }
+          },
+          "type": {
+            "tag": "TypeReference",
+            "name": "Int",
+            "module": null,
+            "arguments": [],
+            "sourceLocation": {
+              "start": {
+                "line": 36,
+                "col": 5
+              },
+              "end": {
+                "line": 36,
+                "col": 8
+              }
+            }
+          }
+        }
+      ],
+      "returnType": {
+        "tag": "TypeReference",
+        "name": "Int",
+        "module": null,
+        "arguments": [],
+        "sourceLocation": {
+          "start": {
+            "line": 36,
+            "col": 12
+          },
+          "end": {
+            "line": 36,
+            "col": 15
+          }
+        }
+      },
+      "expression": {
+        "tag": "FunctionApplication",
+        "function": {
+          "tag": "VariableReference",
+          "name": "+"
+        },
+        "arguments": [
+          {
+            "tag": "VariableReference",
+            "name": "x",
+            "sourceLocation": {
+              "start": {
+                "line": 38,
+                "col": 5
+              },
+              "end": {
+                "line": 38,
+                "col": 6
+              }
+            }
+          },
+          {
+            "tag": "IntLiteral",
+            "value": 1,
+            "display": {
+              "representation": "DecimalInt"
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 38,
+                "col": 9
+              },
+              "end": {
+                "line": 38,
+                "col": 10
+              }
+            }
+          }
+        ],
+        "display": {
+          "showAsInfix": true
+        },
+        "sourceLocation": {
+          "start": {
+            "line": 38,
+            "col": 5
+          },
+          "end": {
+            "line": 38,
+            "col": 10
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 37,
+          "col": 1
+        },
+        "end": {
+          "line": 38,
+          "col": 10
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "g",
+      "parameters": [
+        {
+          "pattern": {
+            "tag": "VariableDefinition",
+            "name": "def",
+            "sourceLocation": {
+              "start": {
+                "line": 42,
+                "col": 3
+              },
+              "end": {
+                "line": 42,
+                "col": 6
+              }
+            }
+          },
+          "type": {
+            "tag": "TypeVariable",
+            "name": "a",
+            "sourceLocation": {
+              "start": {
+                "line": 41,
+                "col": 5
+              },
+              "end": {
+                "line": 41,
+                "col": 6
+              }
+            }
+          }
+        }
+      ],
+      "returnType": {
+        "tag": "FunctionType",
+        "returnType": {
+          "tag": "TypeReference",
+          "name": "List",
+          "module": null,
+          "arguments": [
+            {
+              "tag": "TypeVariable",
+              "name": "a",
+              "sourceLocation": {
+                "start": {
+                  "line": 41,
+                  "col": 25
+                },
+                "end": {
+                  "line": 41,
+                  "col": 26
+                }
+              }
+            }
+          ],
+          "sourceLocation": {
+            "start": {
+              "line": 41,
+              "col": 20
+            },
+            "end": {
+              "line": 41,
+              "col": 26
+            }
+          }
+        },
+        "argumentTypes": [
+          {
+            "tag": "TypeReference",
+            "name": "List",
+            "module": null,
+            "arguments": [
+              {
+                "tag": "TypeVariable",
+                "name": "a",
+                "sourceLocation": {
+                  "start": {
+                    "line": 41,
+                    "col": 15
+                  },
+                  "end": {
+                    "line": 41,
+                    "col": 16
+                  }
+                }
+              }
+            ],
+            "sourceLocation": {
+              "start": {
+                "line": 41,
+                "col": 10
+              },
+              "end": {
+                "line": 41,
+                "col": 16
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 41,
+            "col": 5
+          },
+          "end": {
+            "line": 41,
+            "col": 26
+          }
+        }
+      },
+      "expression": {
+        "tag": "FunctionApplication",
+        "function": {
+          "tag": "ExternalReference",
+          "module": "List",
+          "identifier": "map",
+          "sourceLocation": {
+            "start": {
+              "line": 43,
+              "col": 5
+            },
+            "end": {
+              "line": 43,
+              "col": 13
+            }
+          }
+        },
+        "arguments": [
+          {
+            "tag": "AnonymousFunction",
+            "parameters": [
+              {
+                "tag": "AnythingPattern",
+                "sourceLocation": {
+                  "start": {
+                    "line": 43,
+                    "col": 16
+                  },
+                  "end": {
+                    "line": 43,
+                    "col": 17
+                  }
+                }
+              }
+            ],
+            "body": {
+              "tag": "VariableReference",
+              "name": "def",
+              "sourceLocation": {
+                "start": {
+                  "line": 43,
+                  "col": 21
+                },
+                "end": {
+                  "line": 43,
+                  "col": 24
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 43,
+                "col": 14
+              },
+              "end": {
+                "line": 43,
+                "col": 25
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 43,
+            "col": 5
+          },
+          "end": {
+            "line": 43,
+            "col": 25
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 42,
+          "col": 1
+        },
+        "end": {
+          "line": 43,
+          "col": 25
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "g2",
+      "parameters": [
+        {
+          "pattern": {
+            "tag": "VariableDefinition",
+            "name": "def",
+            "sourceLocation": {
+              "start": {
+                "line": 47,
+                "col": 4
+              },
+              "end": {
+                "line": 47,
+                "col": 7
+              }
+            }
+          },
+          "type": {
+            "tag": "TypeVariable",
+            "name": "a",
+            "sourceLocation": {
+              "start": {
+                "line": 46,
+                "col": 6
+              },
+              "end": {
+                "line": 46,
+                "col": 7
+              }
+            }
+          }
+        }
+      ],
+      "returnType": {
+        "tag": "FunctionType",
+        "returnType": {
+          "tag": "TypeReference",
+          "name": "List",
+          "module": null,
+          "arguments": [
+            {
+              "tag": "TypeVariable",
+              "name": "a",
+              "sourceLocation": {
+                "start": {
+                  "line": 46,
+                  "col": 26
+                },
+                "end": {
+                  "line": 46,
+                  "col": 27
+                }
+              }
+            }
+          ],
+          "sourceLocation": {
+            "start": {
+              "line": 46,
+              "col": 21
+            },
+            "end": {
+              "line": 46,
+              "col": 27
+            }
+          }
+        },
+        "argumentTypes": [
+          {
+            "tag": "TypeReference",
+            "name": "List",
+            "module": null,
+            "arguments": [
+              {
+                "tag": "TypeVariable",
+                "name": "a",
+                "sourceLocation": {
+                  "start": {
+                    "line": 46,
+                    "col": 16
+                  },
+                  "end": {
+                    "line": 46,
+                    "col": 17
+                  }
+                }
+              }
+            ],
+            "sourceLocation": {
+              "start": {
+                "line": 46,
+                "col": 11
+              },
+              "end": {
+                "line": 46,
+                "col": 17
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 46,
+            "col": 6
+          },
+          "end": {
+            "line": 46,
+            "col": 27
+          }
+        }
+      },
+      "expression": {
+        "tag": "FunctionApplication",
+        "function": {
+          "tag": "ExternalReference",
+          "module": "List",
+          "identifier": "map",
+          "sourceLocation": {
+            "start": {
+              "line": 48,
+              "col": 5
+            },
+            "end": {
+              "line": 48,
+              "col": 13
+            }
+          }
+        },
+        "arguments": [
+          {
+            "tag": "AnonymousFunction",
+            "parameters": [
+              {
+                "tag": "VariableDefinition",
+                "name": "myArgument",
+                "sourceLocation": {
+                  "start": {
+                    "line": 48,
+                    "col": 16
+                  },
+                  "end": {
+                    "line": 48,
+                    "col": 26
+                  }
+                }
+              }
+            ],
+            "body": {
+              "tag": "VariableReference",
+              "name": "def",
+              "sourceLocation": {
+                "start": {
+                  "line": 48,
+                  "col": 30
+                },
+                "end": {
+                  "line": 48,
+                  "col": 33
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 48,
+                "col": 14
+              },
+              "end": {
+                "line": 48,
+                "col": 34
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 48,
+            "col": 5
+          },
+          "end": {
+            "line": 48,
+            "col": 34
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 47,
+          "col": 1
+        },
+        "end": {
+          "line": 48,
+          "col": 34
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "g3",
+      "parameters": [],
+      "returnType": {
+        "tag": "FunctionType",
+        "returnType": {
+          "tag": "TypeReference",
+          "name": "List",
+          "module": null,
+          "arguments": [
+            {
+              "tag": "TypeVariable",
+              "name": "a",
+              "sourceLocation": {
+                "start": {
+                  "line": 51,
+                  "col": 26
+                },
+                "end": {
+                  "line": 51,
+                  "col": 27
+                }
+              }
+            }
+          ],
+          "sourceLocation": {
+            "start": {
+              "line": 51,
+              "col": 21
+            },
+            "end": {
+              "line": 51,
+              "col": 27
+            }
+          }
+        },
+        "argumentTypes": [
+          {
+            "tag": "TypeVariable",
+            "name": "a",
+            "sourceLocation": {
+              "start": {
+                "line": 51,
+                "col": 6
+              },
+              "end": {
+                "line": 51,
+                "col": 7
+              }
+            }
+          },
+          {
+            "tag": "TypeReference",
+            "name": "List",
+            "module": null,
+            "arguments": [
+              {
+                "tag": "TypeVariable",
+                "name": "a",
+                "sourceLocation": {
+                  "start": {
+                    "line": 51,
+                    "col": 16
+                  },
+                  "end": {
+                    "line": 51,
+                    "col": 17
+                  }
+                }
+              }
+            ],
+            "sourceLocation": {
+              "start": {
+                "line": 51,
+                "col": 11
+              },
+              "end": {
+                "line": 51,
+                "col": 17
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 51,
+            "col": 6
+          },
+          "end": {
+            "line": 51,
+            "col": 27
+          }
+        }
+      },
+      "expression": {
+        "tag": "AnonymousFunction",
+        "parameters": [
+          {
+            "tag": "VariableDefinition",
+            "name": "def",
+            "sourceLocation": {
+              "start": {
+                "line": 53,
+                "col": 6
+              },
+              "end": {
+                "line": 53,
+                "col": 9
+              }
+            }
+          }
+        ],
+        "body": {
+          "tag": "FunctionApplication",
+          "function": {
+            "tag": "ExternalReference",
+            "module": "List",
+            "identifier": "map",
+            "sourceLocation": {
+              "start": {
+                "line": 54,
+                "col": 9
+              },
+              "end": {
+                "line": 54,
+                "col": 17
+              }
+            }
+          },
+          "arguments": [
+            {
+              "tag": "AnonymousFunction",
+              "parameters": [
+                {
+                  "tag": "VariableDefinition",
+                  "name": "myArguuument",
+                  "sourceLocation": {
+                    "start": {
+                      "line": 54,
+                      "col": 20
+                    },
+                    "end": {
+                      "line": 54,
+                      "col": 32
+                    }
+                  }
+                }
+              ],
+              "body": {
+                "tag": "VariableReference",
+                "name": "def",
+                "sourceLocation": {
+                  "start": {
+                    "line": 54,
+                    "col": 36
+                  },
+                  "end": {
+                    "line": 54,
+                    "col": 39
+                  }
+                }
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 54,
+                  "col": 18
+                },
+                "end": {
+                  "line": 54,
+                  "col": 40
+                }
+              }
+            }
+          ],
+          "sourceLocation": {
+            "start": {
+              "line": 54,
+              "col": 9
+            },
+            "end": {
+              "line": 54,
+              "col": 40
+            }
+          }
+        },
+        "sourceLocation": {
+          "start": {
+            "line": 53,
+            "col": 5
+          },
+          "end": {
+            "line": 54,
+            "col": 40
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 52,
+          "col": 1
+        },
+        "end": {
+          "line": 54,
+          "col": 40
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "yellow",
+      "parameters": [],
+      "returnType": {
+        "tag": "TypeReference",
+        "name": "Color",
+        "module": null,
+        "arguments": [
+          {
+            "tag": "TypeReference",
+            "name": "Int",
+            "module": null,
+            "arguments": [],
+            "sourceLocation": {
+              "start": {
+                "line": 57,
+                "col": 16
+              },
+              "end": {
+                "line": 57,
+                "col": 19
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 57,
+            "col": 10
+          },
+          "end": {
+            "line": 57,
+            "col": 19
+          }
+        }
+      },
+      "expression": {
+        "tag": "FunctionApplication",
+        "function": {
+          "tag": "VariableReference",
+          "name": "Custom",
+          "sourceLocation": {
+            "start": {
+              "line": 59,
+              "col": 5
+            },
+            "end": {
+              "line": 59,
+              "col": 11
+            }
+          }
+        },
+        "arguments": [
+          {
+            "tag": "IntLiteral",
+            "value": 255,
+            "display": {
+              "representation": "DecimalInt"
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 59,
+                "col": 12
+              },
+              "end": {
+                "line": 59,
+                "col": 15
+              }
+            }
+          },
+          {
+            "tag": "IntLiteral",
+            "value": 255,
+            "display": {
+              "representation": "DecimalInt"
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 59,
+                "col": 16
+              },
+              "end": {
+                "line": 59,
+                "col": 19
+              }
+            }
+          },
+          {
+            "tag": "IntLiteral",
+            "value": 0,
+            "display": {
+              "representation": "DecimalInt"
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 59,
+                "col": 20
+              },
+              "end": {
+                "line": 59,
+                "col": 21
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 59,
+            "col": 5
+          },
+          "end": {
+            "line": 59,
+            "col": 21
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 58,
+          "col": 1
+        },
+        "end": {
+          "line": 59,
+          "col": 21
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "red",
+      "parameters": [],
+      "returnType": {
+        "tag": "TypeReference",
+        "name": "Color",
+        "module": null,
+        "arguments": [
+          {
+            "tag": "TypeVariable",
+            "name": "a",
+            "sourceLocation": {
+              "start": {
+                "line": 62,
+                "col": 13
+              },
+              "end": {
+                "line": 62,
+                "col": 14
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 62,
+            "col": 7
+          },
+          "end": {
+            "line": 62,
+            "col": 14
+          }
+        }
+      },
+      "expression": {
+        "tag": "VariableReference",
+        "name": "Red",
+        "sourceLocation": {
+          "start": {
+            "line": 64,
+            "col": 5
+          },
+          "end": {
+            "line": 64,
+            "col": 8
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 63,
+          "col": 1
+        },
+        "end": {
+          "line": 64,
+          "col": 8
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "match",
+      "parameters": [],
+      "returnType": {
+        "tag": "TypeReference",
+        "name": "Int",
+        "module": null,
+        "arguments": [],
+        "sourceLocation": {
+          "start": {
+            "line": 67,
+            "col": 9
+          },
+          "end": {
+            "line": 67,
+            "col": 12
+          }
+        }
+      },
+      "expression": {
+        "tag": "CaseExpression",
+        "subject": {
+          "tag": "FunctionApplication",
+          "function": {
+            "tag": "VariableReference",
+            "name": "Custom",
+            "sourceLocation": {
+              "start": {
+                "line": 69,
+                "col": 10
+              },
+              "end": {
+                "line": 69,
+                "col": 16
+              }
+            }
+          },
+          "arguments": [
+            {
+              "tag": "IntLiteral",
+              "value": 255,
+              "display": {
+                "representation": "DecimalInt"
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 69,
+                  "col": 17
+                },
+                "end": {
+                  "line": 69,
+                  "col": 20
+                }
+              }
+            },
+            {
+              "tag": "IntLiteral",
+              "value": 255,
+              "display": {
+                "representation": "DecimalInt"
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 69,
+                  "col": 21
+                },
+                "end": {
+                  "line": 69,
+                  "col": 24
+                }
+              }
+            },
+            {
+              "tag": "IntLiteral",
+              "value": 0,
+              "display": {
+                "representation": "DecimalInt"
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 69,
+                  "col": 25
+                },
+                "end": {
+                  "line": 69,
+                  "col": 26
+                }
+              }
+            }
+          ],
+          "sourceLocation": {
+            "start": {
+              "line": 69,
+              "col": 10
+            },
+            "end": {
+              "line": 69,
+              "col": 26
+            }
+          }
+        },
+        "branches": [
+          {
+            "pattern": {
+              "tag": "DataPattern",
+              "constructor": {
+                "tag": "VariableReference",
+                "name": "Red"
+              },
+              "arguments": [],
+              "sourceLocation": {
+                "start": {
+                  "line": 70,
+                  "col": 9
+                },
+                "end": {
+                  "line": 70,
+                  "col": 12
+                }
+              }
+            },
+            "body": {
+              "tag": "IntLiteral",
+              "value": 0,
+              "display": {
+                "representation": "DecimalInt"
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 71,
+                  "col": 13
+                },
+                "end": {
+                  "line": 71,
+                  "col": 14
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 70,
+                "col": 9
+              },
+              "end": {
+                "line": 71,
+                "col": 14
+              }
+            }
+          },
+          {
+            "pattern": {
+              "tag": "DataPattern",
+              "constructor": {
+                "tag": "VariableReference",
+                "name": "Green"
+              },
+              "arguments": [],
+              "sourceLocation": {
+                "start": {
+                  "line": 73,
+                  "col": 9
+                },
+                "end": {
+                  "line": 73,
+                  "col": 14
+                }
+              }
+            },
+            "body": {
+              "tag": "IntLiteral",
+              "value": 1,
+              "display": {
+                "representation": "DecimalInt"
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 74,
+                  "col": 13
+                },
+                "end": {
+                  "line": 74,
+                  "col": 14
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 71,
+                "col": 14
+              },
+              "end": {
+                "line": 74,
+                "col": 14
+              }
+            }
+          },
+          {
+            "pattern": {
+              "tag": "DataPattern",
+              "constructor": {
+                "tag": "VariableReference",
+                "name": "Blue"
+              },
+              "arguments": [],
+              "sourceLocation": {
+                "start": {
+                  "line": 76,
+                  "col": 9
+                },
+                "end": {
+                  "line": 76,
+                  "col": 13
+                }
+              }
+            },
+            "body": {
+              "tag": "IntLiteral",
+              "value": 2,
+              "display": {
+                "representation": "DecimalInt"
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 77,
+                  "col": 13
+                },
+                "end": {
+                  "line": 77,
+                  "col": 14
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 74,
+                "col": 14
+              },
+              "end": {
+                "line": 77,
+                "col": 14
+              }
+            }
+          },
+          {
+            "pattern": {
+              "tag": "DataPattern",
+              "constructor": {
+                "tag": "VariableReference",
+                "name": "Custom"
+              },
+              "arguments": [
+                {
+                  "tag": "VariableDefinition",
+                  "name": "a",
+                  "sourceLocation": {
+                    "start": {
+                      "line": 79,
+                      "col": 16
+                    },
+                    "end": {
+                      "line": 79,
+                      "col": 17
+                    }
+                  }
+                },
+                {
+                  "tag": "VariableDefinition",
+                  "name": "b",
+                  "sourceLocation": {
+                    "start": {
+                      "line": 79,
+                      "col": 18
+                    },
+                    "end": {
+                      "line": 79,
+                      "col": 19
+                    }
+                  }
+                },
+                {
+                  "tag": "VariableDefinition",
+                  "name": "c",
+                  "sourceLocation": {
+                    "start": {
+                      "line": 79,
+                      "col": 20
+                    },
+                    "end": {
+                      "line": 79,
+                      "col": 21
+                    }
+                  }
+                }
+              ],
+              "sourceLocation": {
+                "start": {
+                  "line": 79,
+                  "col": 9
+                },
+                "end": {
+                  "line": 79,
+                  "col": 21
+                }
+              }
+            },
+            "body": {
+              "tag": "FunctionApplication",
+              "function": {
+                "tag": "VariableReference",
+                "name": "+"
+              },
+              "arguments": [
+                {
+                  "tag": "FunctionApplication",
+                  "function": {
+                    "tag": "VariableReference",
+                    "name": "+"
+                  },
+                  "arguments": [
+                    {
+                      "tag": "VariableReference",
+                      "name": "a",
+                      "sourceLocation": {
+                        "start": {
+                          "line": 80,
+                          "col": 13
+                        },
+                        "end": {
+                          "line": 80,
+                          "col": 14
+                        }
+                      }
+                    },
+                    {
+                      "tag": "VariableReference",
+                      "name": "b",
+                      "sourceLocation": {
+                        "start": {
+                          "line": 80,
+                          "col": 17
+                        },
+                        "end": {
+                          "line": 80,
+                          "col": 18
+                        }
+                      }
+                    }
+                  ],
+                  "display": {
+                    "showAsInfix": true
+                  }
+                },
+                {
+                  "tag": "VariableReference",
+                  "name": "c",
+                  "sourceLocation": {
+                    "start": {
+                      "line": 80,
+                      "col": 21
+                    },
+                    "end": {
+                      "line": 80,
+                      "col": 22
+                    }
+                  }
+                }
+              ],
+              "display": {
+                "showAsInfix": true
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 80,
+                  "col": 13
+                },
+                "end": {
+                  "line": 80,
+                  "col": 22
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 77,
+                "col": 14
+              },
+              "end": {
+                "line": 80,
+                "col": 22
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 69,
+            "col": 5
+          },
+          "end": {
+            "line": 80,
+            "col": 22
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 68,
+          "col": 1
+        },
+        "end": {
+          "line": 80,
+          "col": 22
+        }
+      }
+    }
+  ]
+}
