@@ -50,7 +50,8 @@ let%expect_test "Syntax.elm parses correctly" =
   |> Common.parse_file_json
   |> show_definitions
   |> print_endline;
-  [%expect {|
+  [%expect
+    {|
     (type (Color a) (Red) (Green) (Blue) (Custom a a a))
     ----
     (f : (Int -> Int))
@@ -96,7 +97,8 @@ let%expect_test "List1.elm parses" =
   |> Common.parse_file_json
   |> show_definitions
   |> print_endline;
-  [%expect {|
+  [%expect
+    {|
     (type (B) (Fal) (Tru))
     (type (L a) (Nil) (Cons a (L a)))
     ----
@@ -140,7 +142,8 @@ let%expect_test "Sugar.elm parses" =
   |> Common.parse_file_json
   |> show_definitions
   |> print_endline;
-  [%expect {|
+  [%expect
+    {|
     ----
     (filter : ((a -> (Bool)) -> ((List a) -> (List a))))
     (map : ((a -> b) -> ((List a) -> (List b))))
