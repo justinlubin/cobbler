@@ -14,7 +14,6 @@ let norm : datatype_env -> typ_env -> env -> exp -> exp =
   |> inline env
   |> Exp.normalize sigma
   |> Fusion.fuse sigma
-  |> Fusion.pull_out_cases
   |> Exp.normalize sigma
 
 (* Grammar and expansion *)
@@ -86,7 +85,7 @@ let problem_of_definitions : datatype_env * typ_env * env -> problem =
   ; gamma
   ; env =
       String.Map.mapi env ~f:(fun ~key:name ~data:old_rhs ->
-          match Recursion_scheme.extract_cata sigma gamma env name with
+          match Recursion_scheme.rewrite sigma env name with
           | Some new_rhs -> new_rhs
           | None -> old_rhs)
   ; name = "main"
