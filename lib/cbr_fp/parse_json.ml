@@ -36,18 +36,16 @@ let rec typ_of_json : Json.t -> typ =
       Typ.build_arr domain codomain
   | s -> failwith (sprintf "unknown type tag '%s'" s)
 
-(* Patterns *)
+(* Variable parsing *)
 
-let pat_of_json : Json.t -> string =
+let pvar_of_json : Json.t -> string =
  fun j ->
   match j |> J.member "tag" |> J.to_string with
   | "VariableDefinition" -> j |> J.member "name" |> J.to_string
   | "AnythingPattern" -> Util.gensym "wildcard"
-  | s -> failwith (sprintf "unknown pattern tag '%s'" s)
+  | s -> failwith (sprintf "unknown variable pattern tag '%s'" s)
 
-(* Expressions *)
-
-let var_of_json : Json.t -> string =
+let evar_of_json : Json.t -> string =
  fun j ->
   match j |> J.member "tag" |> J.to_string with
   | "VariableReference" -> j |> J.member "name" |> J.to_string
@@ -55,20 +53,30 @@ let var_of_json : Json.t -> string =
       let m = j |> J.member "module" |> J.to_string in
       let i = j |> J.member "identifier" |> J.to_string in
       sprintf "%s.%s" m i
-  | s -> failwith (sprintf "unknown variable tag '%s'" s)
+  | s -> failwith (sprintf "unknown expression variable tag '%s'" s)
+
+(* Patterns *)
+
+let pctor_of_json : Json.t -> string * string list =
+ fun j ->
+  match j |> J.member "tag" |> J.to_string with
+  | "DataPattern" ->
+      ( j |> J.member "constructor" |> evar_of_json
+      , j |> J.member "arguments" |> J.to_list |> List.map ~f:pvar_of_json )
+  | "ListPattern" ->
+      (match j |> J.member "prefix" |> J.to_list with
+      | [] -> ("Basics.Nil", [])
+      | [ hd ] -> ("Basics.Cons", [ j |> J.member "rest" |> pvar_of_json ])
+      | _ -> failwith (sprintf "nested list patterns unsupported"))
+  | s -> failwith (sprintf "unknown constructor pattern tag '%s'" s)
+
+(* Expressions *)
 
 let rec branch_of_json : Json.t -> branch =
  fun j ->
-  let pat = j |> J.member "pattern" in
-  match pat |> J.member "tag" |> J.to_string with
-  | "DataPattern" ->
-      let ctor = j |> J.member "constructor" |> var_of_json in
-      let params =
-        j |> J.member "arguments" |> J.to_list |> List.map ~f:pat_of_json
-      in
-      let rhs = j |> J.member "body" |> exp_of_json in
-      (ctor, (params, rhs))
-  | s -> failwith (sprintf "unknown branch pattern tag '%s'" s)
+  let ctor, params = j |> J.member "pattern" |> pctor_of_json in
+  let rhs = j |> J.member "body" |> exp_of_json in
+  (ctor, (params, rhs))
 
 and exp_of_json : Json.t -> exp =
  fun j ->
@@ -77,10 +85,10 @@ and exp_of_json : Json.t -> exp =
   | "FloatLiteral" -> EBase (BEFloat (j |> J.member "value" |> J.to_float))
   | "StringLiteral" -> EBase (BEString (j |> J.member "value" |> J.to_string))
   | "UnitLiteral" -> ECtor ("EUnit", [])
-  | "VariableReference" | "ExternalReference" -> EVar (var_of_json j)
+  | "VariableReference" | "ExternalReference" -> EVar (evar_of_json j)
   | "AnonymousFunction" ->
       let params =
-        j |> J.member "parameters" |> J.to_list |> List.map ~f:pat_of_json
+        j |> J.member "parameters" |> J.to_list |> List.map ~f:pvar_of_json
       in
       let body = j |> J.member "body" |> exp_of_json in
       Exp.build_abs params body
@@ -96,7 +104,15 @@ and exp_of_json : Json.t -> exp =
       in
       (match j |> J.member "function" |> exp_of_json with
       | EVar c when is_constructor c -> ECtor (c, args)
+      | EVar "::" -> ECtor ("Basics.Cons", args)
       | head -> Exp.build_app head args)
+  | "ListLiteral" ->
+      j
+      |> J.member "terms"
+      |> J.to_list
+      |> List.fold_right
+           ~init:(ECtor ("Basics.Nil", []))
+           ~f:(fun e acc -> ECtor ("Basics.Cons", [ exp_of_json e; acc ]))
   | s -> failwith (sprintf "unknown expression tag '%s'" s)
 
 (* Definitions *)
@@ -112,7 +128,7 @@ let variant_of_json : Json.t -> string * typ list =
 
 let param_of_json : Json.t -> string * typ =
  fun j ->
-  (j |> J.member "pattern" |> pat_of_json, j |> J.member "type" |> typ_of_json)
+  (j |> J.member "pattern" |> pvar_of_json, j |> J.member "type" |> typ_of_json)
 
 let definition_of_json : Json.t -> definition =
  fun j ->
@@ -135,11 +151,17 @@ let definition_of_json : Json.t -> definition =
         |> List.map ~f:param_of_json
         |> List.unzip
       in
-      let codomain = j |> J.member "returnType" |> typ_of_json in
-      let tau = Typ.build_arr domain codomain in
-      let rhs = j |> J.member "expression" |> exp_of_json in
-      let body = Exp.build_abs params rhs in
-      VariableDefinition (name, tau, body)
+      (match j |> J.member "returnType" |> J.to_option typ_of_json with
+      | Some codomain ->
+          let tau = Typ.build_arr domain codomain in
+          let rhs = j |> J.member "expression" |> exp_of_json in
+          let body = Exp.build_abs params rhs in
+          VariableDefinition (name, tau, body)
+      | None ->
+          failwith
+            (sprintf
+               "missing type declaration for top-level definition '%s'"
+               name))
   | s -> failwith (sprintf "unknown definition tag '%s'" s)
 
 let merge_definitions : definition list -> datatype_env * typ_env * env =

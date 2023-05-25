@@ -1,6 +1,5 @@
 module Sugar exposing (..)
 
-
 map : (a -> b) -> List a -> List b
 map f xs =
     case xs of
