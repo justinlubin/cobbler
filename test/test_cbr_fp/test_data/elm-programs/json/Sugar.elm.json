@@ -1,0 +1,1548 @@
+{
+  "moduleName": "Sugar",
+  "imports": {},
+  "body": [
+    {
+      "tag": "Definition",
+      "name": "map",
+      "parameters": [
+        {
+          "pattern": {
+            "tag": "VariableDefinition",
+            "name": "f",
+            "sourceLocation": {
+              "start": {
+                "line": 5,
+                "col": 5
+              },
+              "end": {
+                "line": 5,
+                "col": 6
+              }
+            }
+          },
+          "type": {
+            "tag": "FunctionType",
+            "returnType": {
+              "tag": "TypeVariable",
+              "name": "b",
+              "sourceLocation": {
+                "start": {
+                  "line": 4,
+                  "col": 13
+                },
+                "end": {
+                  "line": 4,
+                  "col": 14
+                }
+              }
+            },
+            "argumentTypes": [
+              {
+                "tag": "TypeVariable",
+                "name": "a",
+                "sourceLocation": {
+                  "start": {
+                    "line": 4,
+                    "col": 8
+                  },
+                  "end": {
+                    "line": 4,
+                    "col": 9
+                  }
+                }
+              }
+            ],
+            "sourceLocation": {
+              "start": {
+                "line": 4,
+                "col": 7
+              },
+              "end": {
+                "line": 4,
+                "col": 15
+              }
+            }
+          }
+        },
+        {
+          "pattern": {
+            "tag": "VariableDefinition",
+            "name": "xs",
+            "sourceLocation": {
+              "start": {
+                "line": 5,
+                "col": 7
+              },
+              "end": {
+                "line": 5,
+                "col": 9
+              }
+            }
+          },
+          "type": {
+            "tag": "TypeReference",
+            "name": "List",
+            "module": null,
+            "arguments": [
+              {
+                "tag": "TypeVariable",
+                "name": "a",
+                "sourceLocation": {
+                  "start": {
+                    "line": 4,
+                    "col": 24
+                  },
+                  "end": {
+                    "line": 4,
+                    "col": 25
+                  }
+                }
+              }
+            ],
+            "sourceLocation": {
+              "start": {
+                "line": 4,
+                "col": 19
+              },
+              "end": {
+                "line": 4,
+                "col": 25
+              }
+            }
+          }
+        }
+      ],
+      "returnType": {
+        "tag": "TypeReference",
+        "name": "List",
+        "module": null,
+        "arguments": [
+          {
+            "tag": "TypeVariable",
+            "name": "b",
+            "sourceLocation": {
+              "start": {
+                "line": 4,
+                "col": 34
+              },
+              "end": {
+                "line": 4,
+                "col": 35
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 4,
+            "col": 29
+          },
+          "end": {
+            "line": 4,
+            "col": 35
+          }
+        }
+      },
+      "expression": {
+        "tag": "CaseExpression",
+        "subject": {
+          "tag": "VariableReference",
+          "name": "xs",
+          "sourceLocation": {
+            "start": {
+              "line": 6,
+              "col": 10
+            },
+            "end": {
+              "line": 6,
+              "col": 12
+            }
+          }
+        },
+        "branches": [
+          {
+            "pattern": {
+              "tag": "ListPattern",
+              "prefix": [],
+              "rest": null,
+              "sourceLocation": {
+                "start": {
+                  "line": 7,
+                  "col": 9
+                },
+                "end": {
+                  "line": 7,
+                  "col": 11
+                }
+              }
+            },
+            "body": {
+              "tag": "ListLiteral",
+              "terms": [],
+              "sourceLocation": {
+                "start": {
+                  "line": 8,
+                  "col": 13
+                },
+                "end": {
+                  "line": 8,
+                  "col": 15
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 7,
+                "col": 9
+              },
+              "end": {
+                "line": 8,
+                "col": 15
+              }
+            }
+          },
+          {
+            "pattern": {
+              "tag": "ListPattern",
+              "prefix": [
+                {
+                  "tag": "VariableDefinition",
+                  "name": "hd",
+                  "sourceLocation": {
+                    "start": {
+                      "line": 10,
+                      "col": 9
+                    },
+                    "end": {
+                      "line": 10,
+                      "col": 11
+                    }
+                  }
+                }
+              ],
+              "rest": {
+                "tag": "VariableDefinition",
+                "name": "tl",
+                "sourceLocation": {
+                  "start": {
+                    "line": 10,
+                    "col": 15
+                  },
+                  "end": {
+                    "line": 10,
+                    "col": 17
+                  }
+                }
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 10,
+                  "col": 9
+                },
+                "end": {
+                  "line": 10,
+                  "col": 17
+                }
+              }
+            },
+            "body": {
+              "tag": "FunctionApplication",
+              "function": {
+                "tag": "VariableReference",
+                "name": "::"
+              },
+              "arguments": [
+                {
+                  "tag": "FunctionApplication",
+                  "function": {
+                    "tag": "VariableReference",
+                    "name": "f",
+                    "sourceLocation": {
+                      "start": {
+                        "line": 11,
+                        "col": 13
+                      },
+                      "end": {
+                        "line": 11,
+                        "col": 14
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "tag": "VariableReference",
+                      "name": "hd",
+                      "sourceLocation": {
+                        "start": {
+                          "line": 11,
+                          "col": 15
+                        },
+                        "end": {
+                          "line": 11,
+                          "col": 17
+                        }
+                      }
+                    }
+                  ],
+                  "sourceLocation": {
+                    "start": {
+                      "line": 11,
+                      "col": 13
+                    },
+                    "end": {
+                      "line": 11,
+                      "col": 17
+                    }
+                  }
+                },
+                {
+                  "tag": "FunctionApplication",
+                  "function": {
+                    "tag": "VariableReference",
+                    "name": "map",
+                    "sourceLocation": {
+                      "start": {
+                        "line": 11,
+                        "col": 21
+                      },
+                      "end": {
+                        "line": 11,
+                        "col": 24
+                      }
+                    }
+                  },
+                  "arguments": [
+                    {
+                      "tag": "VariableReference",
+                      "name": "f",
+                      "sourceLocation": {
+                        "start": {
+                          "line": 11,
+                          "col": 25
+                        },
+                        "end": {
+                          "line": 11,
+                          "col": 26
+                        }
+                      }
+                    },
+                    {
+                      "tag": "VariableReference",
+                      "name": "tl",
+                      "sourceLocation": {
+                        "start": {
+                          "line": 11,
+                          "col": 27
+                        },
+                        "end": {
+                          "line": 11,
+                          "col": 29
+                        }
+                      }
+                    }
+                  ],
+                  "sourceLocation": {
+                    "start": {
+                      "line": 11,
+                      "col": 21
+                    },
+                    "end": {
+                      "line": 11,
+                      "col": 29
+                    }
+                  }
+                }
+              ],
+              "display": {
+                "showAsInfix": true
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 11,
+                  "col": 13
+                },
+                "end": {
+                  "line": 11,
+                  "col": 29
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 8,
+                "col": 15
+              },
+              "end": {
+                "line": 11,
+                "col": 29
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 6,
+            "col": 5
+          },
+          "end": {
+            "line": 11,
+            "col": 29
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 5,
+          "col": 1
+        },
+        "end": {
+          "line": 11,
+          "col": 29
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "filter",
+      "parameters": [
+        {
+          "pattern": {
+            "tag": "VariableDefinition",
+            "name": "pred",
+            "sourceLocation": {
+              "start": {
+                "line": 15,
+                "col": 8
+              },
+              "end": {
+                "line": 15,
+                "col": 12
+              }
+            }
+          },
+          "type": {
+            "tag": "FunctionType",
+            "returnType": {
+              "tag": "TypeReference",
+              "name": "Bool",
+              "module": null,
+              "arguments": [],
+              "sourceLocation": {
+                "start": {
+                  "line": 14,
+                  "col": 16
+                },
+                "end": {
+                  "line": 14,
+                  "col": 20
+                }
+              }
+            },
+            "argumentTypes": [
+              {
+                "tag": "TypeVariable",
+                "name": "a",
+                "sourceLocation": {
+                  "start": {
+                    "line": 14,
+                    "col": 11
+                  },
+                  "end": {
+                    "line": 14,
+                    "col": 12
+                  }
+                }
+              }
+            ],
+            "sourceLocation": {
+              "start": {
+                "line": 14,
+                "col": 10
+              },
+              "end": {
+                "line": 14,
+                "col": 21
+              }
+            }
+          }
+        },
+        {
+          "pattern": {
+            "tag": "VariableDefinition",
+            "name": "xs",
+            "sourceLocation": {
+              "start": {
+                "line": 15,
+                "col": 13
+              },
+              "end": {
+                "line": 15,
+                "col": 15
+              }
+            }
+          },
+          "type": {
+            "tag": "TypeReference",
+            "name": "List",
+            "module": null,
+            "arguments": [
+              {
+                "tag": "TypeVariable",
+                "name": "a",
+                "sourceLocation": {
+                  "start": {
+                    "line": 14,
+                    "col": 30
+                  },
+                  "end": {
+                    "line": 14,
+                    "col": 31
+                  }
+                }
+              }
+            ],
+            "sourceLocation": {
+              "start": {
+                "line": 14,
+                "col": 25
+              },
+              "end": {
+                "line": 14,
+                "col": 31
+              }
+            }
+          }
+        }
+      ],
+      "returnType": {
+        "tag": "TypeReference",
+        "name": "List",
+        "module": null,
+        "arguments": [
+          {
+            "tag": "TypeVariable",
+            "name": "a",
+            "sourceLocation": {
+              "start": {
+                "line": 14,
+                "col": 40
+              },
+              "end": {
+                "line": 14,
+                "col": 41
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 14,
+            "col": 35
+          },
+          "end": {
+            "line": 14,
+            "col": 41
+          }
+        }
+      },
+      "expression": {
+        "tag": "CaseExpression",
+        "subject": {
+          "tag": "VariableReference",
+          "name": "xs",
+          "sourceLocation": {
+            "start": {
+              "line": 16,
+              "col": 10
+            },
+            "end": {
+              "line": 16,
+              "col": 12
+            }
+          }
+        },
+        "branches": [
+          {
+            "pattern": {
+              "tag": "ListPattern",
+              "prefix": [],
+              "rest": null,
+              "sourceLocation": {
+                "start": {
+                  "line": 17,
+                  "col": 9
+                },
+                "end": {
+                  "line": 17,
+                  "col": 11
+                }
+              }
+            },
+            "body": {
+              "tag": "ListLiteral",
+              "terms": [],
+              "sourceLocation": {
+                "start": {
+                  "line": 18,
+                  "col": 13
+                },
+                "end": {
+                  "line": 18,
+                  "col": 15
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 17,
+                "col": 9
+              },
+              "end": {
+                "line": 18,
+                "col": 15
+              }
+            }
+          },
+          {
+            "pattern": {
+              "tag": "ListPattern",
+              "prefix": [
+                {
+                  "tag": "VariableDefinition",
+                  "name": "hd",
+                  "sourceLocation": {
+                    "start": {
+                      "line": 20,
+                      "col": 9
+                    },
+                    "end": {
+                      "line": 20,
+                      "col": 11
+                    }
+                  }
+                }
+              ],
+              "rest": {
+                "tag": "VariableDefinition",
+                "name": "tl",
+                "sourceLocation": {
+                  "start": {
+                    "line": 20,
+                    "col": 15
+                  },
+                  "end": {
+                    "line": 20,
+                    "col": 17
+                  }
+                }
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 20,
+                  "col": 9
+                },
+                "end": {
+                  "line": 20,
+                  "col": 17
+                }
+              }
+            },
+            "body": {
+              "tag": "CaseExpression",
+              "subject": {
+                "tag": "FunctionApplication",
+                "function": {
+                  "tag": "VariableReference",
+                  "name": "pred",
+                  "sourceLocation": {
+                    "start": {
+                      "line": 21,
+                      "col": 16
+                    },
+                    "end": {
+                      "line": 21,
+                      "col": 20
+                    }
+                  }
+                },
+                "arguments": [
+                  {
+                    "tag": "VariableReference",
+                    "name": "hd",
+                    "sourceLocation": {
+                      "start": {
+                        "line": 21,
+                        "col": 21
+                      },
+                      "end": {
+                        "line": 21,
+                        "col": 23
+                      }
+                    }
+                  }
+                ],
+                "sourceLocation": {
+                  "start": {
+                    "line": 21,
+                    "col": 16
+                  },
+                  "end": {
+                    "line": 21,
+                    "col": 23
+                  }
+                }
+              },
+              "branches": [
+                {
+                  "pattern": {
+                    "tag": "DataPattern",
+                    "constructor": {
+                      "tag": "ExternalReference",
+                      "module": "Basics",
+                      "identifier": "True"
+                    },
+                    "arguments": []
+                  },
+                  "body": {
+                    "tag": "FunctionApplication",
+                    "function": {
+                      "tag": "VariableReference",
+                      "name": "filter",
+                      "sourceLocation": {
+                        "start": {
+                          "line": 22,
+                          "col": 17
+                        },
+                        "end": {
+                          "line": 22,
+                          "col": 23
+                        }
+                      }
+                    },
+                    "arguments": [
+                      {
+                        "tag": "VariableReference",
+                        "name": "pred",
+                        "sourceLocation": {
+                          "start": {
+                            "line": 22,
+                            "col": 24
+                          },
+                          "end": {
+                            "line": 22,
+                            "col": 28
+                          }
+                        }
+                      },
+                      {
+                        "tag": "VariableReference",
+                        "name": "tl",
+                        "sourceLocation": {
+                          "start": {
+                            "line": 22,
+                            "col": 29
+                          },
+                          "end": {
+                            "line": 22,
+                            "col": 31
+                          }
+                        }
+                      }
+                    ],
+                    "sourceLocation": {
+                      "start": {
+                        "line": 22,
+                        "col": 17
+                      },
+                      "end": {
+                        "line": 22,
+                        "col": 31
+                      }
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "tag": "DataPattern",
+                    "constructor": {
+                      "tag": "ExternalReference",
+                      "module": "Basics",
+                      "identifier": "False"
+                    },
+                    "arguments": []
+                  },
+                  "body": {
+                    "tag": "FunctionApplication",
+                    "function": {
+                      "tag": "VariableReference",
+                      "name": "::"
+                    },
+                    "arguments": [
+                      {
+                        "tag": "VariableReference",
+                        "name": "hd",
+                        "sourceLocation": {
+                          "start": {
+                            "line": 25,
+                            "col": 17
+                          },
+                          "end": {
+                            "line": 25,
+                            "col": 19
+                          }
+                        }
+                      },
+                      {
+                        "tag": "FunctionApplication",
+                        "function": {
+                          "tag": "VariableReference",
+                          "name": "filter",
+                          "sourceLocation": {
+                            "start": {
+                              "line": 25,
+                              "col": 23
+                            },
+                            "end": {
+                              "line": 25,
+                              "col": 29
+                            }
+                          }
+                        },
+                        "arguments": [
+                          {
+                            "tag": "VariableReference",
+                            "name": "pred",
+                            "sourceLocation": {
+                              "start": {
+                                "line": 25,
+                                "col": 30
+                              },
+                              "end": {
+                                "line": 25,
+                                "col": 34
+                              }
+                            }
+                          },
+                          {
+                            "tag": "VariableReference",
+                            "name": "tl",
+                            "sourceLocation": {
+                              "start": {
+                                "line": 25,
+                                "col": 35
+                              },
+                              "end": {
+                                "line": 25,
+                                "col": 37
+                              }
+                            }
+                          }
+                        ],
+                        "sourceLocation": {
+                          "start": {
+                            "line": 25,
+                            "col": 23
+                          },
+                          "end": {
+                            "line": 25,
+                            "col": 37
+                          }
+                        }
+                      }
+                    ],
+                    "display": {
+                      "showAsInfix": true
+                    },
+                    "sourceLocation": {
+                      "start": {
+                        "line": 25,
+                        "col": 17
+                      },
+                      "end": {
+                        "line": 25,
+                        "col": 37
+                      }
+                    }
+                  }
+                }
+              ],
+              "display": {
+                "showAsIf": true
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 21,
+                  "col": 13
+                },
+                "end": {
+                  "line": 25,
+                  "col": 37
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 18,
+                "col": 15
+              },
+              "end": {
+                "line": 25,
+                "col": 37
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 16,
+            "col": 5
+          },
+          "end": {
+            "line": 25,
+            "col": 37
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 15,
+          "col": 1
+        },
+        "end": {
+          "line": 25,
+          "col": 37
+        }
+      }
+    },
+    {
+      "tag": "Definition",
+      "name": "target",
+      "parameters": [
+        {
+          "pattern": {
+            "tag": "VariableDefinition",
+            "name": "pred",
+            "sourceLocation": {
+              "start": {
+                "line": 29,
+                "col": 8
+              },
+              "end": {
+                "line": 29,
+                "col": 12
+              }
+            }
+          },
+          "type": {
+            "tag": "FunctionType",
+            "returnType": {
+              "tag": "TypeReference",
+              "name": "Bool",
+              "module": null,
+              "arguments": [],
+              "sourceLocation": {
+                "start": {
+                  "line": 28,
+                  "col": 16
+                },
+                "end": {
+                  "line": 28,
+                  "col": 20
+                }
+              }
+            },
+            "argumentTypes": [
+              {
+                "tag": "TypeVariable",
+                "name": "a",
+                "sourceLocation": {
+                  "start": {
+                    "line": 28,
+                    "col": 11
+                  },
+                  "end": {
+                    "line": 28,
+                    "col": 12
+                  }
+                }
+              }
+            ],
+            "sourceLocation": {
+              "start": {
+                "line": 28,
+                "col": 10
+              },
+              "end": {
+                "line": 28,
+                "col": 21
+              }
+            }
+          }
+        },
+        {
+          "pattern": {
+            "tag": "VariableDefinition",
+            "name": "f",
+            "sourceLocation": {
+              "start": {
+                "line": 29,
+                "col": 13
+              },
+              "end": {
+                "line": 29,
+                "col": 14
+              }
+            }
+          },
+          "type": {
+            "tag": "FunctionType",
+            "returnType": {
+              "tag": "TypeVariable",
+              "name": "b",
+              "sourceLocation": {
+                "start": {
+                  "line": 28,
+                  "col": 31
+                },
+                "end": {
+                  "line": 28,
+                  "col": 32
+                }
+              }
+            },
+            "argumentTypes": [
+              {
+                "tag": "TypeVariable",
+                "name": "a",
+                "sourceLocation": {
+                  "start": {
+                    "line": 28,
+                    "col": 26
+                  },
+                  "end": {
+                    "line": 28,
+                    "col": 27
+                  }
+                }
+              }
+            ],
+            "sourceLocation": {
+              "start": {
+                "line": 28,
+                "col": 25
+              },
+              "end": {
+                "line": 28,
+                "col": 33
+              }
+            }
+          }
+        },
+        {
+          "pattern": {
+            "tag": "VariableDefinition",
+            "name": "xs",
+            "sourceLocation": {
+              "start": {
+                "line": 29,
+                "col": 15
+              },
+              "end": {
+                "line": 29,
+                "col": 17
+              }
+            }
+          },
+          "type": {
+            "tag": "TypeReference",
+            "name": "List",
+            "module": null,
+            "arguments": [
+              {
+                "tag": "TypeVariable",
+                "name": "a",
+                "sourceLocation": {
+                  "start": {
+                    "line": 28,
+                    "col": 42
+                  },
+                  "end": {
+                    "line": 28,
+                    "col": 43
+                  }
+                }
+              }
+            ],
+            "sourceLocation": {
+              "start": {
+                "line": 28,
+                "col": 37
+              },
+              "end": {
+                "line": 28,
+                "col": 43
+              }
+            }
+          }
+        }
+      ],
+      "returnType": {
+        "tag": "TypeReference",
+        "name": "List",
+        "module": null,
+        "arguments": [
+          {
+            "tag": "TypeVariable",
+            "name": "b",
+            "sourceLocation": {
+              "start": {
+                "line": 28,
+                "col": 52
+              },
+              "end": {
+                "line": 28,
+                "col": 53
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 28,
+            "col": 47
+          },
+          "end": {
+            "line": 28,
+            "col": 53
+          }
+        }
+      },
+      "expression": {
+        "tag": "CaseExpression",
+        "subject": {
+          "tag": "VariableReference",
+          "name": "xs",
+          "sourceLocation": {
+            "start": {
+              "line": 30,
+              "col": 10
+            },
+            "end": {
+              "line": 30,
+              "col": 12
+            }
+          }
+        },
+        "branches": [
+          {
+            "pattern": {
+              "tag": "ListPattern",
+              "prefix": [],
+              "rest": null,
+              "sourceLocation": {
+                "start": {
+                  "line": 31,
+                  "col": 9
+                },
+                "end": {
+                  "line": 31,
+                  "col": 11
+                }
+              }
+            },
+            "body": {
+              "tag": "ListLiteral",
+              "terms": [],
+              "sourceLocation": {
+                "start": {
+                  "line": 32,
+                  "col": 13
+                },
+                "end": {
+                  "line": 32,
+                  "col": 15
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 31,
+                "col": 9
+              },
+              "end": {
+                "line": 32,
+                "col": 15
+              }
+            }
+          },
+          {
+            "pattern": {
+              "tag": "ListPattern",
+              "prefix": [
+                {
+                  "tag": "VariableDefinition",
+                  "name": "hd",
+                  "sourceLocation": {
+                    "start": {
+                      "line": 34,
+                      "col": 9
+                    },
+                    "end": {
+                      "line": 34,
+                      "col": 11
+                    }
+                  }
+                }
+              ],
+              "rest": {
+                "tag": "VariableDefinition",
+                "name": "tl",
+                "sourceLocation": {
+                  "start": {
+                    "line": 34,
+                    "col": 15
+                  },
+                  "end": {
+                    "line": 34,
+                    "col": 17
+                  }
+                }
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 34,
+                  "col": 9
+                },
+                "end": {
+                  "line": 34,
+                  "col": 17
+                }
+              }
+            },
+            "body": {
+              "tag": "CaseExpression",
+              "subject": {
+                "tag": "FunctionApplication",
+                "function": {
+                  "tag": "VariableReference",
+                  "name": "pred",
+                  "sourceLocation": {
+                    "start": {
+                      "line": 35,
+                      "col": 16
+                    },
+                    "end": {
+                      "line": 35,
+                      "col": 20
+                    }
+                  }
+                },
+                "arguments": [
+                  {
+                    "tag": "VariableReference",
+                    "name": "hd",
+                    "sourceLocation": {
+                      "start": {
+                        "line": 35,
+                        "col": 21
+                      },
+                      "end": {
+                        "line": 35,
+                        "col": 23
+                      }
+                    }
+                  }
+                ],
+                "sourceLocation": {
+                  "start": {
+                    "line": 35,
+                    "col": 16
+                  },
+                  "end": {
+                    "line": 35,
+                    "col": 23
+                  }
+                }
+              },
+              "branches": [
+                {
+                  "pattern": {
+                    "tag": "DataPattern",
+                    "constructor": {
+                      "tag": "ExternalReference",
+                      "module": "Basics",
+                      "identifier": "True"
+                    },
+                    "arguments": []
+                  },
+                  "body": {
+                    "tag": "FunctionApplication",
+                    "function": {
+                      "tag": "VariableReference",
+                      "name": "target",
+                      "sourceLocation": {
+                        "start": {
+                          "line": 36,
+                          "col": 17
+                        },
+                        "end": {
+                          "line": 36,
+                          "col": 23
+                        }
+                      }
+                    },
+                    "arguments": [
+                      {
+                        "tag": "VariableReference",
+                        "name": "pred",
+                        "sourceLocation": {
+                          "start": {
+                            "line": 36,
+                            "col": 24
+                          },
+                          "end": {
+                            "line": 36,
+                            "col": 28
+                          }
+                        }
+                      },
+                      {
+                        "tag": "VariableReference",
+                        "name": "f",
+                        "sourceLocation": {
+                          "start": {
+                            "line": 36,
+                            "col": 29
+                          },
+                          "end": {
+                            "line": 36,
+                            "col": 30
+                          }
+                        }
+                      },
+                      {
+                        "tag": "VariableReference",
+                        "name": "tl",
+                        "sourceLocation": {
+                          "start": {
+                            "line": 36,
+                            "col": 31
+                          },
+                          "end": {
+                            "line": 36,
+                            "col": 33
+                          }
+                        }
+                      }
+                    ],
+                    "sourceLocation": {
+                      "start": {
+                        "line": 36,
+                        "col": 17
+                      },
+                      "end": {
+                        "line": 36,
+                        "col": 33
+                      }
+                    }
+                  }
+                },
+                {
+                  "pattern": {
+                    "tag": "DataPattern",
+                    "constructor": {
+                      "tag": "ExternalReference",
+                      "module": "Basics",
+                      "identifier": "False"
+                    },
+                    "arguments": []
+                  },
+                  "body": {
+                    "tag": "FunctionApplication",
+                    "function": {
+                      "tag": "VariableReference",
+                      "name": "::"
+                    },
+                    "arguments": [
+                      {
+                        "tag": "FunctionApplication",
+                        "function": {
+                          "tag": "VariableReference",
+                          "name": "f",
+                          "sourceLocation": {
+                            "start": {
+                              "line": 39,
+                              "col": 17
+                            },
+                            "end": {
+                              "line": 39,
+                              "col": 18
+                            }
+                          }
+                        },
+                        "arguments": [
+                          {
+                            "tag": "VariableReference",
+                            "name": "hd",
+                            "sourceLocation": {
+                              "start": {
+                                "line": 39,
+                                "col": 19
+                              },
+                              "end": {
+                                "line": 39,
+                                "col": 21
+                              }
+                            }
+                          }
+                        ],
+                        "sourceLocation": {
+                          "start": {
+                            "line": 39,
+                            "col": 17
+                          },
+                          "end": {
+                            "line": 39,
+                            "col": 21
+                          }
+                        }
+                      },
+                      {
+                        "tag": "FunctionApplication",
+                        "function": {
+                          "tag": "VariableReference",
+                          "name": "target",
+                          "sourceLocation": {
+                            "start": {
+                              "line": 39,
+                              "col": 25
+                            },
+                            "end": {
+                              "line": 39,
+                              "col": 31
+                            }
+                          }
+                        },
+                        "arguments": [
+                          {
+                            "tag": "VariableReference",
+                            "name": "pred",
+                            "sourceLocation": {
+                              "start": {
+                                "line": 39,
+                                "col": 32
+                              },
+                              "end": {
+                                "line": 39,
+                                "col": 36
+                              }
+                            }
+                          },
+                          {
+                            "tag": "VariableReference",
+                            "name": "f",
+                            "sourceLocation": {
+                              "start": {
+                                "line": 39,
+                                "col": 37
+                              },
+                              "end": {
+                                "line": 39,
+                                "col": 38
+                              }
+                            }
+                          },
+                          {
+                            "tag": "VariableReference",
+                            "name": "tl",
+                            "sourceLocation": {
+                              "start": {
+                                "line": 39,
+                                "col": 39
+                              },
+                              "end": {
+                                "line": 39,
+                                "col": 41
+                              }
+                            }
+                          }
+                        ],
+                        "sourceLocation": {
+                          "start": {
+                            "line": 39,
+                            "col": 25
+                          },
+                          "end": {
+                            "line": 39,
+                            "col": 41
+                          }
+                        }
+                      }
+                    ],
+                    "display": {
+                      "showAsInfix": true
+                    },
+                    "sourceLocation": {
+                      "start": {
+                        "line": 39,
+                        "col": 17
+                      },
+                      "end": {
+                        "line": 39,
+                        "col": 41
+                      }
+                    }
+                  }
+                }
+              ],
+              "display": {
+                "showAsIf": true
+              },
+              "sourceLocation": {
+                "start": {
+                  "line": 35,
+                  "col": 13
+                },
+                "end": {
+                  "line": 39,
+                  "col": 41
+                }
+              }
+            },
+            "sourceLocation": {
+              "start": {
+                "line": 32,
+                "col": 15
+              },
+              "end": {
+                "line": 39,
+                "col": 41
+              }
+            }
+          }
+        ],
+        "sourceLocation": {
+          "start": {
+            "line": 30,
+            "col": 5
+          },
+          "end": {
+            "line": 39,
+            "col": 41
+          }
+        }
+      },
+      "sourceLocation": {
+        "start": {
+          "line": 29,
+          "col": 1
+        },
+        "end": {
+          "line": 39,
+          "col": 41
+        }
+      }
+    }
+  ]
+}
