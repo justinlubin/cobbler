@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 from lib.cbr_numpy.parser import parse
+from lib.cbr_numpy.extractor import extract
 from timeit import default_timer as timer
 
 # benchmark cells of a single .ipynb file
@@ -25,7 +26,6 @@ def benchmark_nb(in_filepath, out_filepath, build=True):
             code = cell['source']
             stats = {}
             stats['orig code'] = code
-
             try:
                 orig_ast = ast.parse(code, mode='exec')
                 orig_ast_size = num_nodes(orig_ast)
@@ -60,7 +60,7 @@ def benchmark_nb(in_filepath, out_filepath, build=True):
                 code = code[:last_ln_i] + '\nreturn ' + code[last_ln_i + 1:]
 
                 # parse synthesis target
-                env, body = code.split('#synth')
+                env, body = extract(code)
                 sexp = parse(body)
 
                 # call synthesis from subprocess call
@@ -70,7 +70,10 @@ def benchmark_nb(in_filepath, out_filepath, build=True):
                 end = timer()
 
                 # add env back to synthesized code
-                synthed = env + synthed_body
+                if "no solution found" in synthed_body:
+                    synthed = "no solution found"
+                else:
+                    synthed = ast.unparse(env) + '\n' + synthed_body
 
                 stats['synthed code'] = synthed
                 stats['synth time'] = end - start
