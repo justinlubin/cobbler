@@ -2,11 +2,30 @@ import ast
 import re
 
 
-def parse(p):
-    tree = ast.parse(p)
+class SList():
+    def __init__(self, l):
+        self.l = l
+
+    def __str__(self):
+        return "(" + ' '.join([str(c) for c in self.l]) + ")"
+
+
+class SAtom():
+    def __init__(self, a):
+        self.a = a
+
+    def __str__(self):
+        return str(self.a)
+
+
+def parse_str(s: str) -> SList:
+    return parse(ast.parse(s))
+
+
+def parse(p: ast.AST) -> SList:
     parser = IRParser()
-    new_tree = parser.visit(tree)
-    return new_tree
+    sexp = parser.visit(p)
+    return sexp
 
 
 class UnsupportedNodeException(Exception):
@@ -156,19 +175,3 @@ class IRParser(ast.NodeVisitor):
     def generic_visit(self, node):
         name = self.getClassName(node)
         raise UnsupportedNodeException(name)
-
-
-class SList():
-    def __init__(self, l):
-        self.l = l
-
-    def __str__(self):
-        return "(" + ' '.join([str(c) for c in self.l]) + ")"
-
-
-class SAtom():
-    def __init__(self, a):
-        self.a = a
-
-    def __str__(self):
-        return str(self.a)

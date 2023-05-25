@@ -28,6 +28,11 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
+      - name: Install Python 
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11' 
+
       - name: Install OCaml dev dependencies
         run: make dev-deps
 
