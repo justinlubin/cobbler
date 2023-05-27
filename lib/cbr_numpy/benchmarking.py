@@ -1,5 +1,6 @@
 import ast
 import csv
+import contextlib
 import nbformat as nbf
 import numpy as np
 import os
@@ -9,23 +10,7 @@ from lib.cbr_numpy.parser import parse
 from lib.cbr_numpy.extractor import extract
 from timeit import default_timer as timer
 
-# benchmark cells of a single .ipynb file
-def benchmark_nb(in_filepath, out_filepath, build=True):
-    # build dune executable
-    if build:
-        subprocess.run(['dune', 'build', 'benchmark/main.exe'])
-
-    # parse jupyter notebook
-    notebook = nbf.read(in_filepath, nbf.NO_CONVERT)
-    all_stats = []
-
-    for cell in notebook['cells']:
-        if cell['cell_type'] == 'code':
-            stats = benchmark_cell(cell)
-            all_stats.append(stats)
-
-    # fields for csv
-    fields = ['cell name',
+CSV_FIELDS = ['cell name',
               'orig code',
               'orig output',
               'orig ast size',
@@ -38,25 +23,42 @@ def benchmark_nb(in_filepath, out_filepath, build=True):
               'outputs match?',
               'status']
 
-    # write to csv
-    with open(out_filepath, 'r+', newline='') as file:
-        writer = csv.DictWriter(file, fieldnames=fields, extrasaction='ignore')
-        writer.writeheader()
-        writer.writerows(all_stats)
+# benchmark cells of a single notebook
+def benchmark_nb(notebook, build=True):
+    # build dune executable
+    if build:
+        build_benchmark()
+    all_stats = []
+
+    for cell in notebook['cells']:
+        if cell['cell_type'] == 'code':
+            stats = benchmark_cell(cell)
+            all_stats.append(stats)
+
+    return all_stats
 
 # benchmark one cell
 def benchmark_cell(cell):
-    code = cell['source']
+    if type(cell['source']) == str:
+        code = cell['source']
+    elif type(cell['source']) == list:
+        code = '\n'.join(cell['source'])
+    else:
+        raise Exception('Cell source must be a string or a list')
+    
     stats = {}
-    stats['orig code'] = code
+    stats['orig code'] = code.replace('\n', '\\n')[:10000]
 
     # set cell name
-    if code[0] == '#':
+    if len(code) > 0 and code[0] == '#':
         cell_name = code[1:code.find('\n')]
         stats['cell name'] = cell_name
 
     # execute cell and eval last line
     try:
+        if 'input(' in code:
+            raise Exception('Cell cannot request user input')
+
         orig_ast = ast.parse(code, mode='exec')
         orig_ast_size = num_nodes(orig_ast)
         orig_output, orig_exec_time = exec_eval(orig_ast)
@@ -81,7 +83,7 @@ def benchmark_cell(cell):
     try:
         synthed, synth_time = synthesize(code, output_type)
 
-        stats['synthed code'] = synthed
+        stats['synthed code'] = synthed.replace('\n', '\\n')[:30000]
         stats['synth time'] = synth_time
     except:
         stats['status'] = 'SynthFail'
@@ -107,6 +109,9 @@ def benchmark_cell(cell):
     
     stats['status'] = 'Success'
     return stats
+
+def build_benchmark():
+    subprocess.run(['dune', 'build', 'benchmark/main.exe'])
 
 def is_num(x):
     return isinstance(x, int) or isinstance(x, float) or type(x) == np.dtype(int) or type(x) == np.dtype(float)
@@ -134,14 +139,16 @@ def exec_eval(tree):
     last = ast.Expression(tree.body.pop().value)
     _globals, _locals = {}, {}
 
-    # assume that numpy is imported as np
-    exec(compile("import numpy as np", '<string>', mode='exec'), _globals, _locals)
+    # disable IO
+    with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+        # assume that numpy is imported as np
+        exec(compile("import numpy as np", '<string>', mode='exec'), _globals, _locals)
 
-    # execute the cell and evaluate the last line
-    start = timer()
-    exec(compile(tree, '<string>', mode='exec'), _globals, _locals)
-    output = eval(compile(last, '<string>', mode='eval'), _globals, _locals)
-    end = timer()
+        # execute the cell and evaluate the last line
+        start = timer()
+        exec(compile(tree, '<string>', mode='exec'), _globals, _locals)
+        output = eval(compile(last, '<string>', mode='eval'), _globals, _locals)
+        end = timer()
 
     # return (output, execution time)
     return output, end - start
@@ -170,13 +177,24 @@ def synthesize(code, output_type="Number"):
     # return (synthesis output, synthesis time)
     return synthed, end - start
 
+# benchmark tests in data/benchmarking/targets.ipynb
 def main():
     sys.path.append("../..")
     dir = os.path.dirname(os.path.abspath(__file__))
     input_ipynb = os.path.join(dir, "data/benchmarking/targets.ipynb")
     output_csv = os.path.join(dir, "data/benchmarking/benchmarks.csv")
 
-    benchmark_nb(input_ipynb, output_csv)
+    # read .ipynb file
+    notebook = nbf.read(input_ipynb, nbf.NO_CONVERT)
+
+    all_stats = benchmark_nb(notebook)
+
+    # write to csv
+    with open(output_csv, 'w', newline='') as file:
+        file.truncate()
+        writer = csv.DictWriter(file, fieldnames=CSV_FIELDS, extrasaction='ignore')
+        writer.writeheader()
+        writer.writerows(all_stats)
 
 if __name__ == '__main__':
     main()
