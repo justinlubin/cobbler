@@ -1,3 +1,1 @@
-nbformat==5.8.0
-numpy==1.24.2
-setuptools==45.2.0
+tensorflow-cloud==0.1.12
