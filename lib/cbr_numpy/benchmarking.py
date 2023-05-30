@@ -15,7 +15,7 @@ from timeit import default_timer as timer
 def benchmark_nb(in_filepath, out_filepath, build=True):
     # build dune executable
     if build:
-        subprocess.run(['dune', 'build', 'benchmark/main.exe'])
+        subprocess.run(['dune', 'build', 'benchmark_np/main.exe'])
 
     # parse jupyter notebook
     notebook = nbf.read(in_filepath, nbf.NO_CONVERT)
@@ -66,7 +66,7 @@ def benchmark_nb(in_filepath, out_filepath, build=True):
                 # call synthesis from subprocess call
                 start = timer()
                 synthed_body = subprocess.check_output(
-                    './_build/default/benchmark/main.exe', input=output_type + '\n' + str(sexp), text=True)
+                    './_build/default/benchmark_np/main.exe', input=output_type + '\n' + str(sexp), text=True)
                 end = timer()
 
                 # add env back to synthesized code
