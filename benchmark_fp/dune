@@ -1,0 +1,4 @@
+(executable
+ (public_name benchmark_fp)
+ (name main)
+ (libraries cbr_fp))

@@ -51,6 +51,7 @@ watch-test:
 
 .PHONY: benchmark
 benchmark:
+	python3 lib/cbr_fp/benchmarking.py
 	python3 lib/cbr_numpy/benchmarking.py
 
 .PHONY: benchmark-db

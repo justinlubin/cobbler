@@ -24,6 +24,8 @@ CSV_FIELDS = ['cell name',
               'status']
 
 # benchmark cells of a single notebook
+
+
 def benchmark_nb(notebook, build=True):
     # build dune executable
     if build:
@@ -38,6 +40,8 @@ def benchmark_nb(notebook, build=True):
     return all_stats
 
 # benchmark one cell
+
+
 def benchmark_cell(cell):
     if type(cell['source']) == str:
         code = cell['source']
@@ -45,7 +49,7 @@ def benchmark_cell(cell):
         code = '\n'.join(cell['source'])
     else:
         raise Exception('Cell source must be a string or a list')
-    
+
     stats = {}
     stats['orig code'] = code.replace('\n', '\\n')[:10000]
 
@@ -78,7 +82,7 @@ def benchmark_cell(cell):
     else:
         stats['status'] = 'OutputTypeFail'
         return stats
-    
+
     # perform synthesis
     try:
         synthed, synth_time = synthesize(code, output_type)
@@ -88,7 +92,7 @@ def benchmark_cell(cell):
     except:
         stats['status'] = 'SynthFail'
         return stats
-    
+
     # execute synthesized code and eval last line
     try:
         synthed_ast = ast.parse(synthed, mode='exec')
@@ -101,25 +105,30 @@ def benchmark_cell(cell):
     except:
         stats['status'] = 'SynthedExecFail'
         return stats
-    
+
     if output_type == 'Number':
-            stats['outputs match?'] = synthed_output == orig_output
+        stats['outputs match?'] = synthed_output == orig_output
     elif output_type == 'Array':
         stats['outputs match?'] = np.array_equal(synthed_output, orig_output)
-    
+
     stats['status'] = 'Success'
     return stats
+
 
 def build_benchmark():
     subprocess.run(['dune', 'build', 'benchmark/main.exe'])
 
+
 def is_num(x):
     return isinstance(x, int) or isinstance(x, float) or type(x) == np.dtype(int) or type(x) == np.dtype(float)
 
+
 def is_num_array(x):
-    return isinstance(x, np.ndarray) and (x.dtype==np.dtype(int) or x.dtype==np.dtype(float))
+    return isinstance(x, np.ndarray) and (x.dtype == np.dtype(int) or x.dtype == np.dtype(float))
 
 # NodeVisitor that counts the total number of nodes in an AST
+
+
 class NodeCounter(ast.NodeVisitor):
     def __init__(self):
         self.count = 0
@@ -129,12 +138,16 @@ class NodeCounter(ast.NodeVisitor):
         ast.NodeVisitor.generic_visit(self, node)
 
 # compute number of nodes in an AST
+
+
 def num_nodes(tree):
     counter = NodeCounter()
     counter.visit(tree)
     return counter.count
 
 # execute a Python AST and eval the last line
+
+
 def exec_eval(tree):
     last = ast.Expression(tree.body.pop().value)
     _globals, _locals = {}, {}
@@ -142,18 +155,22 @@ def exec_eval(tree):
     # disable IO
     with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
         # assume that numpy is imported as np
-        exec(compile("import numpy as np", '<string>', mode='exec'), _globals, _locals)
+        exec(compile("import numpy as np", '<string>',
+             mode='exec'), _globals, _locals)
 
         # execute the cell and evaluate the last line
         start = timer()
         exec(compile(tree, '<string>', mode='exec'), _globals, _locals)
-        output = eval(compile(last, '<string>', mode='eval'), _globals, _locals)
+        output = eval(compile(last, '<string>', mode='eval'),
+                      _globals, _locals)
         end = timer()
 
     # return (output, execution time)
     return output, end - start
 
 # preproccess code and run synthesis
+
+
 def synthesize(code, output_type="Number"):
     # convert last line to return statement
     last_ln_i = code.rfind('\n')
@@ -165,7 +182,8 @@ def synthesize(code, output_type="Number"):
 
     # call synthesis from subprocess
     start = timer()
-    synthed_body = subprocess.check_output('./_build/default/benchmark/main.exe', input=output_type + '\n' + str(sexp), text=True)
+    synthed_body = subprocess.check_output(
+        './_build/default/benchmark/main.exe', input=output_type + '\n' + str(sexp), text=True)
     end = timer()
 
     # add env back to synthesized code
@@ -178,6 +196,8 @@ def synthesize(code, output_type="Number"):
     return synthed, end - start
 
 # benchmark tests in data/benchmarking/targets.ipynb
+
+
 def main():
     sys.path.append("../..")
     dir = os.path.dirname(os.path.abspath(__file__))
@@ -192,9 +212,11 @@ def main():
     # write to csv
     with open(output_csv, 'w', newline='') as file:
         file.truncate()
-        writer = csv.DictWriter(file, fieldnames=CSV_FIELDS, extrasaction='ignore')
+        writer = csv.DictWriter(
+            file, fieldnames=CSV_FIELDS, extrasaction='ignore')
         writer.writeheader()
         writer.writerows(all_stats)
+
 
 if __name__ == '__main__':
     main()
