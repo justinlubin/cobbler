@@ -39,6 +39,7 @@ def benchmark(input_fname, out_filepath):
             stats['synthed code'] = output
             end = timer()
             stats['synth time'] = end - start
+            stats['status'] = 'Success'
         except subprocess.CalledProcessError as e:
             err = e.stderr
             if "Yojson" in err:
