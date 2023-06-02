@@ -18,6 +18,7 @@ def load_dataset(n):
 
     # Run the command and pass the Python output as input
     try:
+        print(python_output)
         command = 'elm-format --stdin --json'
         shell_process = subprocess.Popen(
             command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
