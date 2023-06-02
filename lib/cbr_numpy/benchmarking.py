@@ -100,6 +100,7 @@ def benchmark_cell(cell):
             stats['status'] = 'SynthFail'
             # return stats
     '''
+
     # execute synthesized code and eval last line
     try:
         synthed_ast = ast.parse(synthed, mode='exec')
@@ -117,13 +118,14 @@ def benchmark_cell(cell):
         stats['outputs match?'] = synthed_output == orig_output
     elif output_type == 'Array':
         stats['outputs match?'] = np.array_equal(synthed_output, orig_output)
-    '''
 
+    '''
     return stats
 
 
 def build_benchmark():
     subprocess.run(['dune', 'build', 'benchmark_np/main.exe'])
+
 
 
 def is_num(x):
@@ -189,7 +191,9 @@ def synthesize(code, output_type="Number"):
     # call synthesis from subprocess
     start = timer()
     synthed_body = subprocess.check_output(
+
         './_build/default/benchmark_np/main.exe', input=output_type + '\n' + str(sexp), text=True)
+
     end = timer()
     print('test')
     # add env back to synthesized code

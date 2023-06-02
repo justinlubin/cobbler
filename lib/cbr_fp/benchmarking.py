@@ -43,6 +43,7 @@ def benchmark(input_fname, out_filepath):
         except subprocess.CalledProcessError as e:
             err = e.stderr
             if "Yojson" in err or "unknown" in err:
+
                 stats["status"] = "ParseFail"
             else:
                 stats["status"] = "SynthFail"
