@@ -59,6 +59,7 @@ def benchmark_cell(cell):
         stats['cell name'] = cell_name
 
     # execute cell and eval last line
+    '''
     try:
         if 'input(' in code:
             raise Exception('Cell cannot request user input')
@@ -82,16 +83,23 @@ def benchmark_cell(cell):
     else:
         stats['status'] = 'OutputTypeFail'
         return stats
-
+    '''
     # perform synthesis
-    try:
-        synthed, synth_time = synthesize(code, output_type)
+    for output_type in ["Number", "Array"]:
+        try:
 
-        stats['synthed code'] = synthed.replace('\n', '\\n')[:30000]
-        stats['synth time'] = synth_time
-    except:
-        stats['status'] = 'SynthFail'
-        return stats
+            synthed, synth_time = synthesize(code, output_type)
+
+            stats['synthed code'] = synthed.replace('\n', '\\n')[:30000]
+            stats['synth time'] = synth_time
+            if synthed == "no solution found":
+                stats['status'] = 'SynthFail'
+            else:
+                stats['status'] = 'Success'
+        except:
+            stats['status'] = 'SynthFail'
+            # return stats
+    '''
 
     # execute synthesized code and eval last line
     try:
@@ -111,12 +119,13 @@ def benchmark_cell(cell):
     elif output_type == 'Array':
         stats['outputs match?'] = np.array_equal(synthed_output, orig_output)
 
-    stats['status'] = 'Success'
+    '''
     return stats
 
 
 def build_benchmark():
-    subprocess.run(['dune', 'build', 'benchmark/main.exe'])
+    subprocess.run(['dune', 'build', 'benchmark_np/main.exe'])
+
 
 
 def is_num(x):
@@ -179,13 +188,14 @@ def synthesize(code, output_type="Number"):
     # parse synthesis target
     env, body = extract(code)
     sexp = parse(body)
-
     # call synthesis from subprocess
     start = timer()
     synthed_body = subprocess.check_output(
-        './_build/default/benchmark/main.exe', input=output_type + '\n' + str(sexp), text=True)
-    end = timer()
 
+        './_build/default/benchmark_np/main.exe', input=output_type + '\n' + str(sexp), text=True)
+
+    end = timer()
+    print('test')
     # add env back to synthesized code
     if "no solution found" in synthed_body:
         synthed = "no solution found"

@@ -119,7 +119,7 @@ and exp_of_json : Json.t -> exp =
 
 type definition =
   | CustomType of string * (string list * (string * typ list) list)
-  | VariableDefinition of string * typ * exp
+  | VariableDefinition of string * typ_scheme * exp
 
 let variant_of_json : Json.t -> string * typ list =
  fun j ->
@@ -129,6 +129,26 @@ let variant_of_json : Json.t -> string * typ list =
 let param_of_json : Json.t -> string * typ =
  fun j ->
   (j |> J.member "pattern" |> pvar_of_json, j |> J.member "type" |> typ_of_json)
+
+let variable_definition_of_json : Json.t -> string * typ_scheme * exp =
+ fun j ->
+  let name = j |> J.member "name" |> J.to_string in
+  let params, domain =
+    j
+    |> J.member "parameters"
+    |> J.to_list
+    |> List.map ~f:param_of_json
+    |> List.unzip
+  in
+  match j |> J.member "returnType" |> J.to_option typ_of_json with
+  | Some codomain ->
+      let tau = Typ.build_arr domain codomain |> Typ.generalize in
+      let rhs = j |> J.member "expression" |> exp_of_json in
+      let body = Exp.build_abs params rhs in
+      (name, tau, body)
+  | None ->
+      failwith
+        (sprintf "missing type declaration for top-level definition '%s'" name)
 
 let definition_of_json : Json.t -> definition =
  fun j ->
@@ -143,25 +163,8 @@ let definition_of_json : Json.t -> definition =
       in
       CustomType (dt, (params, variants))
   | "Definition" ->
-      let name = j |> J.member "name" |> J.to_string in
-      let params, domain =
-        j
-        |> J.member "parameters"
-        |> J.to_list
-        |> List.map ~f:param_of_json
-        |> List.unzip
-      in
-      (match j |> J.member "returnType" |> J.to_option typ_of_json with
-      | Some codomain ->
-          let tau = Typ.build_arr domain codomain in
-          let rhs = j |> J.member "expression" |> exp_of_json in
-          let body = Exp.build_abs params rhs in
-          VariableDefinition (name, tau, body)
-      | None ->
-          failwith
-            (sprintf
-               "missing type declaration for top-level definition '%s'"
-               name))
+      let s, t, e = variable_definition_of_json j in
+      VariableDefinition (s, t, e)
   | s -> failwith (sprintf "unknown definition tag '%s'" s)
 
 let merge_definitions : definition list -> datatype_env * typ_env * env =
@@ -174,7 +177,7 @@ let merge_definitions : definition list -> datatype_env * typ_env * env =
         (String.Map.add_exn sigma ~key:lhs ~data:rhs, gamma, env)
     | VariableDefinition (lhs, tau, body) ->
         ( sigma
-        , String.Map.add_exn gamma ~key:lhs ~data:([], tau)
+        , String.Map.add_exn gamma ~key:lhs ~data:tau
         , String.Map.add_exn env ~key:lhs ~data:body ))
 
 let definitions_of_json : Json.t -> datatype_env * typ_env * env =
@@ -189,6 +192,9 @@ let definitions_of_json : Json.t -> datatype_env * typ_env * env =
 
 let definitions : string -> datatype_env * typ_env * env =
  fun text -> text |> Json.from_string |> definitions_of_json
+
+let variable_definition : string -> string * typ_scheme * exp =
+ fun text -> text |> Json.from_string |> variable_definition_of_json
 
 let exp : string -> exp = fun text -> text |> Json.from_string |> exp_of_json
 let typ : string -> typ = fun text -> text |> Json.from_string |> typ_of_json
