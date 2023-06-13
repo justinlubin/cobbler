@@ -1,5 +1,0 @@
-(library
- (name cbr_fp)
- (libraries cbr_framework util core yojson)
- (preprocess
-  (pps ppx_jane ppx_deriving.ord ppx_deriving.eq ppx_deriving.show)))

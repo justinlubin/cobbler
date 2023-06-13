@@ -1,6 +1,0 @@
-(library
- (name test_util)
- (inline_tests)
- (libraries util core)
- (preprocess
-  (pps ppx_jane ppx_deriving.show ppx_deriving.ord)))

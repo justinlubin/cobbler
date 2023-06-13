@@ -1,8 +1,0 @@
-(library
- (name test_cbr_numpy)
- (inline_tests
-  (deps
-   (glob_files_rec test_data/*)))
- (libraries cbr_framework cbr_numpy core)
- (preprocess
-  (pps ppx_jane ppx_deriving.show ppx_deriving.ord)))

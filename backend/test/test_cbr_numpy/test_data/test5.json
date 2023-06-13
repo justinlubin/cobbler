@@ -1,0 +1,4 @@
+{
+    "body": "y = np.zeros(len(x) - window_size + 1)\nfor i in range(len(x) - window_size + 1):\n    s = 0\n    for j in range(window_size):\n        s += x[i + j]\n    y[i] = s / window_size\nreturn y",
+    "env": "x = np.arange(-5, 5)\nwindow_size = 3"
+}

@@ -1,0 +1,8 @@
+(library
+ (name test_cbr_fp)
+ (inline_tests
+  (deps
+   (glob_files_rec test_data/*)))
+ (libraries cbr_framework cbr_fp core)
+ (preprocess
+  (pps ppx_jane ppx_deriving.show ppx_deriving.ord)))
