@@ -34,32 +34,34 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Navigate to backend directory
-        run: cd backend
-
       - name: Install OCaml dev dependencies
+        working-directory: backend
         run: make dev-deps
 
       - name: Install OCaml dependencies
+        working-directory: backend
         run: make deps
 
       - name: Update shell environment for opam
+        working-directory: backend
         run: eval $(opam env)
 
       - name: Run OCaml autoformatter
+        working-directory: backend
         run: opam exec -- make fmt
 
       - name: Ensure OCaml autoformatter didn't change anything
+        working-directory: backend
         run: git diff --quiet
 
       - name: Run OCaml tests
+        working-directory: backend
         run: opam exec -- make test
 
-      - name: Navigate to frontend directory
-        run: cd ../front
-
       - name: Install Python dependencies
+        working-directory: frontend
         run: make deps
 
       - name: Run Python tests
+        working-directory: frontend
         run: make test
