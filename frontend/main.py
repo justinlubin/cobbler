@@ -112,6 +112,13 @@ if __name__ == "__main__":
         "--language",
         choices=["elm", "python"],
         required=True,
+        help="the language of the synthesizer to benchmark"
+    )
+    benchmark_parser.add_argument(
+        "--sample-limit",
+        type=int,
+        default=20,
+        help="the maximum number of samples (files) to draw from the database (default: 20)"
     )
     benchmark_parser.add_argument(
         "path_to_tsv",
@@ -129,6 +136,7 @@ if __name__ == "__main__":
         "--language",
         choices=["elm", "python"],
         required=True,
+        help="the language of the synthesizer to benchmark"
     )
     view_benchmark_parser.add_argument(
         "path_to_tsv",
@@ -151,14 +159,14 @@ if __name__ == "__main__":
                 path=args.path_to_tsv,
                 generator=db_iter.elm_json,
                 benchmarker=benchmark.elm_json,
-                sample_limit=20,
+                sample_limit=args.sample_limit,
             )
         if args.language == "python":
             benchmark_helper(
                 path=args.path_to_tsv,
                 generator=db_iter.python,
                 benchmarker=benchmark.python,
-                sample_limit=20,
+                sample_limit=args.sample_limit,
             )
     elif args.subcommand == "view-benchmark":
         view_benchmark_helper(
