@@ -42,10 +42,6 @@ def parse(p: ast.AST) -> SList:
 # Helper code
 
 
-class UnsupportedNodeException(Exception):
-    pass
-
-
 class UnsupportedFeatureException(Exception):
     pass
 
@@ -190,4 +186,4 @@ class IRParser(ast.NodeVisitor):
 
     def generic_visit(self, node):
         name = self.getClassName(node)
-        raise UnsupportedNodeException(name)
+        raise UnsupportedFeatureException(name)

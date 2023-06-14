@@ -7,7 +7,8 @@ class NoExtractionException(Exception):
 
 def elm_json(block):
     """Tries to extract a synthesis input from an Elm function/variable
-    definition; assumes that block.get('tag') == 'Definition'"""
+    definition; assumes that block.get('tag') == 'Definition'. Returns a string
+    that contains JSON."""
     if block["expression"]["tag"] == "CaseExpression":
         if block["expression"]["subject"]["tag"] == "VariableReference":
             v = block["expression"]["subject"]["name"]
@@ -27,7 +28,12 @@ def elm_json(block):
 
 def python(tree):
     """Tries to extract a synthesis input from a Python script, assuming that
-    it is represented as a Python AST object"""
+    it is represented as a Python AST object. Returns a pair of Python AST
+    objects (env, body)."""
+
+    if isinstance(tree, ast.Module) and len(tree.body) > 0:
+        tree.body[-1] = ast.Return(value=tree.body[-1])
+
     classifier = VarClassifier()
     classifier.visit(tree)
     if not classifier.found_for:
