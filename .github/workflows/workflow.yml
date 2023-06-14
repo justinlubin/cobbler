@@ -60,5 +60,8 @@ jobs:
       - name: Navigate to frontend directory
         run: cd ../front
 
+      - name: Install Python dependencies
+        run: make deps
+
       - name: Run Python tests
         run: make test
