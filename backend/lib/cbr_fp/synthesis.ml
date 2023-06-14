@@ -84,7 +84,7 @@ let problem_of_definitions : datatype_env * typ_env * env -> string -> problem =
   { sigma
   ; gamma
   ; env =
-      String.Map.mapi env ~f:(fun ~key:name ~data:old_rhs ->
+      Map.mapi env ~f:(fun ~key:name ~data:old_rhs ->
           match Recursion_scheme.rewrite sigma env name with
           | Some new_rhs -> new_rhs
           | None -> old_rhs)
@@ -95,9 +95,9 @@ let problem_of_definitions : datatype_env * typ_env * env -> string -> problem =
 
 let solve : use_unification:bool -> depth:int -> problem -> exp option =
  fun ~use_unification ~depth { sigma; gamma; env; name } ->
-  let reference = String.Map.find_exn env "main" in
+  let reference = Map.find_exn env "main" in
   let reference_domain, reference_codomain =
-    Typ.decompose_arr (Typ.instantiate (String.Map.find_exn gamma "main"))
+    Typ.decompose_arr (Typ.instantiate (Map.find_exn gamma "main"))
   in
   let reference_params, _ = Exp.decompose_abs reference in
   let normalized_reference = norm sigma gamma env reference in
@@ -109,7 +109,7 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
       normalized_reference_params
       reference_domain
       ~init:gamma
-      ~f:(fun acc x tau -> String.Map.update acc x ~f:(fun _ -> ([], tau)))
+      ~f:(fun acc x tau -> Map.update acc x ~f:(fun _ -> ([], tau)))
   in
   let normalized_reference_body_uniterm =
     Unification_adapter.to_unification_term
@@ -119,7 +119,7 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
   in
   let grammar =
     make_grammar
-      (String.Map.remove gamma "main")
+      (Map.remove gamma "main")
       (if use_unification
       then []
       else List.zip_exn reference_params reference_domain)

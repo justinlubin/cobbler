@@ -30,7 +30,7 @@ let%expect_test "list2 mapmap fusion" =
   in
   let mapmap =
     "mapmap"
-    |> String.Map.find_exn env_list2
+    |> Map.find_exn env_list2
     |> Exp.substitute ("map", map_foldr)
     |> Exp.normalize sigma_list2
   in
@@ -51,7 +51,7 @@ let%expect_test "list2 mapfilter fusion" =
   in
   let mapfilter =
     "mapfilter"
-    |> String.Map.find_exn env_list2
+    |> Map.find_exn env_list2
     |> Exp.substitute ("map", map_foldr)
     |> Exp.substitute ("filter", filter_foldr)
     |> Exp.normalize sigma_list2

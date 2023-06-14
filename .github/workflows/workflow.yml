@@ -52,9 +52,6 @@ jobs:
       - name: Ensure OCaml autoformatter didn't change anything
         run: git diff --quiet
 
-      - name: Run OCaml main executable
-        run: opam exec -- make exec
-
       - name: Run OCaml tests
         run: opam exec -- make test
 

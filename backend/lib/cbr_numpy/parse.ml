@@ -128,14 +128,14 @@ let sexp_of_defn : id * defn -> Sexp.t =
     ]
 
 let sexp_of_env : env -> Sexp.t =
- fun e -> Sexp.List (String.Map.to_alist e |> List.map ~f:sexp_of_defn)
+ fun e -> Sexp.List (Map.to_alist e |> List.map ~f:sexp_of_defn)
 
 let sexp_of_program : program -> Sexp.t =
  fun (env, block) -> Sexp.List [ sexp_of_env env; sexp_of_block block ]
 
 let sexp_of_substitutions : substitutions -> Sexp.t =
  fun subs ->
-  String.Map.to_alist subs
+  Map.to_alist subs
   |> List.sexp_of_t (fun (hole, e) ->
          Sexp.List [ Sexp.Atom hole; sexp_of_expr e ])
 

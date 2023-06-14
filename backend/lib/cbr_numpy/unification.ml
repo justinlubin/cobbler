@@ -12,8 +12,7 @@ let merge_option_skewed
   =
  fun sub1 sub2 ->
   match (sub1, sub2) with
-  | Some s1, Some s2 ->
-      Some (String.Map.merge_skewed s1 s2 ~combine:unique_hole_fail)
+  | Some s1, Some s2 -> Some (Map.merge_skewed s1 s2 ~combine:unique_hole_fail)
   | _ -> None
 
 let rec unify_expr
@@ -24,11 +23,9 @@ let rec unify_expr
   | None -> None
   | Some subs ->
       (match expr2 with
-      | Hole (_, h) when String.Map.mem subs h ->
-          if equal_expr expr1 (String.Map.find_exn subs h)
-          then Some subs
-          else None
-      | Hole (_, h) -> Some (String.Map.add_exn subs ~key:h ~data:expr1)
+      | Hole (_, h) when Map.mem subs h ->
+          if equal_expr expr1 (Map.find_exn subs h) then Some subs else None
+      | Hole (_, h) -> Some (Map.add_exn subs ~key:h ~data:expr1)
       | Num n2 ->
           (match expr1 with
           | Num n1 when Int.equal n1 n2 -> Some subs
@@ -70,10 +67,10 @@ let rec unify_pat : substitutions option -> pat -> pat -> substitutions option =
           let _ = print_string "checkpoint" in
           Some subs
       | PName _ -> None
-      | PHole (_, h) when String.Map.mem subs h -> Some subs
+      | PHole (_, h) when Map.mem subs h -> Some subs
       | PHole (_, h) ->
           (match pat1 with
-          | PName n -> Some (String.Map.add_exn subs ~key:h ~data:(Name n))
+          | PName n -> Some (Map.add_exn subs ~key:h ~data:(Name n))
           (* maybe need to consider case of matching hole with index*)
           | _ -> None)
       | PIndex (l2, r2) ->
@@ -127,14 +124,14 @@ let unify_defn : defn -> defn -> substitutions option =
 
 let unify_env : env -> env -> substitutions option =
  fun env1 env2 ->
-  if not (Int.equal (String.Map.length env1) (String.Map.length env2))
+  if not (Int.equal (Map.length env1) (Map.length env2))
   then None
   else
-    String.Map.fold
+    Map.fold
       env1
       ~init:(Some String.Map.empty)
       ~f:(fun ~key:name ~data:defn1 sub ->
-        match String.Map.find env2 name with
+        match Map.find env2 name with
         | None -> None
         | Some defn2 -> unify_defn defn1 defn2 |> merge_option_skewed sub)
 
@@ -202,20 +199,20 @@ let query_of_prog : program -> hole_map * 'a Query.t =
         (map, Sexp.List [ Sexp.Atom "Index"; pat; index ])
     | PName n -> (map, Sexp.List [ Sexp.Atom "Name"; Sexp.Atom n ])
     | PHole (_, h) ->
-        if String.Map.mem map h
-        then (map, Sexp.Atom (String.Map.find_exn map h))
+        if Map.mem map h
+        then (map, Sexp.Atom (Map.find_exn map h))
         else (
           let new_name = gensym "?" |> String.chop_prefix_exn ~prefix:"__" in
-          (String.Map.add_exn map ~key:h ~data:new_name, Sexp.Atom new_name))
+          (Map.add_exn map ~key:h ~data:new_name, Sexp.Atom new_name))
   and replace_holes_expr : hole_map -> expr -> hole_map * Sexp.t =
    fun map e ->
     match e with
     | Hole (_, h) ->
-        if String.Map.mem map h
-        then (map, Sexp.Atom (String.Map.find_exn map h))
+        if Map.mem map h
+        then (map, Sexp.Atom (Map.find_exn map h))
         else (
           let new_name = gensym "?" |> String.chop_prefix_exn ~prefix:"__" in
-          (String.Map.add_exn map ~key:h ~data:new_name, Sexp.Atom new_name))
+          (Map.add_exn map ~key:h ~data:new_name, Sexp.Atom new_name))
     | Name n -> (map, Sexp.List [ Sexp.Atom "Name"; Sexp.Atom n ])
     | Num n -> (map, Sexp.List [ Sexp.Atom "Num"; Sexp.Atom (string_of_int n) ])
     | Index (pat, index) ->
@@ -273,7 +270,7 @@ let extract_matches
   =
  fun graph matches hole_names ->
   let map =
-    String.Map.to_alist hole_names
+    Map.to_alist hole_names
     |> List.fold ~init:String.Map.empty ~f:(fun map (prog_hole, egraph_hole) ->
            let egraph_hole = String.chop_prefix_exn egraph_hole ~prefix:"?" in
            match
@@ -284,12 +281,12 @@ let extract_matches
            | None -> map
            | Some (_, match_map) ->
                let id = StringMap.find egraph_hole match_map in
-               String.Map.add_exn
+               Map.add_exn
                  map
                  ~key:prog_hole
                  ~data:(Extractor.extract graph id |> sexp_of_t |> expr_of_sexp))
   in
-  match String.Map.to_alist map with
+  match Map.to_alist map with
   | [] -> None
   | _ -> Some map
 

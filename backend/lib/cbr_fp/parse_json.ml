@@ -178,12 +178,11 @@ let merge_definitions : definition list -> datatype_env * typ_env * env =
     defs
     ~init:(String.Map.empty, String.Map.empty, String.Map.empty)
     ~f:(fun (sigma, gamma, env) -> function
-    | CustomType (lhs, rhs) ->
-        (String.Map.add_exn sigma ~key:lhs ~data:rhs, gamma, env)
+    | CustomType (lhs, rhs) -> (Map.add_exn sigma ~key:lhs ~data:rhs, gamma, env)
     | VariableDefinition (lhs, tau, body) ->
         ( sigma
-        , String.Map.add_exn gamma ~key:lhs ~data:tau
-        , String.Map.add_exn env ~key:lhs ~data:body ))
+        , Map.add_exn gamma ~key:lhs ~data:tau
+        , Map.add_exn env ~key:lhs ~data:body ))
 
 let definitions_of_json : Json.t -> datatype_env * typ_env * env =
  fun j ->

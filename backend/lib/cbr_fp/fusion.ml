@@ -13,7 +13,7 @@ let rec fuse' : datatype_env -> exp -> exp =
                 ~f:(fun f (_, domain) ->
                   compute_new_cata_arg sigma ~u ~f dt domain)
                 fs
-                (snd (String.Map.find_exn sigma dt)))
+                (snd (Map.find_exn sigma dt)))
          with
         | Some new_fs -> recur (EApp (ERScheme (RSCata, dt, new_fs), arg))
         | None ->
@@ -61,7 +61,7 @@ and compute_new_cata_arg
       ~f:(fun (x, z, tau) (acc_xs, acc_app) ->
         match tau with
         | TDatatype (dt', _) when String.equal dt dt' ->
-            ( String.Set.add acc_xs x
+            ( Set.add acc_xs x
             , Exp.replace_subexp
                 ~old_subexp:(Exp.normalize sigma (EApp (u, EVar x)))
                 ~new_subexp:(EVar z)
@@ -75,8 +75,7 @@ and compute_new_cata_arg
       ~init:(String.Set.empty, application)
       xzs
   in
-  if String.Set.is_empty
-       (String.Set.inter (Exp.free_variables rhs) recursive_xs)
+  if Set.is_empty (Set.inter (Exp.free_variables rhs) recursive_xs)
   then Some (Exp.build_abs (List.map ~f:(fun (_, z, _) -> z) xzs) rhs)
   else None
 

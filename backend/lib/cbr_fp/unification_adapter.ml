@@ -30,8 +30,8 @@ let rec embed
   let head = Util.embed_name prefix metadata in
   to_unification_term'
     sigma
-    (String.Set.add stdlib head)
-    (String.Map.add_exn
+    (Set.add stdlib head)
+    (Map.add_exn
        gamma
        ~key:head
        ~data:
@@ -52,7 +52,7 @@ and to_unification_term'
   in
   match e with
   | EVar x ->
-      if String.Set.mem stdlib x
+      if Set.mem stdlib x
       then Atom (Constant (x, to_unification_typ result_type))
       else Atom (Variable (x, to_unification_typ result_type))
   | EApp (e1, e2) ->
@@ -67,8 +67,8 @@ and to_unification_term'
             , to_unification_typ dom
             , to_unification_term'
                 sigma
-                (String.Set.remove stdlib x)
-                (String.Map.update gamma x ~f:(fun _ -> ([], dom)))
+                (Set.remove stdlib x)
+                (Map.update gamma x ~f:(fun _ -> ([], dom)))
                 body )
       | _ -> failwith "improper abstraction type")
   | EMatch (scrutinee, branches) ->
@@ -87,8 +87,7 @@ and to_unification_term'
 let to_unification_term
     : Lang.datatype_env -> Lang.typ_env -> Lang.exp -> Unification.term
   =
- fun sigma stdlib e ->
-  to_unification_term' sigma (String.Map.key_set stdlib) stdlib e
+ fun sigma stdlib e -> to_unification_term' sigma (Map.key_set stdlib) stdlib e
 
 let rec from_unification_term
     : Lang.datatype_env -> Unification.term -> Lang.exp
@@ -115,7 +114,7 @@ let rec from_unification_term
             in
             let tags =
               datatype
-              |> String.Map.find_exn sigma
+              |> Map.find_exn sigma
               |> snd
               |> sort_tags
               |> List.map ~f:(fun (tag, _) -> tag)

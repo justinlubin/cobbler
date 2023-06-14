@@ -42,9 +42,7 @@ let ctor_typ
     : datatype_env -> string -> ((string * string list) * typ list) option
   =
  fun sigma tag ->
-  List.find_map
-    (String.Map.to_alist sigma)
-    ~f:(fun (dt, (dt_params, dt_info)) ->
+  List.find_map (Map.to_alist sigma) ~f:(fun (dt, (dt_params, dt_info)) ->
       Option.map
         (List.Assoc.find dt_info ~equal:String.equal tag)
         ~f:(fun domains -> ((dt, dt_params), domains)))
@@ -56,7 +54,7 @@ let rec free_vars : typ -> String.Set.t =
   | TVar x -> String.Set.singleton x
   | TDatatype (_, args) ->
       args |> List.map ~f:free_vars |> String.Set.union_list
-  | TArr (dom, cod) -> String.Set.union (free_vars dom) (free_vars cod)
+  | TArr (dom, cod) -> Set.union (free_vars dom) (free_vars cod)
 
 let fresh_type_var : unit -> typ = fun () -> TVar (Util.gensym "__typevar")
 

@@ -61,7 +61,7 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
                                   domains
                                   ~init:gamma
                                   ~f:(fun acc a d ->
-                                    String.Map.update acc a ~f:(fun _ ->
+                                    Map.update acc a ~f:(fun _ ->
                                         ([], Typ.apply_sub dt_sub d))))
                                rhs
                            in
@@ -72,7 +72,7 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
                    [%eq: string]
                    (List.sort ctors ~compare:[%compare: string])
                    (List.sort
-                      (List.map ~f:fst (snd (String.Map.find_exn sigma dt)))
+                      (List.map ~f:fst (snd (Map.find_exn sigma dt)))
                       ~compare:[%compare: string])
               then (
                 let t_scrutinee, c_scrutinee =
@@ -142,10 +142,10 @@ let rec unify_exn : constraint_set -> Typ.sub =
       | TBase b1, TBase b2 when [%eq: base_typ] b1 b2 -> unify_exn tail
       | TVar x1, TVar x2 when String.equal x1 x2 -> unify_exn tail
       (* Free variable cases *)
-      | TVar x, _ when not (String.Set.mem fvt x) ->
+      | TVar x, _ when not (Set.mem fvt x) ->
           let sub = String.Map.singleton x t in
           Typ.compose_subs (unify_exn (apply_sub_constraints sub tail)) sub
-      | _, TVar x when not (String.Set.mem fvs x) ->
+      | _, TVar x when not (Set.mem fvs x) ->
           let sub = String.Map.singleton x s in
           Typ.compose_subs (unify_exn (apply_sub_constraints sub tail)) sub
       (* Recursive cases*)
@@ -181,7 +181,7 @@ let check : datatype_env -> typ_env -> exp -> typ -> unit =
 
 let well_typed : datatype_env * typ_env * env -> unit =
  fun (sigma, gamma, env) ->
-  String.Map.iteri env ~f:(fun ~key:name ~data:body ->
+  Map.iteri env ~f:(fun ~key:name ~data:body ->
       check
         sigma
         gamma

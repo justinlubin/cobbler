@@ -44,10 +44,8 @@ let gensym_prefix : string = "univar"
 let rec free_variables : term -> String.Set.t = function
   | Atom (Variable (x, _)) -> String.Set.singleton x
   | Atom (Constant (c, _)) -> String.Set.empty
-  | Application (t1, t2) ->
-      String.Set.union (free_variables t1) (free_variables t2)
-  | Abstraction (param, _, body) ->
-      String.Set.remove (free_variables body) param
+  | Application (t1, t2) -> Set.union (free_variables t1) (free_variables t2)
+  | Abstraction (param, _, body) -> Set.remove (free_variables body) param
 
 let replace : string * string -> term -> term =
  fun (lhs, rhs) e ->
@@ -82,7 +80,7 @@ let substitute_recursively : (string * term) list -> term -> term =
         (match List.Assoc.find ~equal:String.equal bindings param with
         | Some _ -> Abstraction (param, alpha, body)
         | None ->
-            if not (String.Set.mem fvs param)
+            if not (Set.mem fvs param)
             then Abstraction (param, alpha, recurse body)
             else (
               let new_param = Util.gensym gensym_prefix in
