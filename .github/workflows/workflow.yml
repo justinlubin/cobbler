@@ -28,10 +28,13 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
-      - name: Install Python 
+      - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11' 
+          python-version: "3.11"
+
+      - name: Navigate to backend directory
+        run: cd backend
 
       - name: Install OCaml dev dependencies
         run: make dev-deps
@@ -42,14 +45,23 @@ jobs:
       - name: Update shell environment for opam
         run: eval $(opam env)
 
-      - name: Run autoformatter
+      - name: Run OCaml autoformatter
         run: opam exec -- make fmt
 
-      - name: Ensure autoformatter didn't change anything
+      - name: Ensure OCaml autoformatter didn't change anything
         run: git diff --quiet
 
-      - name: Run main executable
+      - name: Run OCaml main executable
         run: opam exec -- make exec
 
-      - name: Run tests
+      - name: Run OCaml tests
         run: opam exec -- make test
+
+      - name: Navigate to frontend directory
+        run: cd ../front
+
+      - name: Install Python dependencies
+        run: make deps
+
+      - name: Run Python tests
+        run: make test

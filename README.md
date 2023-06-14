@@ -2,48 +2,35 @@
 
 [![Tests](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml/badge.svg)](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml)
 
-## Installation instructions
+This project contains the source code for the Garnet program synthesizer, which implements the component-based refactoring algorithm.
 
-**Important note on Python:**
-For the benchmarking script, it is recommended to create a new Python
-environment to avoid polluting the global Python environment (e.g. via `conda`).
-The `make deps` command will use `pip` to install dependencies, so if you use
-`conda`, make sure to run `conda install pip` in your environment first. After
-running `make deps`,
-**you may also need to run `pip install -U pip setuptools`, as per
-[this GitHub issue](https://github.com/conda/conda/issues/11931)!**
+This repository is split into two main sections: the backend (implemented in OCaml and located in the `backend` directory) and the frontend (implemented in Python and located in the `frontend` directory).
 
-1. [Install OCaml and opam](https://ocaml.org/docs/up-and-running)
-2. Run `make switch`
-3. Restart your shell
-4. Run `make dev-deps deps`
+The `garnet` script at the project's root directory glues everything together and provides the user-facing CLI for the synthesizer.
 
-To execute `bin/main.ml`, run `make exec`.
+To use the `garnet` script, you first need to install its dependencies (see below).
 
-To run the tests in the `tests` directory, run `make test`.
+Once that is done, see `./garnet --help`.
 
-## Benchmarking
+## Installing dependencies
 
-To build the benchmarking script, run `make build`. To run benchmarking, run `make benchmark`.
+### Installing OCaml dependencies
 
-Test synthesizer inputs should be placed in `lib/cbr_numpy/data/benchmarking/targets.ipynb`. Inputs should be of the form
+1. If you haven't already, [install OCaml and opam](https://ocaml.org/docs/up-and-running)
+2. From the project's root directory, run `cd backend`
+3. Run `make switch`
+4. Restart your shell
+5. Run `make dev-deps deps`
 
-```
-#[test name]
-[environment]
-#synth
-[body]
-```
+### Installing Python dependencies
 
-where the body ends in an expression. Benchmarking data is generated in `lib/cbr_numpy/data/benchmarking/benchmarks.csv`.
+1. If you haven't already, [install Python](https://www.python.org/)
+2. From the project's root directory, run `cd frontend`
+3. *Optional: If you use virtual environments, create a new one for this project now. The next step will use `pip` to install the necessary Python packages.*
+4. Run `make deps`
 
-## Project structure
+## Running tests
 
-- `bin` implements the "main" executable function.
-- `lib/cbr_framework` implements the component-based refactoring framework
-- `lib/cbr_fp` instantiates the component-based refactoring framework in the
-  domain of functional programming combinators
-- `lib/cbr_numpy` instantiates the component-based refactoring framework in the
-  domain of NumPy combinators
-- `lib/util` provides general utilities
-- `test` defines tests
+To run the backend tests, run `make test` from the `backend` subdirectory.
+
+To run the frontend tests, run `make test` from the `frontend` subdirectory.

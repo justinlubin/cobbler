@@ -3,3 +3,6 @@ _build
 *.pyc
 _coverage
 elm-stuff
+backend/after_eqsat.txt
+backend/before_eqsat.txt
+__pycache__
