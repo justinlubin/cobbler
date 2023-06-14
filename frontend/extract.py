@@ -32,7 +32,8 @@ def python(tree):
     objects (env, body)."""
 
     if isinstance(tree, ast.Module) and len(tree.body) > 0:
-        tree.body[-1] = ast.Return(value=tree.body[-1])
+        if not isinstance(tree.body[-1], ast.Return):
+            tree.body[-1] = ast.Return(value=tree.body[-1])
 
     classifier = VarClassifier()
     classifier.visit(tree)

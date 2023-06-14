@@ -16,7 +16,7 @@ class TestExtractor(unittest.TestCase):
         self.maxDiff = None
         for py_fname, json_fname in zip(py_fnames, json_fnames):
             with open(fnames_dir + "/" + py_fname, "r") as f:
-                text = f.read()
+                text = ast.parse(f.read())
                 env, body = extract.python(text)
             with open(fnames_dir + "/" + json_fname, "r") as f:
                 expected = json.load(f)
