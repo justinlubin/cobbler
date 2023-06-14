@@ -1,7 +1,7 @@
 import ast
 
 
-class NoSynthException(Exception):
+class NoExtractionException(Exception):
     pass
 
 
@@ -18,21 +18,20 @@ def elm_json(block):
                     if type and type["tag"] == "TypeReference":
                         if type["name"] == "Maybe" or type["name"] == "Result" or type["name"] == "List":
                             return str(block)
-            raise NoSynthException("scrutinee not of correct type")
+            raise NoExtractionException("scrutinee not of correct type")
         else:
-            raise NoSynthException("scrutinee is not parameter")
+            raise NoExtractionException("scrutinee is not parameter")
     else:
-        raise NoSynthException("body is not case expression")
+        raise NoExtractionException("body is not case expression")
 
 
-def python(p):
+def python(tree):
     """Tries to extract a synthesis input from a Python script, assuming that
-    it is represented as a string"""
-    tree = ast.parse(p)
+    it is represented as a Python AST object"""
     classifier = VarClassifier()
     classifier.visit(tree)
     if not classifier.found_for:
-        raise NoSynthException("for loop not found")
+        raise NoExtractionException("for loop not found")
     input_vars = classifier.input_vars
     output_vars = classifier.output_vars
     extractor = Extractor(input_vars, output_vars)
@@ -61,7 +60,7 @@ class VarClassifier(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign):
         if len(node.targets) > 1:
-            raise NoSynthException("multiple assignment targets in VarClassifier")
+            raise NoExtractionException("multiple assignment targets in VarClassifier")
         var = self.visit(node.targets[0])
         if self.in_for:
             if var in self.input_vars:
@@ -96,10 +95,16 @@ class Extractor(ast.NodeVisitor):
         self.body_stmts = []
         self.num_modules = 0
 
+    def visit_Name(self, node):
+        return node.id
+
+    def visit_Subscript(self, node: ast.Subscript):
+        return self.visit(node.value)
+
     def visit_Assign(self, node: ast.Assign):
         if len(node.targets) > 1:
-            raise NoSynthException("multiple assignment targets in Extractor.visit_Assign")
-        var = node.targets[0].id
+            raise NoExtractionException("multiple assignment targets in Extractor.visit_Assign")
+        var = self.visit(node.targets[0])
         if var in self.input_vars:
             self.env_stmts.append(node)
         else:
@@ -110,8 +115,8 @@ class Extractor(ast.NodeVisitor):
 
     def visit_AugAssign(self, node: ast.AugAssign):
         if len(node.targets) > 1:
-            raise NoSynthException("multiple assignment targets in Extractor.visit_AugAssign")
-        var = node.targets[0].id
+            raise NoExtractionException("multiple assignment targets in Extractor.visit_AugAssign")
+        var = self.visit(node.target)
         if var in self.input_vars:
             self.env_stmts.append(node)
         else:
@@ -122,7 +127,7 @@ class Extractor(ast.NodeVisitor):
         for stmt in node.body:
             self.visit(stmt)
         if self.num_modules > 1:
-            raise NoSynthException("Multiple modules in Extractor.visit_Module")
+            raise NoExtractionException("Multiple modules in Extractor.visit_Module")
         self.num_modules = 0
         self.env_ast = ast.Module(self.env_stmts, [])
         self.body_ast = ast.Module(self.body_stmts, [])

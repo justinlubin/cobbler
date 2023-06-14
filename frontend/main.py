@@ -14,6 +14,7 @@ def benchmark_helper(path, generator=None, benchmarker=None, sample_limit=100):
         writer = csv.DictWriter(
             f,
             fieldnames=benchmark.CSV_FIELDS,
+            delimiter="\t",
         )
         writer.writeheader()
         previous_path = None
@@ -57,9 +58,9 @@ if __name__ == "__main__":
         required=True,
     )
     benchmark_parser.add_argument(
-        "path_to_csv",
+        "path_to_tsv",
         type=pathlib.Path,
-        help="the path to write the benchmarking csv to",
+        help="the path to write the benchmarking tsv to",
     )
 
     args = parser.parse_args()
@@ -67,15 +68,15 @@ if __name__ == "__main__":
     if args.subcommand == "benchmark":
         if args.language == "elm":
             benchmark_helper(
-                args.path_to_csv,
+                args.path_to_tsv,
                 generator=db_iter.elm_json,
                 benchmarker=benchmark.elm_json,
-                sample_limit=100,
+                sample_limit=1,
             )
         if args.language == "python":
             benchmark_helper(
-                args.path_to_csv,
+                args.path_to_tsv,
                 generator=db_iter.python_cell,
                 benchmarker=benchmark.python_cell,
-                sample_limit=100,
+                sample_limit=1,
             )

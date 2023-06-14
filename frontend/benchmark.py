@@ -9,7 +9,6 @@ import util
 
 
 CSV_FIELDS = [
-    "name",
     "orig code",
     "orig output",
     "orig ast size",
@@ -30,9 +29,9 @@ def elm_json(ex):
     stats = {}
     try:
         json_str = extract.elm_json(ex)
-        stats["name"] = f"Benchmark TODO"
         try:
             start = timer()
+            stats["orig code"] = json_str
             output = subprocess.check_output(
                 util.path_from_root("backend/_build/default/benchmark_fp/main.exe"),
                 input=json_str,
@@ -40,7 +39,6 @@ def elm_json(ex):
                 text=True,
             )
             end = timer()
-            stats["orig code"] = json_str
             stats["synthed code"] = output
             stats["synth time"] = end - start
             stats["status"] = "Success_TODO"
@@ -55,16 +53,11 @@ def elm_json(ex):
     return stats
 
 
-def python(code):
-    """Benchmarks a Python script, assuming that it is represented as a
-    string"""
+def python(tree):
+    """Benchmarks a Python script, assuming that it is represented as a Python
+    AST object"""
     stats = {}
-    stats["orig code"] = code.replace("\n", "\\n")[:10000]
-
-    # set cell name
-    if len(code) > 0 and code[0] == "#":
-        cell_name = code[1 : code.find("\n")]
-        stats["name"] = cell_name
+    stats["orig code"] = ast.dump(tree).replace("\n", "_CBR__NL___").replace("\t", "    ")
 
     # execute cell and eval last line
     """
@@ -101,7 +94,8 @@ def python(code):
             code = code[:last_ln_i] + "\nreturn " + code[last_ln_i + 1 :]
 
             # parse synthesis target
-            env, body = extract(code)
+            tree = ast.parse(code)
+            env, body = extract.python(tree)
 
             try:
                 sexp = python_to_ir.parse(body)
@@ -163,35 +157,3 @@ def python_cell(cell):
         return python("\n".join(cell["source"]))
     else:
         raise Exception("Cell source must be a string or a list")
-
-
-def python_nb(notebook):
-    """Benchmarks an entire Jupyter notebook, assuming that it is represented
-    as a JSON object"""
-    all_stats = []
-    for cell in notebook["cells"]:
-        if cell["cell_type"] == "code":
-            stats = python_cell(cell)
-            all_stats.append(stats)
-    return all_stats
-
-
-# benchmark tests in data/benchmarking/targets.ipynb
-# def main():
-#     sys.path.append("../..")
-#     dir = os.path.dirname(os.path.abspath(__file__))
-#     input_ipynb = os.path.join(dir, "data/benchmarking/targets.ipynb")
-#     output_csv = os.path.join(dir, "data/benchmarking/benchmarks.csv")
-
-#     # read .ipynb file
-#     notebook = nbf.read(input_ipynb, nbf.NO_CONVERT)
-
-#     all_stats = benchmark_nb(notebook)
-
-#     # write to csv
-#     with open(output_csv, 'w', newline='') as file:
-#         file.truncate()
-#         writer = csv.DictWriter(
-#             file, fieldnames=CSV_FIELDS, extrasaction='ignore')
-#         writer.writeheader()
-#         writer.writerows(all_stats)
