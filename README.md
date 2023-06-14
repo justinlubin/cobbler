@@ -10,7 +10,7 @@ The `garnet` script at the project's root directory glues everything together an
 
 To use the `garnet` script, you first need to install its dependencies (see below).
 
-Once that is done, see `garnet --help`.
+Once that is done, see `./garnet --help`.
 
 ## Installing dependencies
 
