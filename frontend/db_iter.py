@@ -4,6 +4,8 @@ import datasets
 
 
 def python_cell(sample_limit=None):
+    """Iterates through The Stack database, yielding JSON representations of
+    Python cells from Jupyter notebooks"""
     ds = datasets.load_dataset(
         "bigcode/the-stack",
         data_dir="data/jupyter-notebook",
@@ -26,6 +28,8 @@ def python_cell(sample_limit=None):
 
 
 def elm_json(sample_limit=None):
+    """Iterates through The Stack database, yielding elm-format JSON
+    representations of Elm function/variable definitions from Elm files"""
     ds = datasets.load_dataset(
         "bigcode/the-stack",
         data_dir="data/elm",

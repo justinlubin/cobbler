@@ -7,11 +7,12 @@ import sys
 
 
 def path_from_root(path):
+    """Returns a path from the root of the project"""
     return os.path.normpath(os.path.join(os.path.dirname(sys.path[0]), path))
 
 
 def exec_eval(tree):
-    """execute a Python AST and eval the last line"""
+    """Executes a Python AST and evals the last line"""
     last = ast.Expression(tree.body.pop().value)
     _globals, _locals = {}, {}
 
@@ -38,9 +39,6 @@ def is_num_array(x):
     return isinstance(x, np.ndarray) and (x.dtype == np.dtype(int) or x.dtype == np.dtype(float))
 
 
-# compute number of nodes in an AST
-
-
 class NodeCounter(ast.NodeVisitor):
     """NodeVisitor that counts the total number of nodes in an AST"""
 
@@ -53,6 +51,7 @@ class NodeCounter(ast.NodeVisitor):
 
 
 def num_nodes(tree):
+    """Counts the total number of nodes in an AST"""
     counter = NodeCounter()
     counter.visit(tree)
     return counter.count

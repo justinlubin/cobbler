@@ -1,16 +1,22 @@
 import ast
 import re
 
+# S-expression datatype
 
-class SList():
+
+class SList:
+    """S-expression for lists"""
+
     def __init__(self, l):
         self.l = l
 
     def __str__(self):
-        return "(" + ' '.join([str(c) for c in self.l]) + ")"
+        return "(" + " ".join([str(c) for c in self.l]) + ")"
 
 
-class SAtom():
+class SAtom:
+    """S-expression for atoms"""
+
     def __init__(self, a):
         self.a = a
 
@@ -18,14 +24,22 @@ class SAtom():
         return str(self.a)
 
 
+# Main functions
+
+
 def parse_str(s: str) -> SList:
+    """Parses Python in a string to the s-expression IR"""
     return parse(ast.parse(s))
 
 
 def parse(p: ast.AST) -> SList:
+    """Parses a Python AST object to the s-expression IR"""
     parser = IRParser()
     sexp = parser.visit(p)
     return sexp
+
+
+# Helper code
 
 
 class UnsupportedNodeException(Exception):
@@ -37,7 +51,6 @@ class UnsupportedFeatureException(Exception):
 
 
 class IRParser(ast.NodeVisitor):
-
     def getClassName(self, node):
         pattern = "<class '_?ast\\.([\\w]+)'>"
         match = re.search(pattern, str(node.__class__))
@@ -59,8 +72,7 @@ class IRParser(ast.NodeVisitor):
     def visit_Assign(self, node):
         if len(node.targets) > 1:
             raise UnsupportedFeatureException("Multiple assignments")
-        return SList([SAtom("Assign"), self.visit(
-            node.targets[0]), self.visit(node.value)])
+        return SList([SAtom("Assign"), self.visit(node.targets[0]), self.visit(node.value)])
 
     def visit_Attribute(self, node):
         className = self.getClassName(node.value)
@@ -113,13 +125,13 @@ class IRParser(ast.NodeVisitor):
         return SList([SAtom("Call"), op, self.visit(node.operand)])
 
     def visit_Subscript(self, node):
-        return SList([SAtom("Index"), self.visit(
-            node.value), self.visit(node.slice)])
+        return SList([SAtom("Index"), self.visit(node.value), self.visit(node.slice)])
 
     def visit_AugAssign(self, node):
         target = self.visit(node.target)
-        return SList([SAtom("Assign"), target, SList(
-            [SAtom("Call"), self.visit(node.op), target, self.visit(node.value)])])
+        return SList(
+            [SAtom("Assign"), target, SList([SAtom("Call"), self.visit(node.op), target, self.visit(node.value)])]
+        )
 
     def visit_Index(self, node):
         return self.visit(node.value)
@@ -127,8 +139,14 @@ class IRParser(ast.NodeVisitor):
     def visit_For(self, node):
         if node.orelse:
             raise UnsupportedFeatureException("For-else statement")
-        return SList([SAtom("For"), self.visit(node.target), self.visit(
-            node.iter), SList([self.visit(stmt) for stmt in node.body])])
+        return SList(
+            [
+                SAtom("For"),
+                self.visit(node.target),
+                self.visit(node.iter),
+                SList([self.visit(stmt) for stmt in node.body]),
+            ]
+        )
 
     def visit_If(self, node):
         cond = self.visit(node.test)
@@ -155,15 +173,13 @@ class IRParser(ast.NodeVisitor):
         return SList([SAtom("Num"), SAtom(str(node.n))])
 
     def visit_Call(self, node):
-        return SList([SAtom("Call"), self.visit(node.func)] +
-                     [self.visit(arg) for arg in node.args])
+        return SList([SAtom("Call"), self.visit(node.func)] + [self.visit(arg) for arg in node.args])
 
     def visit_Operator(self, node):
         return SAtom(self.getClassName(node))
 
     def visit_BinOp(self, node):
-        return SList([SAtom("Call"), self.visit(node.op),
-                     self.visit(node.left), self.visit(node.right)])
+        return SList([SAtom("Call"), self.visit(node.op), self.visit(node.left), self.visit(node.right)])
 
     def visit_Arg(self, node):
         print(node.arg)

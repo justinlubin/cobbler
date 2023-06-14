@@ -24,8 +24,9 @@ CSV_FIELDS = [
 ]
 
 
-# Benchmarks a single elm function (json format)
 def elm_json(ex):
+    """Benchmarks a single Elm function/variable definition, assuming that it is
+    represented as an elm-format JSON object"""
     stats = {}
     try:
         json_str = extract.elm_json(ex)
@@ -55,6 +56,8 @@ def elm_json(ex):
 
 
 def python(code):
+    """Benchmarks a Python script, assuming that it is represented as a
+    string"""
     stats = {}
     stats["orig code"] = code.replace("\n", "\\n")[:10000]
 
@@ -151,8 +154,9 @@ def python(code):
     return stats
 
 
-# benchmark one cell
 def python_cell(cell):
+    """Benchmarks a single Jupyter notebook cell, assuming that it is
+    represented as a JSON object"""
     if type(cell["source"]) == str:
         return python(cell["source"])
     elif type(cell["source"]) == list:
@@ -161,8 +165,9 @@ def python_cell(cell):
         raise Exception("Cell source must be a string or a list")
 
 
-# benchmark cells of a single notebook
-def python_nb(notebook, build=True):
+def python_nb(notebook):
+    """Benchmarks an entire Jupyter notebook, assuming that it is represented
+    as a JSON object"""
     all_stats = []
     for cell in notebook["cells"]:
         if cell["cell_type"] == "code":
