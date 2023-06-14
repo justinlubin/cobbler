@@ -24,10 +24,10 @@ type problem =
   ; name : string
   }
 
-(** [problem_of_definitions defs] extracts the function named "main" from
+(** [problem_of_definitions defs name] extracts the function named [name] from
     [defs] and returns the synthesis problem to rewrite it in terms of the
     remaining definitions. *)
-val problem_of_definitions : datatype_env * typ_env * env -> problem
+val problem_of_definitions : datatype_env * typ_env * env -> string -> problem
 
 (** [solve ~use_unification ~depth problem] tries to find a solution to
     [problem] using search depth [depth]. If [use_unification] is [true], the

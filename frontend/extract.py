@@ -7,8 +7,8 @@ class NoExtractionException(Exception):
 
 def elm_json(block):
     """Tries to extract a synthesis input from an Elm function/variable
-    definition; assumes that block.get('tag') == 'Definition'. Returns a string
-    that contains JSON."""
+    definition; assumes that block.get('tag') == 'Definition'. Returns a JSON
+    object."""
     if block["expression"]["tag"] == "CaseExpression":
         if block["expression"]["subject"]["tag"] == "VariableReference":
             v = block["expression"]["subject"]["name"]
@@ -18,7 +18,7 @@ def elm_json(block):
                 if pat.get("name") == v:
                     if type and type["tag"] == "TypeReference":
                         if type["name"] == "Maybe" or type["name"] == "Result" or type["name"] == "List":
-                            return str(block)
+                            return block
             raise NoExtractionException("scrutinee not of correct type")
         else:
             raise NoExtractionException("scrutinee is not parameter")

@@ -1,10 +1,14 @@
 (** Program parsing: 
  * This module parses strings into IIR programs (using types from the [!module:Lang] module), 
  * using s-expressions as an intermediate representation. Also implements translation of
- * programs back into strings for printing and testing. *)
+ * programs back into strings for printing and testing.
+
+ Upon parse failure, this module throws the [ParseFail] exception. *)
 
 open Lang
 open Core
+
+exception ParseFail of string
 
 val sexp_of_expr : expr -> Sexp.t
 val expr_of_sexp : Sexp.t -> expr

@@ -79,8 +79,8 @@ type problem =
   ; name : string
   }
 
-let problem_of_definitions : datatype_env * typ_env * env -> problem =
- fun (sigma, gamma, env) ->
+let problem_of_definitions : datatype_env * typ_env * env -> string -> problem =
+ fun (sigma, gamma, env) name ->
   { sigma
   ; gamma
   ; env =
@@ -88,7 +88,7 @@ let problem_of_definitions : datatype_env * typ_env * env -> problem =
           match Recursion_scheme.rewrite sigma env name with
           | Some new_rhs -> new_rhs
           | None -> old_rhs)
-  ; name = "main"
+  ; name
   }
 
 (* Synthesis *)

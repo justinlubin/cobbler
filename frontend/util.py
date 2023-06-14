@@ -1,4 +1,5 @@
 import ast
+import base64
 import contextlib
 import os
 from timeit import default_timer as timer
@@ -9,6 +10,16 @@ import sys
 def path_from_root(path):
     """Returns a path from the root of the project"""
     return os.path.normpath(os.path.join(os.path.dirname(sys.path[0]), path))
+
+
+def csv_str_encode(s):
+    """Safely encodes a string for use in CSVs"""
+    return base64.b64encode(s.encode("utf8")).decode("utf8")
+
+
+def csv_str_decode(s):
+    """Decodes a CSV string (inverse to `csv_str_encode`)"""
+    return base64.b64decode(s.encode("utf8")).decode("utf8")
 
 
 def exec_eval(tree):

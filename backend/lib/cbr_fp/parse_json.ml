@@ -3,6 +3,8 @@ open Lang
 module Json = Yojson.Basic
 module J = Yojson.Basic.Util
 
+exception ParseFail of string
+
 let is_type_var : string -> bool = fun s -> Char.is_lowercase (String.get s 0)
 
 let is_constructor : string -> bool =
@@ -34,7 +36,7 @@ let rec typ_of_json : Json.t -> typ =
       in
       let codomain = j |> J.member "returnType" |> typ_of_json in
       Typ.build_arr domain codomain
-  | s -> failwith (sprintf "unknown type tag '%s'" s)
+  | s -> raise (ParseFail (sprintf "unknown type tag '%s'" s))
 
 (* Variable parsing *)
 
@@ -43,7 +45,7 @@ let pvar_of_json : Json.t -> string =
   match j |> J.member "tag" |> J.to_string with
   | "VariableDefinition" -> j |> J.member "name" |> J.to_string
   | "AnythingPattern" -> Util.gensym "wildcard"
-  | s -> failwith (sprintf "unknown variable pattern tag '%s'" s)
+  | s -> raise (ParseFail (sprintf "unknown variable pattern tag '%s'" s))
 
 let evar_of_json : Json.t -> string =
  fun j ->
@@ -53,7 +55,7 @@ let evar_of_json : Json.t -> string =
       let m = j |> J.member "module" |> J.to_string in
       let i = j |> J.member "identifier" |> J.to_string in
       sprintf "%s.%s" m i
-  | s -> failwith (sprintf "unknown expression variable tag '%s'" s)
+  | s -> raise (ParseFail (sprintf "unknown expression variable tag '%s'" s))
 
 (* Patterns *)
 
@@ -67,8 +69,8 @@ let pctor_of_json : Json.t -> string * string list =
       (match j |> J.member "prefix" |> J.to_list with
       | [] -> ("Basics.Nil", [])
       | [ hd ] -> ("Basics.Cons", [ j |> J.member "rest" |> pvar_of_json ])
-      | _ -> failwith (sprintf "nested list patterns unsupported"))
-  | s -> failwith (sprintf "unknown constructor pattern tag '%s'" s)
+      | _ -> raise (ParseFail (sprintf "nested list patterns unsupported")))
+  | s -> raise (ParseFail (sprintf "unknown constructor pattern tag '%s'" s))
 
 (* Expressions *)
 
@@ -113,7 +115,7 @@ and exp_of_json : Json.t -> exp =
       |> List.fold_right
            ~init:(ECtor ("Basics.Nil", []))
            ~f:(fun e acc -> ECtor ("Basics.Cons", [ exp_of_json e; acc ]))
-  | s -> failwith (sprintf "unknown expression tag '%s'" s)
+  | s -> raise (ParseFail (sprintf "unknown expression tag '%s'" s))
 
 (* Definitions *)
 
@@ -147,8 +149,11 @@ let variable_definition_of_json : Json.t -> string * typ_scheme * exp =
       let body = Exp.build_abs params rhs in
       (name, tau, body)
   | None ->
-      failwith
-        (sprintf "missing type declaration for top-level definition '%s'" name)
+      raise
+        (ParseFail
+           (sprintf
+              "missing type declaration for top-level definition '%s'"
+              name))
 
 let definition_of_json : Json.t -> definition =
  fun j ->
@@ -165,7 +170,7 @@ let definition_of_json : Json.t -> definition =
   | "Definition" ->
       let s, t, e = variable_definition_of_json j in
       VariableDefinition (s, t, e)
-  | s -> failwith (sprintf "unknown definition tag '%s'" s)
+  | s -> raise (ParseFail (sprintf "unknown definition tag '%s'" s))
 
 let merge_definitions : definition list -> datatype_env * typ_env * env =
  fun defs ->

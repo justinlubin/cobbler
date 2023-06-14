@@ -1,5 +1,4 @@
 import ast
-import base64
 import json
 import subprocess
 
@@ -22,6 +21,7 @@ CSV_FIELDS = [
     "synth time",  #
     "outputs match?",
     "status",  #
+    "reason",  #
 ]
 
 
@@ -29,18 +29,20 @@ def elm_json(js):
     """Benchmarks a single Elm function/variable definition, assuming that it is
     represented as an elm-format JSON object"""
     stats = {}
-    stats["orig code"] = base64.b64encode(json.dumps(js))
+    stats["orig code"] = util.csv_str_encode(json.dumps(js))
+    stats["outputs match?"] = len(stats["orig code"])
+
     try:
         block = extract.elm_json(js)
-    except extract.NoSynthException:
+    except extract.NoExtractionException:
         stats["status"] = "ExtractFail"
         return stats
 
     start = timer()
 
     synthesis_result = subprocess.check_output(
-        util.path_from_root("backend/_build/default/benchmark_fp/main.exe"),
-        input=block,
+        [util.path_from_root("backend/_build/default/bin/main.exe"), "elm"],
+        input=json.dumps(block),
         text=True,
     )
 
@@ -50,27 +52,25 @@ def elm_json(js):
 
     synthesis_result = json.loads(synthesis_result)
 
+    stats["status"] = synthesis_result["status"]
+    if "reason" in synthesis_result:
+        stats["reason"] = synthesis_result["reason"]
+
     if synthesis_result["status"] == "Success":
-        stats["synthed code"] = base64.b64encode(synthesis_result["solution"])
-        stats["status"] = "Success"
-        return stats
-    elif synthesis_result["status"] == "ParseFail":
-        stats["status"] = "ParseFail"
-        return stats
-    else:
-        stats["status"] = "SynthFail"
-        return stats
+        stats["synthed code"] = util.csv_str_encode(synthesis_result["solution"])
+
+    return stats
 
 
 def python(tree):
     """Benchmarks a Python script, assuming that it is represented as a Python
     AST object"""
     stats = {}
-    stats["orig code"] = base64.b64encode(ast.dump(tree).encode("utf8"))
+    stats["orig code"] = util.csv_str_encode(ast.dump(tree))
 
     try:
         env, body = extract.python(tree)
-    except extract.NoSynthException:
+    except extract.NoExtractionException:
         stats["status"] = "ExtractFail"
         return stats
 
@@ -92,13 +92,14 @@ def python(tree):
 
     synthesis_result = json.loads(synthesis_result)
 
+    stats["status"] = synthesis_result["status"]
+    if "reason" in synthesis_result:
+        stats["reason"] = synthesis_result["reason"]
+
     if synthesis_result["status"] == "Success":
-        stats["synthed code"] = base64.b64encode(ast.dump(env) + "\n" + synthesis_result["solution"])
-        stats["status"] = "Success"
-        return stats
-    else:
-        stats["status"] = "SynthFail"
-        return stats
+        stats["synthed code"] = util.csv_str_encode((ast.dump(env) + "\n" + synthesis_result["solution"]))
+
+    return stats
 
 
 # # execute cell and eval last line

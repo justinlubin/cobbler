@@ -1,6 +1,8 @@
 open Lang
 open Core
 
+exception ParseFail of string
+
 let rec pat_of_sexp : Sexp.t -> pat =
  fun sexp ->
   match sexp with
@@ -9,7 +11,7 @@ let rec pat_of_sexp : Sexp.t -> pat =
       PIndex (pat_of_sexp p, expr_of_sexp e)
   | Sexp.List [ Sexp.Atom "Number_Hole"; Sexp.Atom hole ] -> PHole (Number, hole)
   | Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ] -> PHole (Array, hole)
-  | _ -> failwith ("Invalid pattern: " ^ Sexp.to_string sexp)
+  | _ -> raise (ParseFail ("Invalid pattern: " ^ Sexp.to_string sexp))
 
 and expr_of_sexp : Sexp.t -> expr =
  fun sexp ->
@@ -23,7 +25,7 @@ and expr_of_sexp : Sexp.t -> expr =
   | Sexp.Atom name -> Name name
   | Sexp.List [ Sexp.Atom "Num_Hole"; Sexp.Atom hole ] -> Hole (Number, hole)
   | Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ] -> Hole (Array, hole)
-  | _ -> failwith ("Invalid expression: " ^ Sexp.to_string sexp)
+  | _ -> raise (ParseFail ("Invalid expression: " ^ Sexp.to_string sexp))
 
 let rec stmt_of_sexp : Sexp.t -> stmt =
  fun sexp ->
@@ -35,12 +37,12 @@ let rec stmt_of_sexp : Sexp.t -> stmt =
   | Sexp.List [ Sexp.Atom "Return"; e ] -> Return (expr_of_sexp e)
   | Sexp.List [ Sexp.Atom "If"; cond; body; orelse ] ->
       If (expr_of_sexp cond, block_of_sexp body, block_of_sexp orelse)
-  | _ -> failwith ("Invalid statement: " ^ Sexp.to_string sexp)
+  | _ -> raise (ParseFail ("Invalid statement: " ^ Sexp.to_string sexp))
 
 and block_of_sexp : Sexp.t -> block =
  fun sexp ->
   match sexp with
-  | Sexp.Atom _ -> failwith ("Invalid block: " ^ Sexp.to_string sexp)
+  | Sexp.Atom _ -> raise (ParseFail ("Invalid block: " ^ Sexp.to_string sexp))
   | Sexp.List l -> List.map l ~f:stmt_of_sexp
 
 let parse_defn : Sexp.t -> id * defn =
@@ -48,13 +50,15 @@ let parse_defn : Sexp.t -> id * defn =
   match sexp with
   | Sexp.List [ Sexp.Atom name; Sexp.List params; body ] ->
       (name, (List.map params ~f:id_of_sexp, block_of_sexp body))
-  | _ -> failwith ("Invalid function definition: " ^ Sexp.to_string sexp)
+  | _ ->
+      raise (ParseFail ("Invalid function definition: " ^ Sexp.to_string sexp))
 
 let env_of_sexp : Sexp.t -> env =
  fun sexp ->
   match sexp with
   | Sexp.Atom _ ->
-      failwith ("Invalid environment s-expression: " ^ Sexp.to_string sexp)
+      raise
+        (ParseFail ("Invalid environment s-expression: " ^ Sexp.to_string sexp))
   | Sexp.List l -> List.map l ~f:parse_defn |> String.Map.of_alist_exn
 
 let program_of_sexp : Sexp.t -> program =
@@ -62,7 +66,7 @@ let program_of_sexp : Sexp.t -> program =
   match sexp with
   | Sexp.List [ env_sexp; block_sexp ] ->
       (env_of_sexp env_sexp, block_of_sexp block_sexp)
-  | _ -> failwith ("Invalid program: " ^ Sexp.to_string sexp)
+  | _ -> raise (ParseFail ("Invalid program: " ^ Sexp.to_string sexp))
 
 let program_of_str : string -> program =
  fun str -> Sexp.of_string str |> program_of_sexp
@@ -141,7 +145,7 @@ let substitutions_of_sexp : Sexp.t -> substitutions =
     (fun sexp ->
       match sexp with
       | Sexp.List [ Sexp.Atom hole; e ] -> (hole, expr_of_sexp e)
-      | _ -> failwith "Invalid s-expression")
+      | _ -> raise (ParseFail "Invalid s-expression"))
     sexp
   |> String.Map.of_alist_exn
 
@@ -192,7 +196,7 @@ let rec py_str_of_sexp : Sexp.t -> string =
   | Sexp.List [ right ] -> py_str_of_sexp right
   | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] -> n
   | Sexp.Atom a -> a
-  | _ -> failwith ("Invalid expression: " ^ Sexp.to_string sexp)
+  | _ -> raise (ParseFail ("Invalid expression: " ^ Sexp.to_string sexp))
 
 and py_str_of_block : block -> string =
  fun block -> block |> sexp_of_block |> py_str_of_sexp
