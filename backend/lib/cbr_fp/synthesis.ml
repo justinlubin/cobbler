@@ -95,9 +95,9 @@ let problem_of_definitions : datatype_env * typ_env * env -> string -> problem =
 
 let solve : use_unification:bool -> depth:int -> problem -> exp option =
  fun ~use_unification ~depth { sigma; gamma; env; name } ->
-  let reference = Map.find_exn env "main" in
+  let reference = Map.find_exn env name in
   let reference_domain, reference_codomain =
-    Typ.decompose_arr (Typ.instantiate (Map.find_exn gamma "main"))
+    Typ.decompose_arr (Typ.instantiate (Map.find_exn gamma name))
   in
   let reference_params, _ = Exp.decompose_abs reference in
   let normalized_reference = norm sigma gamma env reference in
@@ -119,7 +119,7 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
   in
   let grammar =
     make_grammar
-      (Map.remove gamma "main")
+      (Map.remove gamma name)
       (if use_unification
       then []
       else List.zip_exn reference_params reference_domain)

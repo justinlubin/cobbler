@@ -63,9 +63,7 @@ let rec unify_pat : substitutions option -> pat -> pat -> substitutions option =
   | None -> None
   | Some subs ->
       (match pat2 with
-      | PName _ when equal_pat pat1 pat2 ->
-          let _ = print_string "checkpoint" in
-          Some subs
+      | PName _ when equal_pat pat1 pat2 -> Some subs
       | PName _ -> None
       | PHole (_, h) when Map.mem subs h -> Some subs
       | PHole (_, h) ->
