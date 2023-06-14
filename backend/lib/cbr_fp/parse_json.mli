@@ -14,8 +14,7 @@ exception ParseFail of string
     expression definitions. *)
 val definitions : string -> datatype_env * typ_env * env
 
-(** [variable_definitions s] parses a string [s] as a list of datatype, type, and
-    expression definitions. *)
+(** [variable_definitions s] parses a string [s] as variable definition. *)
 val variable_definition : string -> string * typ_scheme * exp
 
 (** [exp s] parses a string [s] as an expression. *)
