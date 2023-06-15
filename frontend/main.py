@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import json
 import pathlib
 import subprocess
 import sys
@@ -38,6 +39,7 @@ def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=1
                 previous_path = sample_path
             stats = benchmarker(block)
             writer.writerow(stats)
+        print(f"Completed '{previous_path}' ({sample_num+1}/{sample_limit})")
 
 
 def view_benchmark_helper(path=None, line_number=None, show_code=None):
@@ -101,6 +103,29 @@ def filter_benchmarks_helper(
                 in_statuses = row["status"] in statuses
                 if not invert and in_statuses or invert and not in_statuses:
                     writer.writerow(row)
+
+
+def rerun_benchmarks_helper(
+    input_path=None,
+    output_path=None,
+    language=None,
+):
+    if language == "elm":
+        benchmarker = lambda s: benchmark.elm_json(json.loads(s))
+    elif language == "python":
+        benchmarker = lambda s: benchmark.python(ast.parse(s))
+
+    def generator(sample_limit=None):
+        with open(input_path, "r", newline="") as input_f:
+            for i, row in enumerate(csv.DictReader(input_f, delimiter="\t")):
+                yield f"Row {i + 2}", util.csv_str_decode(row["orig code"])
+
+    benchmark_helper(
+        path=output_path,
+        generator=generator,
+        benchmarker=benchmarker,
+        sample_limit=None,
+    )
 
 
 if __name__ == "__main__":
@@ -203,6 +228,31 @@ if __name__ == "__main__":
         help="the statuses to filter",
     )
 
+    # Re-run benchmark suite subcommand
+
+    rerun_benchmark_parser = subparsers.add_parser(
+        "rerun-benchmarks",
+        help="run a benchmarking suite",
+    )
+    rerun_benchmark_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the synthesizer to benchmark",
+    )
+    rerun_benchmark_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path of the benchmarking tsv to re-run",
+    )
+    rerun_benchmark_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the new benchmarking tsv",
+    )
+
     # Routing
 
     args = parser.parse_args()
@@ -234,4 +284,10 @@ if __name__ == "__main__":
             output_path=args.output,
             invert=args.invert,
             statuses=args.statuses,
+        )
+    elif args.subcommand == "rerun-benchmarks":
+        rerun_benchmarks_helper(
+            input_path=args.input,
+            output_path=args.output,
+            language=args.language,
         )
