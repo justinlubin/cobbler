@@ -32,7 +32,12 @@ let main_elm : string -> Yojson.Basic.t =
   | Parse_json.ParseFail s ->
       `Assoc [ ("status", `String "ParseFail"); ("reason", `String s) ]
   | Yojson.Json_error s ->
-      failwith (sprintf "Yojson.Json_error: %s\n\n%s" s input)
+      `Assoc [ ("status", `String "Yojson.Json_error"); ("reason", `String s) ]
+  | Yojson.Basic.Util.Type_error (s, _) ->
+      `Assoc
+        [ ("status", `String "Yojson.Basic.Util.Type_error")
+        ; ("reason", `String s)
+        ]
 
 let main_python : string -> Yojson.Basic.t =
  fun input ->
