@@ -80,8 +80,8 @@ val replace_subexp : old_subexp:exp -> new_subexp:exp -> exp -> exp
     in [bindings]. TODO: recursively? *)
 val fill_holes : (string * exp) list -> exp -> exp
 
-(** [clean e] tidies [e] up in a semantics-preserving way (e.g. via
-    alpha/eta-equivalence). *)
+(** [clean e] tidies [e] up in a semantics-preserving way (e.g. via eta-
+    equivalence). *)
 val clean : exp -> exp
 
 (** [apply_type_sub subst e] applies the type substitute [subst] to the
