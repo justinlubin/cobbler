@@ -9,13 +9,12 @@ let main_elm : string -> Yojson.Basic.t =
         Parse_json.definitions (In_channel.input_all file))
   in
   try
-    let name, _, rhs = Parse_json.variable_definition input in
-    let rhs =
-      Exp.build_abs
-        (Set.to_list
-           (Set.diff (Exp.free_variables rhs) (String.Set.singleton name)))
-        rhs
+    let name, orig_typ, rhs = Parse_json.variable_definition input in
+    let fvs =
+      Set.to_list
+        (Set.diff (Exp.free_variables rhs) (String.Set.singleton name))
     in
+    let rhs = Exp.build_abs fvs rhs in
     let typ = Typ.generalize (Type_system.infer sigma gamma rhs) in
     let gamma = gamma |> Map.add_exn ~key:name ~data:typ in
     let env = Map.add_exn env ~key:name ~data:rhs in
@@ -23,12 +22,17 @@ let main_elm : string -> Yojson.Basic.t =
     let problem = Synthesis.problem_of_definitions (sigma, gamma, env) name in
     match Synthesis.solve ~use_unification:true ~depth:3 problem with
     | None -> `Assoc [ ("status", `String "SynthFail") ]
-    | Some e ->
+    | Some solution ->
         (try
-           Type_system.check sigma gamma e (Typ.instantiate typ);
+           Type_system.check sigma gamma solution (Typ.instantiate typ);
+           let params, inside = Exp.decompose_abs (Exp.clean solution) in
+           let solution =
+             Exp.build_abs (List.drop params (List.length fvs)) inside
+           in
            `Assoc
              [ ("status", `String "Success")
-             ; ("solution", `String (Exp.show_single (Exp.clean e)))
+             ; ( "solution"
+               , `String (Unparse_elm.definition name orig_typ solution) )
              ]
          with
         | Type_system.IllTyped e ->
