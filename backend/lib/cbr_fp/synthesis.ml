@@ -131,7 +131,8 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
        ~expand:(expand grammar)
        ~correct:
          (if use_unification
-         then (fun candidate_body ->
+         then
+           fun candidate_body ->
            let normalized_candidate_body =
              norm sigma gamma env candidate_body
            in
@@ -141,20 +142,6 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
                stdlib
                normalized_candidate_body
            in
-           if String.equal
-                (Exp.show_single candidate_body)
-                " ((maybeWithDefault____CBR (?? __hole#56 (Bool))) \
-                 ((maybeMap____CBR (?? __hole#76 (____typevar#74 -> (Bool)))) \
-                 (?? __hole#77 (Maybe ____typevar#74))))"
-           then
-             failwith
-               (sprintf
-                  "%s\n\n\n%s\n\n\n%s\n\n\n%s"
-                  (Exp.show_multi 0 normalized_candidate_body)
-                  (Unification.show_term normalized_candidate_body_uniterm)
-                  (Exp.show_multi 0 normalized_reference_body)
-                  (Unification.show_term normalized_reference_body_uniterm))
-           else ();
            match
              Unification.unify
                1000
@@ -162,19 +149,6 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
                normalized_reference_body_uniterm
            with
            | Unification.Solved subs ->
-               if false
-               then
-                 failwith
-                   (sprintf
-                      "%s\n\n%s\n\n%sDONE"
-                      (Exp.show_single normalized_candidate_body)
-                      (Exp.show_single normalized_reference_body)
-                      (String.concat
-                         (List.map
-                            (Unification_adapter.simplify_solution sigma subs)
-                            ~f:(fun (s, t) ->
-                              sprintf "%s -> %s\n" s (Exp.show_single t)))))
-               else ();
                Some
                  (Exp.build_abs
                     normalized_reference_params
@@ -182,7 +156,7 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
                        (Unification_adapter.simplify_solution sigma subs)
                        candidate_body))
            | Unification.Impossible -> None
-           | Unification.OutOfFuel -> None)
+           | Unification.OutOfFuel -> None
          else
            fun candidate_body ->
            let candidate = Exp.build_abs reference_params candidate_body in

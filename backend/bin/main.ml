@@ -27,10 +27,18 @@ let main_elm : string -> Yojson.Basic.t =
     match Synthesis.solve ~use_unification:true ~depth:3 problem with
     | None -> `Assoc [ ("status", `String "SynthFail") ]
     | Some e ->
-        `Assoc
-          [ ("status", `String "Success")
-          ; ("solution", `String (Exp.show_single (Exp.clean e)))
-          ]
+        (try
+           Type_system.check sigma gamma e (Typ.instantiate typ);
+           `Assoc
+             [ ("status", `String "Success")
+             ; ("solution", `String (Exp.show_single (Exp.clean e)))
+             ]
+         with
+        | Type_system.IllTyped e ->
+            `Assoc
+              [ ("status", `String "OutputIllTyped")
+              ; ("reason", `String (Exp.show_single e))
+              ])
   with
   | Type_system.IllTyped e ->
       `Assoc
