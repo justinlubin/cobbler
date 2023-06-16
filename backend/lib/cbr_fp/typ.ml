@@ -78,8 +78,8 @@ let compose_subs : sub -> sub -> sub =
  fun sigma1 sigma2 ->
   Map.merge sigma1 sigma2 ~f:(fun ~key el ->
       match el with
-      | `Left t1 -> Some t1
-      | `Right t2 | `Both (_, t2) -> Some (apply_sub sigma1 t2))
+      | `Left t -> Some t
+      | `Right t | `Both (_, t) -> Some (apply_sub sigma1 t))
 
 (* Type schemes *)
 

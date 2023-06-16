@@ -97,7 +97,9 @@ def python(tree):
         stats["reason"] = synthesis_result["reason"]
 
     if synthesis_result["status"] == "Success":
-        stats["synthed code"] = util.csv_str_encode((ast.dump(env) + "\n" + synthesis_result["solution"]))
+        stats["synthed code"] = util.csv_str_encode(
+            (ast.dump(env) + "\n" + synthesis_result["solution"])
+        )
 
     return stats
 

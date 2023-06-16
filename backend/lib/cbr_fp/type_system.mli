@@ -7,6 +7,7 @@ open Core
 open Lang
 
 exception IllTyped of exp
+exception CannotUnify of (typ * typ) list
 
 (** [infer gamma e] returns [tau] if and only if [e] has type [tau] in
     the datatype environment [sigma] and type environment [gamma] and throws the

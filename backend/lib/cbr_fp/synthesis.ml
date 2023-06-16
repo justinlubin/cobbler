@@ -64,7 +64,7 @@ let expand : grammar -> int -> exp -> exp list =
 
 let debug_expand : grammar -> int -> exp -> exp list =
  fun grammar depth e ->
-  print_endline (sprintf "{ Expanding (depth %d): %s" depth (Exp.show_single e));
+  Printf.eprintf "{ Expanding (depth %d): %s\n" depth (Exp.show_single e);
   let expansions = expand grammar depth e in
   List.iter ~f:(fun e' -> print_endline ("  " ^ Exp.show_single e')) expansions;
   print_endline "}";

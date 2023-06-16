@@ -81,7 +81,8 @@ and to_unification_term'
   | EBase (BEInt n) -> embed' "base_int" (Int.to_string n) []
   | EBase (BEFloat f) -> embed' "base_float" (Float.to_string f) []
   | EBase (BEString s) -> embed' "base_string" s []
-  | EHole (name, typ) -> Atom (Variable (name, to_unification_typ typ))
+  | EHole (name, typ) ->
+      Atom (Variable (sprintf "__ua_hole^%s" name, to_unification_typ typ))
   | ERScheme (RSCata, dt, args) -> embed' "cata" dt args
 
 let to_unification_term
@@ -99,9 +100,10 @@ let rec from_unification_term
   in
   let body =
     match head with
-    | Variable (x, tau) when String.is_prefix ~prefix:"__hole" x ->
-        build_arguments (EHole (x, from_unification_typ tau))
-    | Variable (x, _) -> build_arguments (EVar x)
+    | Variable (x, tau) ->
+        (match String.chop_prefix ~prefix:"__ua_hole^" x with
+        | Some name -> build_arguments (EHole (name, from_unification_typ tau))
+        | None -> build_arguments (EVar x))
     | Constant (x, _) ->
         (match Util.unembed_name x with
         | Some ("match", "") ->
@@ -143,12 +145,12 @@ let simplify_solution
   =
  fun sigma subs ->
   List.filter_map subs ~f:(fun (lhs, rhs) ->
-      if String.is_prefix ~prefix:"__hole" lhs
-      then
-        Some
-          ( lhs
-          , from_unification_term
-              sigma
-              (Unification.normalize
-                 (Unification.substitute_recursively subs rhs)) )
-      else None)
+      match String.chop_prefix ~prefix:"__ua_hole^" lhs with
+      | Some name ->
+          Some
+            ( name
+            , from_unification_term
+                sigma
+                (Unification.normalize
+                   (Unification.substitute_recursively subs rhs)) )
+      | None -> None)

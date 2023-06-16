@@ -45,3 +45,7 @@ watch:
 .PHONY: watch-test
 watch-test:
 	dune runtest --watch --terminal-persistence=clear-on-rebuild
+
+.PHONY: regen-stdlib
+regen-stdlib:
+	cat bin/Stdlib.elm | elm-format --json --stdin > bin/Stdlib.json

@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import json
 import pathlib
 import subprocess
 import sys
@@ -9,6 +10,34 @@ import sys
 import benchmark
 import db_iter
 import util
+
+
+def refactor_helper(language=None):
+    try:
+        subprocess.run(
+            ["dune", "build", "bin/main.exe"],
+            cwd=util.path_from_root("backend"),
+            check=True,
+        )
+    except subprocess.CalledProcessError:
+        sys.exit(1)
+
+    code = sys.stdin.read()
+
+    if language == "elm":
+        elm_format_output = subprocess.check_output(
+            ["elm-format", "--stdin", "--json"],
+            input=code.encode("utf-8"),
+        )
+        stats = benchmark.elm_json(json.loads(elm_format_output)["body"][0])
+    elif language == "python":
+        stats = benchmark.python(ast.parse(code))
+
+    if stats["status"] == "Success":
+        print(util.csv_str_decode(stats["synthed code"]))
+    else:
+        print("No solution found.")
+        sys.exit(1)
 
 
 def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=100):
@@ -38,6 +67,7 @@ def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=1
                 previous_path = sample_path
             stats = benchmarker(block)
             writer.writerow(stats)
+        print(f"Completed '{previous_path}' ({sample_num+1}/{sample_limit})")
 
 
 def view_benchmark_helper(path=None, line_number=None, show_code=None):
@@ -103,6 +133,29 @@ def filter_benchmarks_helper(
                     writer.writerow(row)
 
 
+def rerun_benchmarks_helper(
+    input_path=None,
+    output_path=None,
+    language=None,
+):
+    if language == "elm":
+        benchmarker = lambda s: benchmark.elm_json(json.loads(s))
+    elif language == "python":
+        benchmarker = lambda s: benchmark.python(ast.parse(s))
+
+    def generator(sample_limit=None):
+        with open(input_path, "r", newline="") as input_f:
+            for i, row in enumerate(csv.DictReader(input_f, delimiter="\t")):
+                yield f"Row {i + 2}", util.csv_str_decode(row["orig code"])
+
+    benchmark_helper(
+        path=output_path,
+        generator=generator,
+        benchmarker=benchmarker,
+        sample_limit=None,
+    )
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print(
@@ -124,6 +177,19 @@ if __name__ == "__main__":
         title="subcommands",
         dest="subcommand",
         required=True,
+    )
+
+    # Refactor code subcommand
+
+    refactor_parser = subparsers.add_parser(
+        "refactor",
+        help="refactor a snippet of code from stdin, printing to stdout",
+    )
+    refactor_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the code to refactor",
     )
 
     # Run benchmark suite subcommand
@@ -203,11 +269,40 @@ if __name__ == "__main__":
         help="the statuses to filter",
     )
 
+    # Re-run benchmark suite subcommand
+
+    rerun_benchmark_parser = subparsers.add_parser(
+        "rerun-benchmarks",
+        help="run a benchmarking suite",
+    )
+    rerun_benchmark_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the synthesizer to benchmark",
+    )
+    rerun_benchmark_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path of the benchmarking tsv to re-run",
+    )
+    rerun_benchmark_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the new benchmarking tsv",
+    )
+
     # Routing
 
     args = parser.parse_args()
 
-    if args.subcommand == "benchmark":
+    if args.subcommand == "refactor":
+        refactor_helper(
+            language=args.language,
+        )
+    elif args.subcommand == "benchmark":
         if args.language == "elm":
             benchmark_helper(
                 path=args.path_to_tsv,
@@ -234,4 +329,10 @@ if __name__ == "__main__":
             output_path=args.output,
             invert=args.invert,
             statuses=args.statuses,
+        )
+    elif args.subcommand == "rerun-benchmarks":
+        rerun_benchmarks_helper(
+            input_path=args.input,
+            output_path=args.output,
+            language=args.language,
         )

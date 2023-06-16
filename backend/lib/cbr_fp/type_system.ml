@@ -16,6 +16,8 @@ let apply_sub_constraints : Typ.sub -> constraint_set -> constraint_set =
 
 exception IllTyped of exp [@@deriving sexp]
 
+let polymorphic_variant_universe : string = "POLYMORPHIC_VARIANT____CBR"
+
 let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
   =
  fun sigma gamma e ->
@@ -100,14 +102,19 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
           , List.map2_exn domains ts_args ~f:(fun d t ->
                 (Typ.apply_sub sub d, t))
             @ List.concat cs_args )
-      | None -> raise (IllTyped e))
+      | None ->
+          (* raise (IllTyped e)) *)
+          (TDatatype (polymorphic_variant_universe, []), []))
   | EBase (BEInt _) -> (TBase BTInt, [])
   | EBase (BEFloat _) -> (TBase BTFloat, [])
   | EBase (BEString _) -> (TBase BTString, [])
   | EHole (_, t) -> (t, [])
   | ERScheme (RSCata, dt, args) ->
       let dt_params, ctors = Map.find_exn sigma dt in
-      let xs = List.map ~f:(fun _ -> Typ.fresh_type_var ()) dt_params in
+      let sub_list =
+        List.map ~f:(fun p -> (p, Typ.fresh_type_var ())) dt_params
+      in
+      let sub = String.Map.of_alist_exn sub_list in
       let return_type_var = Typ.fresh_type_var () in
       let args_constraints =
         List.map2_exn args ctors ~f:(fun arg (_, domain) ->
@@ -119,12 +126,13 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
                      match d with
                      | TDatatype (dt', _) when String.equal dt dt' ->
                          return_type_var
-                     | _ -> d)
+                     | _ -> Typ.apply_sub sub d)
                    domain)
                 return_type_var )
             :: c_arg)
       in
-      (TArr (TDatatype (dt, xs), return_type_var), List.concat args_constraints)
+      ( TArr (TDatatype (dt, List.map ~f:snd sub_list), return_type_var)
+      , List.concat args_constraints )
 
 (* Constraint unification *)
 
@@ -141,6 +149,9 @@ let rec unify_exn : constraint_set -> Typ.sub =
       (* Base cases *)
       | TBase b1, TBase b2 when [%eq: base_typ] b1 b2 -> unify_exn tail
       | TVar x1, TVar x2 when String.equal x1 x2 -> unify_exn tail
+      | TDatatype (dt1, _), TDatatype (dt2, _)
+        when String.equal dt1 polymorphic_variant_universe
+             || String.equal dt2 polymorphic_variant_universe -> unify_exn tail
       (* Free variable cases *)
       | TVar x, _ when not (Set.mem fvt x) ->
           let sub = String.Map.singleton x t in
