@@ -52,9 +52,10 @@ let evar_of_json : Json.t -> string =
   match j |> J.member "tag" |> J.to_string with
   | "VariableReference" -> j |> J.member "name" |> J.to_string
   | "ExternalReference" ->
-      let m = j |> J.member "module" |> J.to_string in
+      (* let m = j |> J.member "module" |> J.to_string in *)
       let i = j |> J.member "identifier" |> J.to_string in
-      sprintf "%s.%s" m i
+      (* sprintf "%s.%s" m i *)
+      i
   | s -> raise (ParseFail (sprintf "unknown expression variable tag '%s'" s))
 
 (* Patterns *)
@@ -67,8 +68,8 @@ let pctor_of_json : Json.t -> string * string list =
       , j |> J.member "arguments" |> J.to_list |> List.map ~f:pvar_of_json )
   | "ListPattern" ->
       (match j |> J.member "prefix" |> J.to_list with
-      | [] -> ("Basics.Nil", [])
-      | [ hd ] -> ("Basics.Cons", [ j |> J.member "rest" |> pvar_of_json ])
+      | [] -> ("Nil", [])
+      | [ hd ] -> ("Cons", [ j |> J.member "rest" |> pvar_of_json ])
       | _ -> raise (ParseFail (sprintf "nested list patterns unsupported")))
   | s -> raise (ParseFail (sprintf "unknown constructor pattern tag '%s'" s))
 
@@ -87,7 +88,9 @@ and exp_of_json : Json.t -> exp =
   | "FloatLiteral" -> EBase (BEFloat (j |> J.member "value" |> J.to_float))
   | "StringLiteral" -> EBase (BEString (j |> J.member "value" |> J.to_string))
   | "UnitLiteral" -> ECtor ("EUnit", [])
-  | "VariableReference" | "ExternalReference" -> EVar (evar_of_json j)
+  | "VariableReference" | "ExternalReference" ->
+      let name = evar_of_json j in
+      if is_constructor name then ECtor (name, []) else EVar name
   | "AnonymousFunction" ->
       let params =
         j |> J.member "parameters" |> J.to_list |> List.map ~f:pvar_of_json
@@ -105,16 +108,16 @@ and exp_of_json : Json.t -> exp =
         j |> J.member "arguments" |> J.to_list |> List.map ~f:exp_of_json
       in
       (match j |> J.member "function" |> exp_of_json with
-      | EVar c when is_constructor c -> ECtor (c, args)
-      | EVar "::" -> ECtor ("Basics.Cons", args)
+      | ECtor (c, []) -> ECtor (c, args)
+      | EVar "::" -> ECtor ("Cons", args)
       | head -> Exp.build_app head args)
   | "ListLiteral" ->
       j
       |> J.member "terms"
       |> J.to_list
       |> List.fold_right
-           ~init:(ECtor ("Basics.Nil", []))
-           ~f:(fun e acc -> ECtor ("Basics.Cons", [ exp_of_json e; acc ]))
+           ~init:(ECtor ("Nil", []))
+           ~f:(fun e acc -> ECtor ("Cons", [ exp_of_json e; acc ]))
   | s -> raise (ParseFail (sprintf "unknown expression tag '%s'" s))
 
 (* Definitions *)

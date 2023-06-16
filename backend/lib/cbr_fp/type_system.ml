@@ -16,6 +16,8 @@ let apply_sub_constraints : Typ.sub -> constraint_set -> constraint_set =
 
 exception IllTyped of exp [@@deriving sexp]
 
+let polymorphic_variant_universe : string = "POLYMORPHIC_VARIANT____CBR"
+
 let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
   =
  fun sigma gamma e ->
@@ -100,7 +102,9 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
           , List.map2_exn domains ts_args ~f:(fun d t ->
                 (Typ.apply_sub sub d, t))
             @ List.concat cs_args )
-      | None -> raise (IllTyped e))
+      | None ->
+          (* raise (IllTyped e)) *)
+          (TDatatype (polymorphic_variant_universe, []), []))
   | EBase (BEInt _) -> (TBase BTInt, [])
   | EBase (BEFloat _) -> (TBase BTFloat, [])
   | EBase (BEString _) -> (TBase BTString, [])
@@ -141,6 +145,9 @@ let rec unify_exn : constraint_set -> Typ.sub =
       (* Base cases *)
       | TBase b1, TBase b2 when [%eq: base_typ] b1 b2 -> unify_exn tail
       | TVar x1, TVar x2 when String.equal x1 x2 -> unify_exn tail
+      | TDatatype (dt1, _), TDatatype (dt2, _)
+        when String.equal dt1 polymorphic_variant_universe
+             || String.equal dt2 polymorphic_variant_universe -> unify_exn tail
       (* Free variable cases *)
       | TVar x, _ when not (Set.mem fvt x) ->
           let sub = String.Map.singleton x t in
@@ -190,3 +197,11 @@ let well_typed : datatype_env * typ_env * env -> unit =
         |> Map.find gamma
         |> Option.value_or_thunk ~default:(fun _ -> raise (IllTyped body))
         |> Typ.instantiate))
+
+let assume_free_ok
+    : exceptions:String.Set.t -> datatype_env -> exp -> typ_env -> typ_env
+  =
+ fun ~exceptions sigma e gamma ->
+  let fvs = Set.diff (Exp.free_variables e) exceptions in
+  Set.fold fvs ~init:gamma ~f:(fun acc x ->
+      Map.add_exn acc ~key:x ~data:(Typ.generalize (Typ.fresh_type_var ())))

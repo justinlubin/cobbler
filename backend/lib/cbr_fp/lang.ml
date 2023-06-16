@@ -25,7 +25,7 @@ type typ =
 type typ_scheme = string list * typ [@@deriving sexp, ord, eq, compare, show]
 
 (** An environment of types (commonly called "gamma") *)
-type typ_env = typ_scheme String.Map.t
+type typ_env = typ_scheme String.Map.t [@@deriving sexp]
 
 (** An environment of datatypes (commonly called "sigma") *)
 type datatype_env = (string list * (string * typ list) list) String.Map.t

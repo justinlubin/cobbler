@@ -7,18 +7,18 @@ open Core
 type typ =
   | Elementary of Lang.typ
   | Arrow of typ * typ
-[@@deriving eq, sexp, ord]
+[@@deriving eq, sexp, ord, show]
 
 type atom =
   | Variable of string * typ
   | Constant of string * typ
-[@@deriving eq, sexp, ord]
+[@@deriving eq, sexp, ord, show]
 
 type term =
   | Atom of atom
   | Application of term * term
   | Abstraction of string * typ * term
-[@@deriving eq, sexp, ord]
+[@@deriving eq, sexp, ord, show]
 
 (* Types *)
 
@@ -33,8 +33,20 @@ let rec typ : term -> typ = function
       | Arrow (alpha, beta) ->
           if [%eq: typ] (typ t2) alpha
           then beta
-          else failwith "argument type mismatch"
-      | _ -> failwith "head not arrow type")
+          else
+            failwith
+              (sprintf
+                 "argument (%s) type mismatch: %s and %s"
+                 ([%show: term] t2)
+                 ([%show: typ] (typ t2))
+                 ([%show: typ] alpha))
+      | tau ->
+          failwith
+            (sprintf
+               "head of type %s (not arrow type): %s applied to %s"
+               ([%show: typ] tau)
+               ([%show: term] t1)
+               ([%show: term] t2)))
   | Abstraction (param, alpha, body) -> Arrow (alpha, typ body)
 
 (* Substitution function *)
