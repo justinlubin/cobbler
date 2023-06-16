@@ -64,7 +64,7 @@ let expand : grammar -> int -> exp -> exp list =
 
 let debug_expand : grammar -> int -> exp -> exp list =
  fun grammar depth e ->
-  print_endline (sprintf "{ Expanding (depth %d): %s" depth (Exp.show_single e));
+  Printf.eprintf "{ Expanding (depth %d): %s\n" depth (Exp.show_single e);
   let expansions = expand grammar depth e in
   List.iter ~f:(fun e' -> print_endline ("  " ^ Exp.show_single e')) expansions;
   print_endline "}";
@@ -131,8 +131,7 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
        ~expand:(expand grammar)
        ~correct:
          (if use_unification
-         then
-           fun candidate_body ->
+         then (fun candidate_body ->
            let normalized_candidate_body =
              norm sigma gamma env candidate_body
            in
@@ -142,6 +141,19 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
                stdlib
                normalized_candidate_body
            in
+           if String.equal
+                (Exp.show_single candidate_body)
+                "((maybeWithDefault____CBR (?? __hole#149 \
+                 (POLYMORPHIC_VARIANT____CBR))) ((maybeMap____CBR (?? \
+                 __hole#222 (____typevar#220 -> \
+                 (POLYMORPHIC_VARIANT____CBR)))) (?? __hole#223 (Maybe \
+                 ____typevar#220))))"
+           then
+             failwith
+               ([%show: Sexp.t]
+                  ([%sexp_of: Unification.term]
+                     normalized_reference_body_uniterm))
+           else ();
            match
              Unification.unify
                1000
@@ -156,7 +168,7 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
                        (Unification_adapter.simplify_solution sigma subs)
                        candidate_body))
            | Unification.Impossible -> None
-           | Unification.OutOfFuel -> None
+           | Unification.OutOfFuel -> None)
          else
            fun candidate_body ->
            let candidate = Exp.build_abs reference_params candidate_body in

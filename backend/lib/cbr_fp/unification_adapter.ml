@@ -46,10 +46,7 @@ and to_unification_term'
     -> Unification.term
   =
  fun sigma stdlib gamma e ->
-  let result_type =
-    try Type_system.infer sigma gamma e with
-    | _ -> failwith (Exp.show_multi 0 (Exp.alpha_normalize e))
-  in
+  let result_type = Type_system.infer sigma gamma e in
   let embed' prefix metadata arguments =
     embed sigma stdlib gamma prefix metadata result_type arguments
   in

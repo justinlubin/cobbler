@@ -111,7 +111,10 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
   | EHole (_, t) -> (t, [])
   | ERScheme (RSCata, dt, args) ->
       let dt_params, ctors = Map.find_exn sigma dt in
-      let xs = List.map ~f:(fun _ -> Typ.fresh_type_var ()) dt_params in
+      let sub_list =
+        List.map ~f:(fun p -> (p, Typ.fresh_type_var ())) dt_params
+      in
+      let sub = String.Map.of_alist_exn sub_list in
       let return_type_var = Typ.fresh_type_var () in
       let args_constraints =
         List.map2_exn args ctors ~f:(fun arg (_, domain) ->
@@ -123,12 +126,13 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
                      match d with
                      | TDatatype (dt', _) when String.equal dt dt' ->
                          return_type_var
-                     | _ -> d)
+                     | _ -> Typ.apply_sub sub d)
                    domain)
                 return_type_var )
             :: c_arg)
       in
-      (TArr (TDatatype (dt, xs), return_type_var), List.concat args_constraints)
+      ( TArr (TDatatype (dt, List.map ~f:snd sub_list), return_type_var)
+      , List.concat args_constraints )
 
 (* Constraint unification *)
 
@@ -203,5 +207,14 @@ let assume_free_ok
   =
  fun ~exceptions sigma e gamma ->
   let fvs = Set.diff (Exp.free_variables e) exceptions in
-  Set.fold fvs ~init:gamma ~f:(fun acc x ->
-      Map.add_exn acc ~key:x ~data:(Typ.generalize (Typ.fresh_type_var ())))
+  let gamma =
+    Set.fold fvs ~init:gamma ~f:(fun acc x ->
+        Map.add_exn acc ~key:x ~data:([], Typ.fresh_type_var ()))
+  in
+  let s, c = constraint_type sigma gamma e in
+  let sub = unify_exn c in
+  gamma
+  |> Map.mapi ~f:(fun ~key ~data:(xs, tau) ->
+         if Set.mem fvs key
+         then Typ.generalize (Typ.apply_sub sub tau)
+         else (xs, tau))

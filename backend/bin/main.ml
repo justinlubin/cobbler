@@ -9,19 +9,22 @@ let main_elm : string -> Yojson.Basic.t =
         Parse_json.definitions (In_channel.input_all file))
   in
   try
-    let name, typ, rhs = Parse_json.variable_definition input in
-    let gamma =
-      gamma
-      |> Map.add_exn ~key:name ~data:typ
-      |> Type_system.assume_free_ok
-           ~exceptions:(String.Set.singleton name)
-           sigma
-           rhs
+    let name, _, rhs = Parse_json.variable_definition input in
+    let rhs =
+      Exp.build_abs
+        (Set.to_list
+           (Set.diff (Exp.free_variables rhs) (String.Set.singleton name)))
+        rhs
     in
+    let typ = Typ.generalize (Type_system.infer sigma gamma rhs) in
+    (*if true
+    then failwith (Typ.show (snd typ) ^ ";;;" ^ Typ.show (snd orig))
+    else ();*)
+    let gamma = gamma |> Map.add_exn ~key:name ~data:typ in
     let env = Map.add_exn env ~key:name ~data:rhs in
     let () = Type_system.well_typed (sigma, gamma, env) in
     let problem = Synthesis.problem_of_definitions (sigma, gamma, env) name in
-    match Synthesis.solve ~use_unification:true ~depth:5 problem with
+    match Synthesis.solve ~use_unification:true ~depth:3 problem with
     | None -> `Assoc [ ("status", `String "SynthFail") ]
     | Some e ->
         `Assoc
@@ -34,7 +37,7 @@ let main_elm : string -> Yojson.Basic.t =
         [ ("status", `String "IllTyped")
         ; ("reason", `String (Exp.show_single e))
         ]
-  (*| Type_system.CannotUnify pairs ->
+  | Type_system.CannotUnify pairs ->
       `Assoc
         [ ("status", `String "CannotUnify")
         ; ( "reason"
@@ -43,7 +46,7 @@ let main_elm : string -> Yojson.Basic.t =
                  ~f:(fun (t1, t2) ->
                    `List [ `String (Typ.show t1); `String (Typ.show t2) ])
                  pairs) )
-        ]*)
+        ]
   | Parse_json.ParseFail s ->
       `Assoc [ ("status", `String "ParseFail"); ("reason", `String s) ]
   | Yojson.Json_error s ->

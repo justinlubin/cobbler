@@ -26,12 +26,19 @@ let atom_typ : atom -> typ = function
   | Variable (_, typ) -> typ
   | Constant (_, typ) -> typ
 
+let rec typ_consistent : typ -> typ -> bool =
+ fun tau1 tau2 ->
+  match (tau1, tau2) with
+  | Elementary _, Elementary _ -> true
+  | Arrow (a, b), Arrow (c, d) -> typ_consistent a c && typ_consistent b d
+  | Elementary _, Arrow (_, _) | Arrow (_, _), Elementary _ -> false
+
 let rec typ : term -> typ = function
   | Atom atom -> atom_typ atom
   | Application (t1, t2) ->
       (match typ t1 with
       | Arrow (alpha, beta) ->
-          if [%eq: typ] (typ t2) alpha
+          if typ_consistent (typ t2) alpha
           then beta
           else
             failwith
