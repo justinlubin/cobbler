@@ -12,6 +12,34 @@ import db_iter
 import util
 
 
+def show_elm_json(s):
+    return "\n".join(
+        subprocess.check_output(
+            ["elm-format", "--stdin", "--from-json"],
+            input=('{"moduleName":"Main","imports":{},"body": [' + s + "]}").encode(
+                "utf8"
+            ),
+        )
+        .decode("utf8")
+        .splitlines()[3:]
+    )
+
+
+def show_elm(s):
+    return "\n".join(
+        subprocess.check_output(
+            ["elm-format", "--stdin"],
+            input=s.encode("utf8"),
+        )
+        .decode("utf8")
+        .splitlines()[3:]
+    )
+
+
+def show_python(s):
+    return s
+
+
 def refactor_helper(language=None):
     try:
         subprocess.run(
@@ -34,7 +62,11 @@ def refactor_helper(language=None):
         stats = benchmark.python(ast.parse(code))
 
     if stats["status"] == "Success":
-        print(util.csv_str_decode(stats["synthed code"]))
+        decoded_data = util.csv_str_decode(stats["synthed code"])
+        if language == "elm":
+            print(show_elm(decoded_data))
+        elif language == "python":
+            print(show_python(decoded_data))
     else:
         print("No solution found.")
         sys.exit(1)
@@ -70,7 +102,12 @@ def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=1
         print(f"Completed '{previous_path}' ({sample_num+1}/{sample_limit})")
 
 
-def view_benchmark_helper(path=None, line_number=None, show_code=None):
+def view_benchmark_helper(
+    path=None,
+    line_number=None,
+    show_code=None,
+    show_synthed_code=None,
+):
     with open(path, "r", newline="") as f:
         for i, row in enumerate(csv.DictReader(f, delimiter="\t")):
             if i == line_number - 2:
@@ -90,27 +127,10 @@ def view_benchmark_helper(path=None, line_number=None, show_code=None):
                 )
                 print(
                     "synthed code:",
-                    util.csv_str_decode(row["synthed code"]),
+                    show_synthed_code(util.csv_str_decode(row["synthed code"])),
                     sep="\n",
                 )
                 break
-
-
-def show_elm(s):
-    return "\n".join(
-        subprocess.check_output(
-            ["elm-format", "--stdin", "--from-json"],
-            input=('{"moduleName":"Main","imports":{},"body": [' + s + "]}").encode(
-                "utf8"
-            ),
-        )
-        .decode("utf8")
-        .splitlines()[3:]
-    )
-
-
-def show_python(s):
-    return s
 
 
 def filter_benchmarks_helper(
@@ -321,7 +341,8 @@ if __name__ == "__main__":
         view_benchmark_helper(
             path=args.path_to_tsv,
             line_number=args.line_number,
-            show_code=show_elm if args.language == "elm" else show_python,
+            show_code=show_elm_json if args.language == "elm" else show_python,
+            show_synthed_code=show_elm if args.language == "elm" else show_python,
         )
     elif args.subcommand == "filter-benchmarks":
         filter_benchmarks_helper(

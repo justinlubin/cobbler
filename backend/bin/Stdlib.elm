@@ -6,14 +6,14 @@ type List a = Nil | Cons a (List a)
 
 type Bool = True | False
 
-maybeMap____CBR : (a -> b) -> Maybe a -> Maybe b
-maybeMap____CBR f mx =
+maybe_map____CBR : (a -> b) -> Maybe a -> Maybe b
+maybe_map____CBR f mx =
   case mx of
     Just x -> Just (f x)
     Nothing -> Nothing
 
-maybeWithDefault____CBR : a -> Maybe a -> a
-maybeWithDefault____CBR d mx =
+maybe_withDefault____CBR : a -> Maybe a -> a
+maybe_withDefault____CBR d mx =
   case mx of
     Just x -> x
     Nothing -> d
