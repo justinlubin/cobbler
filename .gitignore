@@ -6,4 +6,4 @@ elm-stuff
 backend/after_eqsat.txt
 backend/before_eqsat.txt
 __pycache__
-data/*.tsv
+data/*

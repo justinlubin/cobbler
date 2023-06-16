@@ -1,4 +1,4 @@
-type Maybe q = Just q | Nothing
+type Maybe a = Just a | Nothing
 
 type Result error value = Ok value | Err error
 

@@ -17,9 +17,6 @@ let main_elm : string -> Yojson.Basic.t =
         rhs
     in
     let typ = Typ.generalize (Type_system.infer sigma gamma rhs) in
-    (*if true
-    then failwith (Typ.show (snd typ) ^ ";;;" ^ Typ.show (snd orig))
-    else ();*)
     let gamma = gamma |> Map.add_exn ~key:name ~data:typ in
     let env = Map.add_exn env ~key:name ~data:rhs in
     let () = Type_system.well_typed (sigma, gamma, env) in
