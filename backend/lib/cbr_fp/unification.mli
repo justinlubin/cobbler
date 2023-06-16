@@ -14,20 +14,20 @@ open Core
 type typ =
   | Elementary of Lang.typ
   | Arrow of typ * typ
-[@@deriving eq, sexp, ord]
+[@@deriving sexp, ord]
 
 (** Atoms in the language supported for unification *)
 type atom =
   | Variable of string * typ
   | Constant of string * typ
-[@@deriving eq, sexp, ord]
+[@@deriving sexp, ord]
 
 (** Terms in the language supported for unification *)
 type term =
   | Atom of atom
   | Application of term * term
   | Abstraction of string * typ * term
-[@@deriving eq, sexp, ord]
+[@@deriving sexp, ord]
 
 (* [show_term t] displays [t] as a string. *)
 val show_term : term -> string

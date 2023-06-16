@@ -64,12 +64,11 @@ let expand : grammar -> int -> exp -> exp list =
 
 let debug_expand : grammar -> int -> exp -> exp list =
  fun grammar depth e ->
-  (*Printf.eprintf "{ Expanding (depth %d): %s\n" depth (Exp.show_single e);
+  Printf.eprintf "{ Expanding (depth %d): %s\n" depth (Exp.show_single e);
   let expansions = expand grammar depth e in
   List.iter ~f:(fun e' -> print_endline ("  " ^ Exp.show_single e')) expansions;
-  print_endline "}";*)
-  (*expansions*)
-  [ e ]
+  print_endline "}";
+  expansions
 
 (* Problems *)
 
@@ -142,14 +141,11 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
                stdlib
                normalized_candidate_body
            in
-           (*if String.equal
+           if String.equal
                 (Exp.show_single candidate_body)
-                "((maybeWithDefault____CBR (?? __hole#149 \
-                 (POLYMORPHIC_VARIANT____CBR))) ((maybeMap____CBR (?? \
-                 __hole#222 (____typevar#220 -> \
-                 (POLYMORPHIC_VARIANT____CBR)))) (?? __hole#223 (Maybe \
-                 ____typevar#220))))"*)
-           if false
+                " ((maybeWithDefault____CBR (?? __hole#56 (Bool))) \
+                 ((maybeMap____CBR (?? __hole#76 (____typevar#74 -> (Bool)))) \
+                 (?? __hole#77 (Maybe ____typevar#74))))"
            then
              failwith
                (sprintf
@@ -161,7 +157,7 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
            else ();
            match
              Unification.unify
-               10000
+               1000
                normalized_candidate_body_uniterm
                normalized_reference_body_uniterm
            with

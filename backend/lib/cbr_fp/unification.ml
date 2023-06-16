@@ -7,36 +7,43 @@ open Core
 type typ =
   | Elementary of Lang.typ
   | Arrow of typ * typ
-[@@deriving eq, sexp, ord, show]
+[@@deriving sexp, ord, show]
 
 type atom =
   | Variable of string * typ
   | Constant of string * typ
-[@@deriving eq, sexp, ord, show]
+[@@deriving sexp, ord, show]
 
 type term =
   | Atom of atom
   | Application of term * term
   | Abstraction of string * typ * term
-[@@deriving eq, sexp, ord, show]
+[@@deriving sexp, ord, show]
+
+let rec show_typ : typ -> string =
+ fun tau ->
+  match tau with
+  | Elementary tau' -> sprintf "<%s>" (Typ.show tau')
+  | Arrow (t1, t2) -> sprintf "(arr %s %s)" (show_typ t1) (show_typ t2)
 
 let show_term : term -> string =
  fun t ->
   let rec helper depth = function
-    | Atom (Variable (x, _)) -> sprintf "V.%s" x
-    | Atom (Constant (x, _)) -> sprintf "C.%s" x
+    | Atom (Variable (x, tau)) -> sprintf "V.%s(%s)" x (show_typ tau)
+    | Atom (Constant (x, tau)) -> sprintf "C.%s(%s)" x (show_typ tau)
     | Application (t1, t2) ->
         sprintf
           "(%s\n%s%s)"
           (helper depth t1)
           (String.init (4 * (depth + 1)) ~f:(fun _ -> ' '))
           (helper (depth + 1) t2)
-    | Abstraction (x, _, t) ->
+    | Abstraction (x, tau, t) ->
         sprintf
-          "(lam %s.\n%s%s)"
+          "(lam %s(%s).\n%s%s)"
           x
+          (show_typ tau)
           (String.init (4 * (depth + 1)) ~f:(fun _ -> ' '))
-          (helper depth t)
+          (helper (depth + 1) t)
   in
   helper 0 t
 
@@ -233,19 +240,19 @@ let rigid : term -> bool =
 
 (* Substitutions *)
 
-type substitution_pair = string * term [@@deriving eq, sexp, ord]
-type substitution = substitution_pair list [@@deriving eq, sexp, ord]
+type substitution_pair = string * term [@@deriving sexp, ord]
+type substitution = substitution_pair list [@@deriving sexp, ord]
 
 (* === The unification algorithm ===  *)
 
 (* Types *)
 
-type disagreement_set = (term * term) list [@@deriving eq, sexp, ord]
+type disagreement_set = (term * term) list [@@deriving sexp, ord]
 
 type matching_tree =
   | Terminal of bool
   | Nonterminal of disagreement_set * (substitution_pair * matching_tree) list
-[@@deriving eq, sexp, ord]
+[@@deriving sexp, ord]
 
 (* SIMPL procedure *)
 
@@ -356,7 +363,7 @@ let matchh : term -> term -> substitution =
   let projection =
     List.filter_map ws ~f:(fun (w, w_typ) ->
         let w_domain, w_codomain = decompose_arr w_typ in
-        if [%eq: typ] w_codomain codomain
+        if typ_consistent w_codomain codomain
         then
           Some
             ( head1_var

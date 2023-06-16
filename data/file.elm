@@ -1,11 +1,8 @@
-module Main exposing (decodeLoaded)
+main : (String -> Bool) ->  Maybe String -> Maybe Bool
+main f mx =
+    case mx of
+        Just x ->
+          f x
 
-
-decodeLoaded : Json.Decode.Decoder a -> Maybe.Maybe String -> LoadResult a
-decodeLoaded decoder mstring =
-    case mstring of
-        Maybe.Just string ->
-          f string
-
-        Maybe.Nothing ->
-            NoData
+        Nothing ->
+            False
