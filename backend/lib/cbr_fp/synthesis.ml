@@ -64,11 +64,12 @@ let expand : grammar -> int -> exp -> exp list =
 
 let debug_expand : grammar -> int -> exp -> exp list =
  fun grammar depth e ->
-  Printf.eprintf "{ Expanding (depth %d): %s\n" depth (Exp.show_single e);
+  (*Printf.eprintf "{ Expanding (depth %d): %s\n" depth (Exp.show_single e);
   let expansions = expand grammar depth e in
   List.iter ~f:(fun e' -> print_endline ("  " ^ Exp.show_single e')) expansions;
-  print_endline "}";
-  expansions
+  print_endline "}";*)
+  (*expansions*)
+  [ e ]
 
 (* Problems *)
 
@@ -141,26 +142,43 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
                stdlib
                normalized_candidate_body
            in
-           if String.equal
+           (*if String.equal
                 (Exp.show_single candidate_body)
                 "((maybeWithDefault____CBR (?? __hole#149 \
                  (POLYMORPHIC_VARIANT____CBR))) ((maybeMap____CBR (?? \
                  __hole#222 (____typevar#220 -> \
                  (POLYMORPHIC_VARIANT____CBR)))) (?? __hole#223 (Maybe \
-                 ____typevar#220))))"
+                 ____typevar#220))))"*)
+           if false
            then
              failwith
-               ([%show: Sexp.t]
-                  ([%sexp_of: Unification.term]
-                     normalized_reference_body_uniterm))
+               (sprintf
+                  "%s\n\n\n%s\n\n\n%s\n\n\n%s"
+                  (Exp.show_multi 0 normalized_candidate_body)
+                  (Unification.show_term normalized_candidate_body_uniterm)
+                  (Exp.show_multi 0 normalized_reference_body)
+                  (Unification.show_term normalized_reference_body_uniterm))
            else ();
            match
              Unification.unify
-               1000
+               10000
                normalized_candidate_body_uniterm
                normalized_reference_body_uniterm
            with
            | Unification.Solved subs ->
+               if false
+               then
+                 failwith
+                   (sprintf
+                      "%s\n\n%s\n\n%sDONE"
+                      (Exp.show_single normalized_candidate_body)
+                      (Exp.show_single normalized_reference_body)
+                      (String.concat
+                         (List.map
+                            (Unification_adapter.simplify_solution sigma subs)
+                            ~f:(fun (s, t) ->
+                              sprintf "%s -> %s\n" s (Exp.show_single t)))))
+               else ();
                Some
                  (Exp.build_abs
                     normalized_reference_params

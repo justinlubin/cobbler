@@ -12,6 +12,34 @@ import db_iter
 import util
 
 
+def refactor_helper(language=None):
+    try:
+        subprocess.run(
+            ["dune", "build", "bin/main.exe"],
+            cwd=util.path_from_root("backend"),
+            check=True,
+        )
+    except subprocess.CalledProcessError:
+        sys.exit(1)
+
+    code = sys.stdin.read()
+
+    if language == "elm":
+        elm_format_output = subprocess.check_output(
+            ["elm-format", "--stdin", "--json"],
+            input=code.encode("utf-8"),
+        )
+        stats = benchmark.elm_json(json.loads(elm_format_output)["body"][0])
+    elif language == "python":
+        stats = benchmark.python(ast.parse(code))
+
+    if stats["status"] == "Success":
+        print(util.csv_str_decode(stats["synthed code"]))
+    else:
+        print("No solution found.")
+        sys.exit(1)
+
+
 def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=100):
     try:
         subprocess.run(
@@ -151,6 +179,19 @@ if __name__ == "__main__":
         required=True,
     )
 
+    # Refactor code subcommand
+
+    refactor_parser = subparsers.add_parser(
+        "refactor",
+        help="refactor a snippet of code from stdin, printing to stdout",
+    )
+    refactor_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the code to refactor",
+    )
+
     # Run benchmark suite subcommand
 
     benchmark_parser = subparsers.add_parser(
@@ -257,7 +298,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.subcommand == "benchmark":
+    if args.subcommand == "refactor":
+        refactor_helper(
+            language=args.language,
+        )
+    elif args.subcommand == "benchmark":
         if args.language == "elm":
             benchmark_helper(
                 path=args.path_to_tsv,

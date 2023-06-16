@@ -201,20 +201,3 @@ let well_typed : datatype_env * typ_env * env -> unit =
         |> Map.find gamma
         |> Option.value_or_thunk ~default:(fun _ -> raise (IllTyped body))
         |> Typ.instantiate))
-
-let assume_free_ok
-    : exceptions:String.Set.t -> datatype_env -> exp -> typ_env -> typ_env
-  =
- fun ~exceptions sigma e gamma ->
-  let fvs = Set.diff (Exp.free_variables e) exceptions in
-  let gamma =
-    Set.fold fvs ~init:gamma ~f:(fun acc x ->
-        Map.add_exn acc ~key:x ~data:([], Typ.fresh_type_var ()))
-  in
-  let s, c = constraint_type sigma gamma e in
-  let sub = unify_exn c in
-  gamma
-  |> Map.mapi ~f:(fun ~key ~data:(xs, tau) ->
-         if Set.mem fvs key
-         then Typ.generalize (Typ.apply_sub sub tau)
-         else (xs, tau))

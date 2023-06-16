@@ -20,6 +20,26 @@ type term =
   | Abstraction of string * typ * term
 [@@deriving eq, sexp, ord, show]
 
+let show_term : term -> string =
+ fun t ->
+  let rec helper depth = function
+    | Atom (Variable (x, _)) -> sprintf "V.%s" x
+    | Atom (Constant (x, _)) -> sprintf "C.%s" x
+    | Application (t1, t2) ->
+        sprintf
+          "(%s\n%s%s)"
+          (helper depth t1)
+          (String.init (4 * (depth + 1)) ~f:(fun _ -> ' '))
+          (helper (depth + 1) t2)
+    | Abstraction (x, _, t) ->
+        sprintf
+          "(lam %s.\n%s%s)"
+          x
+          (String.init (4 * (depth + 1)) ~f:(fun _ -> ' '))
+          (helper depth t)
+  in
+  helper 0 t
+
 (* Types *)
 
 let atom_typ : atom -> typ = function

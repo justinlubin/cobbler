@@ -2,8 +2,8 @@
 
     This module implements Huet's 1974 higher-order pre-unification
     semi-algorithm introduced in "A Unification Algorithm for Typed
-    λ-Calculus." 
-    
+    λ-Calculus."
+
     This module relies on the following assumptions:
     - Atoms of distinct types have distinct variable names
     - Eta-expansion is allowed *)
@@ -28,6 +28,9 @@ type term =
   | Application of term * term
   | Abstraction of string * typ * term
 [@@deriving eq, sexp, ord]
+
+(* [show_term t] displays [t] as a string. *)
+val show_term : term -> string
 
 (** [typ t] returns the type of [t]. *)
 val typ : term -> typ
