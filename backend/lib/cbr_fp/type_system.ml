@@ -117,19 +117,22 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
       let sub = String.Map.of_alist_exn sub_list in
       let return_type_var = Typ.fresh_type_var () in
       let args_constraints =
-        List.map2_exn args ctors ~f:(fun arg (_, domain) ->
-            let t_arg, c_arg = constraint_type sigma gamma arg in
-            ( t_arg
-            , Typ.build_arr
-                (List.map
-                   ~f:(fun d ->
-                     match d with
-                     | TDatatype (dt', _) when String.equal dt dt' ->
-                         return_type_var
-                     | _ -> Typ.apply_sub sub d)
-                   domain)
-                return_type_var )
-            :: c_arg)
+        try
+          List.map2_exn args ctors ~f:(fun arg (_, domain) ->
+              let t_arg, c_arg = constraint_type sigma gamma arg in
+              ( t_arg
+              , Typ.build_arr
+                  (List.map
+                     ~f:(fun d ->
+                       match d with
+                       | TDatatype (dt', _) when String.equal dt dt' ->
+                           return_type_var
+                       | _ -> Typ.apply_sub sub d)
+                     domain)
+                  return_type_var )
+              :: c_arg)
+        with
+        | _ -> failwith ([%show: exp list] args)
       in
       ( TArr (TDatatype (dt, List.map ~f:snd sub_list), return_type_var)
       , List.concat args_constraints )

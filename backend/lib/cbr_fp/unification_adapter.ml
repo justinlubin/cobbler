@@ -133,8 +133,16 @@ let rec from_unification_term
         | Some ("base_float", f) -> EBase (BEFloat (Float.of_string f))
         | Some ("base_string", s) -> EBase (BEString s)
         | Some ("cata", dt) ->
-            ERScheme
-              (RSCata, dt, List.map ~f:(from_unification_term sigma) arguments)
+            (* Only supports applied catas *)
+            let last_arg = List.last_exn arguments in
+            let all_but_last_arg = List.drop_last_exn arguments in
+            EApp
+              ( ERScheme
+                  ( RSCata
+                  , dt
+                  , List.map ~f:(from_unification_term sigma) all_but_last_arg
+                  )
+              , from_unification_term sigma last_arg )
         | _ -> build_arguments (EVar x))
   in
   Exp.build_abs (List.map ~f:fst heading) body

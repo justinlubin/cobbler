@@ -71,9 +71,6 @@ let%test_unit "unification 2" =
              ( "__var#27"
              , Elementary (TDatatype ("Maybe", [ TVar "____typevar#25" ])) )) )
   in
-  print_endline (Unification.show_term u1);
-  print_endline "";
-  print_endline (Unification.show_term u2);
   match Unification.unify 100 u1 u2 with
   | Solved subs -> ()
   | Impossible -> failwith "shouldn't be impossible"
@@ -96,9 +93,6 @@ let%test_unit "unification 3" =
       , Application
           (Atom (Constant ("f", Arrow (bt, bt))), Atom (Variable ("y", bt2))) )
   in
-  print_endline (Unification.show_term u1);
-  print_endline "";
-  print_endline (Unification.show_term u2);
   match Unification.unify 100 u1 u2 with
   | Solved subs -> ()
   | Impossible -> failwith "shouldn't be impossible"

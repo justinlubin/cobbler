@@ -24,6 +24,7 @@ let main_elm : string -> Yojson.Basic.t =
     | None -> `Assoc [ ("status", `String "SynthFail") ]
     | Some solution ->
         (try
+           (*failwith (Exp.show_single solution);*)
            Type_system.check sigma gamma solution (Typ.instantiate typ);
            let params, inside = Exp.decompose_abs (Exp.clean solution) in
            let solution =
