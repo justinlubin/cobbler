@@ -319,17 +319,18 @@ if __name__ == "__main__":
     # Setup
 
     csv.field_size_limit(sys.maxsize)
-    refresh_binary()
 
     # Routing
 
     args = parser.parse_args()
 
     if args.subcommand == "refactor":
+        refresh_binary()
         refactor_helper(
             language=args.language,
         )
     elif args.subcommand == "benchmark":
+        refresh_binary()
         if args.language == "elm":
             benchmark_helper(
                 path=args.path_to_tsv,
@@ -359,6 +360,7 @@ if __name__ == "__main__":
             statuses=args.statuses,
         )
     elif args.subcommand == "rerun-benchmarks":
+        refresh_binary()
         rerun_benchmarks_helper(
             input_path=args.input,
             output_path=args.output,

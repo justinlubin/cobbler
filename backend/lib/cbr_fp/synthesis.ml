@@ -6,7 +6,9 @@ open Lang
 let inline : env -> exp -> exp =
  fun env e ->
   Map.fold env ~init:e ~f:(fun ~key:lhs ~data:rhs acc ->
-      Exp.substitute (lhs, rhs) acc)
+      if String.is_suffix ~suffix:"____CBR_builtin" lhs
+      then acc
+      else Exp.substitute (lhs, rhs) acc)
 
 let norm : datatype_env -> typ_env -> env -> exp -> exp =
  fun sigma gamma env e ->
@@ -150,10 +152,10 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
                  (sprintf
                     "%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s"
                     (Exp.show_single reference)
-                    (Exp.show_single normalized_reference_body)
-                    (Unification.show_term normalized_reference_body_uniterm)
                     (Exp.show_single candidate_body)
+                    (Exp.show_single normalized_reference_body)
                     (Exp.show_single normalized_candidate_body)
+                    (Unification.show_term normalized_reference_body_uniterm)
                     (Unification.show_term normalized_candidate_body_uniterm))
              else ()
            in *)

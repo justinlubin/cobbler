@@ -14,7 +14,9 @@ let main_elm : string -> Yojson.Basic.t =
     in
     let fvs =
       Set.to_list
-        (Set.diff (Exp.free_variables orig_rhs) (String.Set.singleton name))
+        (Set.diff
+           (Exp.free_variables orig_rhs)
+           (Set.add (Map.key_set stdlib_gamma) name))
     in
     (* Build env *)
     let recursive_call =

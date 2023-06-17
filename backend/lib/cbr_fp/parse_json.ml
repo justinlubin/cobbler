@@ -50,7 +50,10 @@ let pvar_of_json : Json.t -> string =
 let evar_of_json : Json.t -> string =
  fun j ->
   match j |> J.member "tag" |> J.to_string with
-  | "VariableReference" -> j |> J.member "name" |> J.to_string
+  | "VariableReference" ->
+      (match j |> J.member "name" |> J.to_string with
+      | "++" -> "append____CBR_builtin"
+      | name -> name)
   | "ExternalReference" ->
       (* let m = j |> J.member "module" |> J.to_string in *)
       let i = j |> J.member "identifier" |> J.to_string in

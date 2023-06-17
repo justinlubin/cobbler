@@ -6,6 +6,12 @@ type List a = Nil | Cons a (List a)
 
 type Bool = True | False
 
+append____CBR_builtin : List a -> List a -> List a
+append____CBR_builtin xs ys =
+  case xs of
+    [] -> ys
+    hd :: tl -> hd :: tl ++ ys
+
 maybe_map____CBR : (a -> b) -> Maybe a -> Maybe b
 maybe_map____CBR f mx =
   case mx of
@@ -48,3 +54,10 @@ list_filter____CBR p xs =
     [] -> []
     hd :: tl ->
       if p hd then hd :: list_filter____CBR p tl else list_filter____CBR p tl
+
+list_concat____CBR : List (List a) -> List a
+list_concat____CBR xss =
+  case xss of
+    [] -> []
+    hd :: tl ->
+      hd ++ list_concat____CBR tl
