@@ -17,8 +17,11 @@ def elm_json(block):
                 pat = param["pattern"]
                 if pat.get("name") == v:
                     if type and type["tag"] == "TypeReference":
-                        # if type["name"] == "Maybe" or type["name"] == "Result" or type["name"] == "List":
-                        if type["name"] == "List":
+                        if (
+                            type["name"] == "Maybe"
+                            or type["name"] == "Result"
+                            or type["name"] == "List"
+                        ):
                             return block
             raise NoExtractionException("scrutinee not of correct type")
         else:

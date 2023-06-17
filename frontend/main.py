@@ -33,27 +33,34 @@ def refresh_binary():
 
 
 def show_elm_json(s):
-    return "\n".join(
-        subprocess.check_output(
-            ["elm-format", "--stdin", "--from-json"],
-            input=('{"moduleName":"Main","imports":{},"body": [' + s + "]}").encode(
-                "utf8"
-            ),
+    try:
+        wrapped = '{"moduleName":"Main","imports":{},"body": [' + s + "]}"
+        return "\n".join(
+            subprocess.check_output(
+                ["elm-format", "--stdin", "--from-json"],
+                input=(wrapped).encode("utf8"),
+                stderr=subprocess.PIPE,
+            )
+            .decode("utf8")
+            .splitlines()[3:]
         )
-        .decode("utf8")
-        .splitlines()[3:]
-    )
+    except subprocess.CalledProcessError as e:
+        return "elm-format error: " + e.stderr.decode("utf8") + "\n\n" + wrapped
 
 
 def show_elm(s):
-    return "\n".join(
-        subprocess.check_output(
-            ["elm-format", "--stdin"],
-            input=s.encode("utf8"),
+    try:
+        return "\n".join(
+            subprocess.check_output(
+                ["elm-format", "--stdin"],
+                input=s.encode("utf8"),
+                stderr=subprocess.PIPE,
+            )
+            .decode("utf8")
+            .splitlines()[3:]
         )
-        .decode("utf8")
-        .splitlines()[3:]
-    )
+    except subprocess.CalledProcessError as e:
+        return "elm-format error: " + e.stderr.decode("utf8") + "\n\n" + s
 
 
 def show_python(s):
