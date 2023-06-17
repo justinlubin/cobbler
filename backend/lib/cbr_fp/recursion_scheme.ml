@@ -43,6 +43,16 @@ let cata_of_definition_exn : datatype_env -> string -> exp -> exp =
  fun sigma name e ->
   match Exp.decompose_abs e with
   | top_params, EMatch (scrutinee, branches) ->
+      let scrutinee_index, _ =
+        match scrutinee with
+        | EVar scrutinee_name ->
+            (match
+               List.findi top_params ~f:(fun _ -> String.equal scrutinee_name)
+             with
+            | Some i -> i
+            | None -> failwith "top-level match scrutinee is not a parameter")
+        | _ -> failwith "top-level match scrutinee not a variable"
+      in
       let first_ctor, _ = List.hd_exn branches in
       let (dt, _), _ = Option.value_exn (Typ.ctor_typ sigma first_ctor) in
       let _, ctors = Map.find_exn sigma dt in
@@ -56,6 +66,8 @@ let cata_of_definition_exn : datatype_env -> string -> exp -> exp =
                 in
                 let cata_arg =
                   List.fold_right
+                    (List.zip_exn branch_params domain)
+                    ~init:rhs
                     ~f:(fun (branch_param, branch_param_type) acc ->
                       match branch_param_type with
                       | TDatatype (dt', _) when String.equal dt dt' ->
@@ -67,11 +79,10 @@ let cata_of_definition_exn : datatype_env -> string -> exp -> exp =
                                   ~old_subexp:
                                     (Exp.build_app
                                        (EVar name)
-                                       (List.drop_last_exn
-                                          (List.map
-                                             ~f:(fun x -> EVar x)
-                                             top_params)
-                                       @ [ EVar branch_param ]))
+                                       (List.mapi top_params ~f:(fun i p ->
+                                            if Int.equal i scrutinee_index
+                                            then EVar branch_param
+                                            else EVar p)))
                                   ~new_subexp:(EVar acc_param)
                                   acc )
                           in
@@ -82,8 +93,6 @@ let cata_of_definition_exn : datatype_env -> string -> exp -> exp =
                                parameter to accumulator"
                           else candidate
                       | _ -> EAbs (branch_param, acc))
-                    ~init:rhs
-                    (List.zip_exn branch_params domain)
                 in
                 if Set.mem (Exp.free_variables cata_arg) name
                 then

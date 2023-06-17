@@ -12,6 +12,12 @@ append____CBR_builtin xs ys =
     [] -> ys
     hd :: tl -> hd :: tl ++ ys
 
+basics_not____CBR : Bool -> Bool
+basics_not____CBR b =
+  case b of
+    True -> False
+    False -> True
+
 maybe_map____CBR : (a -> b) -> Maybe a -> Maybe b
 maybe_map____CBR f mx =
   case mx of
@@ -61,3 +67,18 @@ list_concat____CBR xss =
     [] -> []
     hd :: tl ->
       hd ++ list_concat____CBR tl
+
+list_findMap____CBR : (a -> Maybe b) -> List a -> Maybe b
+list_findMap____CBR f xs =
+  case xs of
+    [] -> Nothing
+    hd :: tl ->
+      case f hd of
+        Nothing -> list_findMap____CBR f tl
+        Just y -> Just y
+
+list_any____CBR : (a -> Bool) -> List a -> Bool
+list_any____CBR p xs =
+  case xs of
+    [] -> False
+    hd :: tl -> if p hd then True else list_any____CBR p tl

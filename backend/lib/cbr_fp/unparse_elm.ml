@@ -13,15 +13,18 @@ let rec prettify_exp : exp -> exp =
   | EVar x ->
       (match String.chop_suffix ~suffix:"____CBR" x with
       | Some left ->
-          (match String.chop_prefix ~prefix:"maybe_" left with
-          | Some mid -> EVar (sprintf "Maybe.%s" (clean_name mid))
+          (match String.chop_prefix ~prefix:"basics_" left with
+          | Some mid -> EVar (sprintf "%s" (clean_name mid))
           | None ->
-              (match String.chop_prefix ~prefix:"result_" left with
-              | Some mid -> EVar (sprintf "Result.%s" (clean_name mid))
+              (match String.chop_prefix ~prefix:"maybe_" left with
+              | Some mid -> EVar (sprintf "Maybe.%s" (clean_name mid))
               | None ->
-                  (match String.chop_prefix ~prefix:"list_" left with
-                  | Some mid -> EVar (sprintf "List.%s" (clean_name mid))
-                  | None -> EVar (clean_name x))))
+                  (match String.chop_prefix ~prefix:"result_" left with
+                  | Some mid -> EVar (sprintf "Result.%s" (clean_name mid))
+                  | None ->
+                      (match String.chop_prefix ~prefix:"list_" left with
+                      | Some mid -> EVar (sprintf "List.%s" (clean_name mid))
+                      | None -> EVar (clean_name x)))))
       | None -> EVar (clean_name x))
   | EApp (e1, e2) -> EApp (prettify_exp e1, prettify_exp e2)
   | EAbs (x, body) -> EAbs (clean_name x, prettify_exp body)

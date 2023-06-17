@@ -66,6 +66,7 @@ let evar_of_json : Json.t -> string =
 let pctor_of_json : Json.t -> string * string list =
  fun j ->
   match j |> J.member "tag" |> J.to_string with
+  | "ExternalReference" -> (evar_of_json j, [])
   | "DataPattern" ->
       ( j |> J.member "constructor" |> evar_of_json
       , j |> J.member "arguments" |> J.to_list |> List.map ~f:pvar_of_json )
