@@ -80,4 +80,4 @@ and compute_new_cata_arg
   else None
 
 let fuse : datatype_env -> exp -> exp =
- fun sigma e -> fuse' sigma (Exp.freshen e)
+ fun sigma e -> fuse_normalize sigma (Exp.freshen e)

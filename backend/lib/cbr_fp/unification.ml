@@ -214,7 +214,7 @@ let abbreviate : term -> abbreviation =
   let head =
     match head_term with
     | Atom a -> a
-    | _ -> failwith "non-normalized head"
+    | _ -> failwith (sprintf "non-normalized head: %s" (show_term t))
   in
   let domain, codomain = decompose_arr (atom_typ head) in
   let eta_ws =

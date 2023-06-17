@@ -53,6 +53,8 @@ let evar_of_json : Json.t -> string =
   | "VariableReference" ->
       (match j |> J.member "name" |> J.to_string with
       | "++" -> "append____CBR_builtin"
+      | "||" -> "or____CBR_inline"
+      | "&&" -> "and____CBR_inline"
       | name -> name)
   | "ExternalReference" ->
       (* let m = j |> J.member "module" |> J.to_string in *)
