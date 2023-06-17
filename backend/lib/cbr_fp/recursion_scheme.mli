@@ -5,6 +5,6 @@
 
 open Lang
 
-(** [rewrite sigma env name] tries to rewrite [env[name]] using recursion
-    schemes as much as possible. *)
-val rewrite : datatype_env -> env -> string -> exp option
+(** [rewrite sigma name e] tries to rewrite [e] (assuming its name is [named])
+    using recursion schemes as much as possible. *)
+val rewrite : datatype_env -> string -> exp -> exp

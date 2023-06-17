@@ -69,7 +69,8 @@ let pctor_of_json : Json.t -> string * string list =
   | "ListPattern" ->
       (match j |> J.member "prefix" |> J.to_list with
       | [] -> ("Nil", [])
-      | [ hd ] -> ("Cons", [ j |> J.member "rest" |> pvar_of_json ])
+      | [ hd ] ->
+          ("Cons", [ pvar_of_json hd; j |> J.member "rest" |> pvar_of_json ])
       | _ -> raise (ParseFail (sprintf "nested list patterns unsupported")))
   | s -> raise (ParseFail (sprintf "unknown constructor pattern tag '%s'" s))
 

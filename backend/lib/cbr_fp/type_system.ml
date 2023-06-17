@@ -198,6 +198,9 @@ let check : datatype_env -> typ_env -> exp -> typ -> unit =
   let _ = unify_exn [ (infer sigma gamma e, tau) ] in
   ()
 
+let check_sub : datatype_env -> typ_env -> exp -> typ -> Typ.sub =
+ fun sigma gamma e tau -> unify_exn [ (infer sigma gamma e, tau) ]
+
 let well_typed : datatype_env * typ_env * env -> unit =
  fun (sigma, gamma, env) ->
   Map.iteri env ~f:(fun ~key:name ~data:body ->

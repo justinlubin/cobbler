@@ -10,7 +10,7 @@ let sigma_cases, gamma_cases, env_cases =
 
 let%expect_test "pull out cases 1" =
   let main_cata =
-    "main" |> Recursion_scheme.rewrite sigma_cases env_cases |> Option.value_exn
+    Recursion_scheme.rewrite sigma_cases "main" (Map.find_exn env_cases "main")
   in
   let fused_main = Fusion.fuse sigma_cases main_cata in
   ignore (Type_system.infer sigma_cases gamma_cases fused_main);
@@ -26,7 +26,7 @@ let sigma_list2, gamma_list2, env_list2 =
 
 let%expect_test "list2 mapmap fusion" =
   let map_foldr =
-    "map" |> Recursion_scheme.rewrite sigma_list2 env_list2 |> Option.value_exn
+    Recursion_scheme.rewrite sigma_list2 "map" (Map.find_exn env_list2 "map")
   in
   let mapmap =
     "mapmap"
@@ -42,12 +42,13 @@ let%expect_test "list2 mapmap fusion" =
 
 let%expect_test "list2 mapfilter fusion" =
   let map_foldr =
-    "map" |> Recursion_scheme.rewrite sigma_list2 env_list2 |> Option.value_exn
+    Recursion_scheme.rewrite sigma_list2 "map" (Map.find_exn env_list2 "map")
   in
   let filter_foldr =
-    "filter"
-    |> Recursion_scheme.rewrite sigma_list2 env_list2
-    |> Option.value_exn
+    Recursion_scheme.rewrite
+      sigma_list2
+      "filter"
+      (Map.find_exn env_list2 "filter")
   in
   let mapfilter =
     "mapfilter"

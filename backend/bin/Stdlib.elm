@@ -35,3 +35,16 @@ result_withDefault____CBR d rx =
   case rx of
     Ok p -> p
     Err q -> d
+
+list_map____CBR : (a -> b) -> List a -> List b
+list_map____CBR f xs =
+  case xs of
+    [] -> []
+    hd :: tl -> f hd :: list_map____CBR f tl
+
+list_filter____CBR : (a -> Bool) -> List a -> List a
+list_filter____CBR p xs =
+  case xs of
+    [] -> []
+    hd :: tl ->
+      if p hd then hd :: list_filter____CBR p tl else list_filter____CBR p tl

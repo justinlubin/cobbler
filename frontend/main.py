@@ -12,6 +12,26 @@ import db_iter
 import util
 
 
+def refresh_binary():
+    try:
+        subprocess.run(
+            ["make", "regen-stdlib"],
+            cwd=util.path_from_root("backend"),
+            check=True,
+        )
+    except subprocess.CalledProcessError:
+        sys.exit(1)
+
+    try:
+        subprocess.run(
+            ["make", "build"],
+            cwd=util.path_from_root("backend"),
+            check=True,
+        )
+    except subprocess.CalledProcessError:
+        sys.exit(1)
+
+
 def show_elm_json(s):
     return "\n".join(
         subprocess.check_output(
@@ -41,15 +61,6 @@ def show_python(s):
 
 
 def refactor_helper(language=None):
-    try:
-        subprocess.run(
-            ["dune", "build", "bin/main.exe"],
-            cwd=util.path_from_root("backend"),
-            check=True,
-        )
-    except subprocess.CalledProcessError:
-        sys.exit(1)
-
     code = sys.stdin.read()
 
     if language == "elm":
@@ -69,19 +80,12 @@ def refactor_helper(language=None):
             print(show_python(decoded_data))
     else:
         print("No solution found.")
+        print("Status:", stats["status"])
+        print("Reason:", stats["reason"] if "reason" in stats else "")
         sys.exit(1)
 
 
 def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=100):
-    try:
-        subprocess.run(
-            ["dune", "build", "bin/main.exe"],
-            cwd=util.path_from_root("backend"),
-            check=True,
-        )
-    except subprocess.CalledProcessError:
-        sys.exit(1)
-
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(
             f,
@@ -188,8 +192,6 @@ if __name__ == "__main__":
         print("\nThe GARNET program synthesizer.\n")
         print(f"For help: {sys.argv[0]} --help")
         sys.exit(0)
-
-    csv.field_size_limit(sys.maxsize)
 
     parser = argparse.ArgumentParser(description="The GARNET program synthesizer.")
 
@@ -313,6 +315,11 @@ if __name__ == "__main__":
         required=True,
         help="the path to output the new benchmarking tsv",
     )
+
+    # Setup
+
+    csv.field_size_limit(sys.maxsize)
+    refresh_binary()
 
     # Routing
 

@@ -17,7 +17,8 @@ def elm_json(block):
                 pat = param["pattern"]
                 if pat.get("name") == v:
                     if type and type["tag"] == "TypeReference":
-                        if type["name"] == "Maybe" or type["name"] == "Result" or type["name"] == "List":
+                        # if type["name"] == "Maybe" or type["name"] == "Result" or type["name"] == "List":
+                        if type["name"] == "List":
                             return block
             raise NoExtractionException("scrutinee not of correct type")
         else:
@@ -110,7 +111,9 @@ class Extractor(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign):
         if len(node.targets) > 1:
-            raise NoExtractionException("multiple assignment targets in Extractor.visit_Assign")
+            raise NoExtractionException(
+                "multiple assignment targets in Extractor.visit_Assign"
+            )
         var = self.visit(node.targets[0])
         if var in self.input_vars:
             self.env_stmts.append(node)
@@ -122,7 +125,9 @@ class Extractor(ast.NodeVisitor):
 
     def visit_AugAssign(self, node: ast.AugAssign):
         if len(node.targets) > 1:
-            raise NoExtractionException("multiple assignment targets in Extractor.visit_AugAssign")
+            raise NoExtractionException(
+                "multiple assignment targets in Extractor.visit_AugAssign"
+            )
         var = self.visit(node.target)
         if var in self.input_vars:
             self.env_stmts.append(node)

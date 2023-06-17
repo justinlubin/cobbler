@@ -154,28 +154,28 @@ let%expect_test "Sugar.elm parses" =
         (match var1
           ((Nil) ->
             (Nil))
-          ((Cons var2) ->
-            (match (var0 hd)
+          ((Cons var2 var3) ->
+            (match (var0 var2)
               ((True) ->
-                ((filter var0) var2))
+                ((filter var0) var3))
               ((False) ->
-                (Cons hd ((filter var0) var2)))))))))
+                (Cons var2 ((filter var0) var3)))))))))
     (map = (lambda var0
       (lambda var1
         (match var1
           ((Nil) ->
             (Nil))
-          ((Cons var2) ->
-            (Cons (var0 hd) ((map var0) var2)))))))
+          ((Cons var2 var3) ->
+            (Cons (var0 var2) ((map var0) var3)))))))
     (target = (lambda var0
       (lambda var1
         (lambda var2
           (match var2
             ((Nil) ->
               (Nil))
-            ((Cons var3) ->
-              (match (var0 hd)
+            ((Cons var3 var4) ->
+              (match (var0 var3)
                 ((True) ->
-                  (((target var0) var1) var3))
+                  (((target var0) var1) var4))
                 ((False) ->
-                  (Cons (var1 hd) (((target var0) var1) var3)))))))))) |}]
+                  (Cons (var1 var3) (((target var0) var1) var4)))))))))) |}]

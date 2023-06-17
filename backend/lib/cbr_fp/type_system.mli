@@ -19,6 +19,11 @@ val infer : datatype_env -> typ_env -> exp -> typ
     exception {!val:IllTyped} otherwise. *)
 val check : datatype_env -> typ_env -> exp -> typ -> unit
 
+(** [check_sub gamma e tau] returns [subst] if and only if [subst] unifies the
+    type of [e] and the type [tau] in the datatype environment [sigma] and type
+    environment [gamma] and throws the exception {!val:IllTyped} otherwise. *)
+val check_sub : datatype_env -> typ_env -> exp -> typ -> Typ.sub
+
 (** [well_typed (sigma, gamma, env)] returns [()] if and only if [env] is
     well-typed in the datatype environment [sigma] and type environment
     [gamma] and throws the exception {!val:IllTyped} otherwise. *)
