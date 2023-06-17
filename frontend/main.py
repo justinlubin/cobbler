@@ -137,6 +137,39 @@ def view_benchmark_helper(
                 break
 
 
+def make_report_helper(
+    input_path=None,
+    output_path=None,
+    language=None,
+):
+    show_code = show_elm_json if language == "elm" else show_python
+    show_synthed_code = show_elm if language == "elm" else show_python
+    comment = "--" if language == "elm" else "##"
+    with open(input_path, "r", newline="") as input_f:
+        with open(output_path, "w") as output_f:
+            for row in csv.DictReader(input_f, delimiter="\t"):
+                output_f.write(
+                    comment
+                    + " =============================================================================\n"
+                )
+                output_f.write(comment + " Status: " + row["status"] + "\n")
+                if row["reason"]:
+                    output_f.write(comment + " Reason: " + row["reason"] + "\n")
+                output_f.write(
+                    comment + " Synthesis time: " + row["synth time"] + "\n\n"
+                )
+                output_f.write(comment + " Original code:\n\n")
+                output_f.write(
+                    show_code(util.csv_str_decode(row["orig code"])) + "\n\n"
+                )
+                if row["synthed code"]:
+                    output_f.write(comment + " Synthesized code:\n\n")
+                    output_f.write(
+                        show_synthed_code(util.csv_str_decode(row["synthed code"]))
+                        + "\n\n"
+                    )
+
+
 def filter_benchmarks_helper(
     input_path=None,
     output_path=None,
@@ -261,6 +294,31 @@ if __name__ == "__main__":
         help="the line number of the benchmark entry to view",
     )
 
+    # Make benchmark report subcommand
+
+    make_report_parser = subparsers.add_parser(
+        "make-report",
+        help="make a nicely-formatted report from a benchmark result",
+    )
+    make_report_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the benchmark",
+    )
+    make_report_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path of the benchmarking tsv to make a report of",
+    )
+    make_report_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the report",
+    )
+
     # Filter benchmark results subcommand
 
     filter_benchmarks_parser = subparsers.add_parser(
@@ -351,6 +409,10 @@ if __name__ == "__main__":
             line_number=args.line_number,
             show_code=show_elm_json if args.language == "elm" else show_python,
             show_synthed_code=show_elm if args.language == "elm" else show_python,
+        )
+    elif args.subcommand == "make-report":
+        make_report_helper(
+            input_path=args.input, output_path=args.output, language=args.language
         )
     elif args.subcommand == "filter-benchmarks":
         filter_benchmarks_helper(
