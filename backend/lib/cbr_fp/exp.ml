@@ -264,16 +264,17 @@ let normalize : datatype_env -> exp -> exp =
                   if String.equal c ctor then Some (i, d) else None)
                 ctors
             in
-            build_app
-              (List.nth_exn cata_args index)
-              (List.map2_exn
-                 ~f:(fun arg tau ->
-                   match tau with
-                   | TDatatype (dt', _) when String.equal dt dt' ->
-                       recur (EApp (ERScheme (RSCata, dt, cata_args), arg))
-                   | _ -> arg)
-                 ctor_args
-                 ctor_domain)
+            recur
+              (build_app
+                 (List.nth_exn cata_args index)
+                 (List.map2_exn
+                    ~f:(fun arg tau ->
+                      match tau with
+                      | TDatatype (dt', _) when String.equal dt dt' ->
+                          recur (EApp (ERScheme (RSCata, dt, cata_args), arg))
+                      | _ -> arg)
+                    ctor_args
+                    ctor_domain))
         | head', arg' -> EApp (head', arg'))
     | EAbs (param, body) -> EAbs (param, recur body)
     | EMatch (scrutinee, branches) ->

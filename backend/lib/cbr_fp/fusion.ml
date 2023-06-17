@@ -20,12 +20,18 @@ let rec fuse' : datatype_env -> exp -> exp =
             EApp
               ( recur u
               , EApp (ERScheme (RSCata, dt, List.map ~f:recur fs), recur arg) ))
-    (* Match fusion (e.g. options, booleans), a.k.a. "if lifting" *)
+    (* Match fusion 1 (e.g. options, booleans), a.k.a. "if lifting" *)
     | EApp (head, EMatch (scrutinee, branches)) ->
         recur
           (EMatch
              ( scrutinee
              , Exp.map_branches branches ~f:(fun rhs -> EApp (head, rhs)) ))
+    (* Match fusion 2 *)
+    | EApp (EMatch (scrutinee, branches), arg) ->
+        recur
+          (EMatch
+             ( scrutinee
+             , Exp.map_branches branches ~f:(fun rhs -> EApp (rhs, arg)) ))
     | EApp (head, arg) -> EApp (recur head, recur arg)
     | EAbs (param, body) -> EAbs (param, recur body)
     | EMatch (scrutinee, branches) ->
