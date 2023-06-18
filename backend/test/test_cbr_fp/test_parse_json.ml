@@ -88,7 +88,7 @@ let%expect_test "Syntax.elm parses correctly" =
         ((+ ((+ var0) var1)) var2))))
     (red = (Red))
     (string1 = "hello")
-    (string2 = ((++ string1) "!"))
+    (string2 = ((append____CBR_builtin string1) "!"))
     (unit = (EUnit))
     (yellow = (Custom 255 255 0)) |}]
 
