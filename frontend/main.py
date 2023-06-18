@@ -12,28 +12,55 @@ import db_iter
 import util
 
 
-def show_elm_json(s):
-    return "\n".join(
-        subprocess.check_output(
-            ["elm-format", "--stdin", "--from-json"],
-            input=('{"moduleName":"Main","imports":{},"body": [' + s + "]}").encode(
-                "utf8"
-            ),
+def refresh_binary():
+    try:
+        subprocess.run(
+            ["make", "regen-stdlib"],
+            cwd=util.path_from_root("backend"),
+            check=True,
         )
-        .decode("utf8")
-        .splitlines()[3:]
-    )
+    except subprocess.CalledProcessError:
+        sys.exit(1)
+
+    try:
+        subprocess.run(
+            ["make", "build"],
+            cwd=util.path_from_root("backend"),
+            check=True,
+        )
+    except subprocess.CalledProcessError:
+        sys.exit(1)
+
+
+def show_elm_json(s):
+    try:
+        wrapped = '{"moduleName":"Main","imports":{},"body": [' + s + "]}"
+        return "\n".join(
+            subprocess.check_output(
+                ["elm-format", "--stdin", "--from-json"],
+                input=(wrapped).encode("utf8"),
+                stderr=subprocess.PIPE,
+            )
+            .decode("utf8")
+            .splitlines()[3:]
+        )
+    except subprocess.CalledProcessError as e:
+        return "elm-format error: " + e.stderr.decode("utf8") + "\n\n" + wrapped
 
 
 def show_elm(s):
-    return "\n".join(
-        subprocess.check_output(
-            ["elm-format", "--stdin"],
-            input=s.encode("utf8"),
+    try:
+        return "\n".join(
+            subprocess.check_output(
+                ["elm-format", "--stdin"],
+                input=s.encode("utf8"),
+                stderr=subprocess.PIPE,
+            )
+            .decode("utf8")
+            .splitlines()[3:]
         )
-        .decode("utf8")
-        .splitlines()[3:]
-    )
+    except subprocess.CalledProcessError as e:
+        return "elm-format error: " + e.stderr.decode("utf8") + "\n\n" + s
 
 
 def show_python(s):
@@ -41,15 +68,6 @@ def show_python(s):
 
 
 def refactor_helper(language=None):
-    try:
-        subprocess.run(
-            ["dune", "build", "bin/main.exe"],
-            cwd=util.path_from_root("backend"),
-            check=True,
-        )
-    except subprocess.CalledProcessError:
-        sys.exit(1)
-
     code = sys.stdin.read()
 
     if language == "elm":
@@ -69,19 +87,12 @@ def refactor_helper(language=None):
             print(show_python(decoded_data))
     else:
         print("No solution found.")
+        print("Status:", stats["status"])
+        print("Reason:", stats["reason"] if "reason" in stats else "")
         sys.exit(1)
 
 
 def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=100):
-    try:
-        subprocess.run(
-            ["dune", "build", "bin/main.exe"],
-            cwd=util.path_from_root("backend"),
-            check=True,
-        )
-    except subprocess.CalledProcessError:
-        sys.exit(1)
-
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(
             f,
@@ -131,6 +142,39 @@ def view_benchmark_helper(
                     sep="\n",
                 )
                 break
+
+
+def make_report_helper(
+    input_path=None,
+    output_path=None,
+    language=None,
+):
+    show_code = show_elm_json if language == "elm" else show_python
+    show_synthed_code = show_elm if language == "elm" else show_python
+    comment = "--" if language == "elm" else "##"
+    with open(input_path, "r", newline="") as input_f:
+        with open(output_path, "w") as output_f:
+            for row in csv.DictReader(input_f, delimiter="\t"):
+                output_f.write(
+                    comment
+                    + " =============================================================================\n"
+                )
+                output_f.write(comment + " Status: " + row["status"] + "\n")
+                if row["reason"]:
+                    output_f.write(comment + " Reason: " + row["reason"] + "\n")
+                output_f.write(
+                    comment + " Synthesis time: " + row["synth time"] + "\n\n"
+                )
+                output_f.write(comment + " Original code:\n\n")
+                output_f.write(
+                    show_code(util.csv_str_decode(row["orig code"])) + "\n\n"
+                )
+                if row["synthed code"]:
+                    output_f.write(comment + " Synthesized code:\n\n")
+                    output_f.write(
+                        show_synthed_code(util.csv_str_decode(row["synthed code"]))
+                        + "\n\n"
+                    )
 
 
 def filter_benchmarks_helper(
@@ -188,8 +232,6 @@ if __name__ == "__main__":
         print("\nThe GARNET program synthesizer.\n")
         print(f"For help: {sys.argv[0]} --help")
         sys.exit(0)
-
-    csv.field_size_limit(sys.maxsize)
 
     parser = argparse.ArgumentParser(description="The GARNET program synthesizer.")
 
@@ -259,6 +301,31 @@ if __name__ == "__main__":
         help="the line number of the benchmark entry to view",
     )
 
+    # Make benchmark report subcommand
+
+    make_report_parser = subparsers.add_parser(
+        "make-report",
+        help="make a nicely-formatted report from a benchmark result",
+    )
+    make_report_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the benchmark",
+    )
+    make_report_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path of the benchmarking tsv to make a report of",
+    )
+    make_report_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the report",
+    )
+
     # Filter benchmark results subcommand
 
     filter_benchmarks_parser = subparsers.add_parser(
@@ -314,15 +381,21 @@ if __name__ == "__main__":
         help="the path to output the new benchmarking tsv",
     )
 
+    # Setup
+
+    csv.field_size_limit(sys.maxsize)
+
     # Routing
 
     args = parser.parse_args()
 
     if args.subcommand == "refactor":
+        refresh_binary()
         refactor_helper(
             language=args.language,
         )
     elif args.subcommand == "benchmark":
+        refresh_binary()
         if args.language == "elm":
             benchmark_helper(
                 path=args.path_to_tsv,
@@ -344,6 +417,10 @@ if __name__ == "__main__":
             show_code=show_elm_json if args.language == "elm" else show_python,
             show_synthed_code=show_elm if args.language == "elm" else show_python,
         )
+    elif args.subcommand == "make-report":
+        make_report_helper(
+            input_path=args.input, output_path=args.output, language=args.language
+        )
     elif args.subcommand == "filter-benchmarks":
         filter_benchmarks_helper(
             input_path=args.input,
@@ -352,6 +429,7 @@ if __name__ == "__main__":
             statuses=args.statuses,
         )
     elif args.subcommand == "rerun-benchmarks":
+        refresh_binary()
         rerun_benchmarks_helper(
             input_path=args.input,
             output_path=args.output,

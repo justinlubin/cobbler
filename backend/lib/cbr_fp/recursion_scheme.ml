@@ -39,10 +39,20 @@ let nonrecursive_matches_to_catas : datatype_env -> exp -> exp =
   in
   recur e
 
-let cata_of_definition : datatype_env -> env -> string -> exp option =
- fun sigma env name ->
-  match Exp.decompose_abs (Map.find_exn env name) with
+let cata_of_definition_exn : datatype_env -> string -> exp -> exp =
+ fun sigma name e ->
+  match Exp.decompose_abs e with
   | top_params, EMatch (scrutinee, branches) ->
+      let scrutinee_index, _ =
+        match scrutinee with
+        | EVar scrutinee_name ->
+            (match
+               List.findi top_params ~f:(fun _ -> String.equal scrutinee_name)
+             with
+            | Some i -> i
+            | None -> failwith "top-level match scrutinee is not a parameter")
+        | _ -> failwith "top-level match scrutinee not a variable"
+      in
       let first_ctor, _ = List.hd_exn branches in
       let (dt, _), _ = Option.value_exn (Typ.ctor_typ sigma first_ctor) in
       let _, ctors = Map.find_exn sigma dt in
@@ -56,25 +66,33 @@ let cata_of_definition : datatype_env -> env -> string -> exp option =
                 in
                 let cata_arg =
                   List.fold_right
+                    (List.zip_exn branch_params domain)
+                    ~init:rhs
                     ~f:(fun (branch_param, branch_param_type) acc ->
                       match branch_param_type with
                       | TDatatype (dt', _) when String.equal dt dt' ->
-                          EAbs
-                            ( branch_param
-                            , Exp.replace_subexp
-                                ~old_subexp:
-                                  (Exp.build_app
-                                     (EVar name)
-                                     (List.drop_last_exn
-                                        (List.map
-                                           ~f:(fun x -> EVar x)
-                                           top_params)
-                                     @ [ EVar branch_param ]))
-                                ~new_subexp:(EVar branch_param)
-                                acc )
+                          let acc_param = Util.gensym "rs_acc" in
+                          let candidate =
+                            EAbs
+                              ( acc_param
+                              , Exp.replace_subexp
+                                  ~old_subexp:
+                                    (Exp.build_app
+                                       (EVar name)
+                                       (List.mapi top_params ~f:(fun i p ->
+                                            if Int.equal i scrutinee_index
+                                            then EVar branch_param
+                                            else EVar p)))
+                                  ~new_subexp:(EVar acc_param)
+                                  acc )
+                          in
+                          if Set.mem (Exp.free_variables candidate) branch_param
+                          then
+                            failwith
+                              "cannot replace all references of branch \
+                               parameter to accumulator"
+                          else candidate
                       | _ -> EAbs (branch_param, acc))
-                    ~init:rhs
-                    (List.zip_exn branch_params domain)
                 in
                 if Set.mem (Exp.free_variables cata_arg) name
                 then
@@ -84,10 +102,17 @@ let cata_of_definition : datatype_env -> env -> string -> exp option =
                        ctor_name)
                 else cata_arg) )
       in
-      Some (Exp.build_abs top_params (EApp (rs, scrutinee)))
-  | _, e -> None
+      Exp.build_abs top_params (EApp (rs, scrutinee))
+  | _, e -> failwith "top-level expression is not a match"
 
-let rewrite : datatype_env -> env -> string -> exp option =
- fun sigma env name ->
-  cata_of_definition sigma env name
-  |> Option.map ~f:(nonrecursive_matches_to_catas sigma)
+let cata_of_definition : datatype_env -> string -> exp -> exp option =
+ fun sigma name e ->
+  try Some (cata_of_definition_exn sigma name e) with
+  | _ -> None
+
+let rewrite : datatype_env -> string -> exp -> exp =
+ fun sigma name e ->
+  let e' = nonrecursive_matches_to_catas sigma e in
+  e'
+  |> cata_of_definition sigma name
+  |> Option.value_or_thunk ~default:(fun () -> e')

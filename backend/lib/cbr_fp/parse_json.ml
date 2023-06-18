@@ -50,7 +50,12 @@ let pvar_of_json : Json.t -> string =
 let evar_of_json : Json.t -> string =
  fun j ->
   match j |> J.member "tag" |> J.to_string with
-  | "VariableReference" -> j |> J.member "name" |> J.to_string
+  | "VariableReference" ->
+      (match j |> J.member "name" |> J.to_string with
+      | "++" -> "append____CBR_builtin"
+      | "||" -> "or____CBR_inline"
+      | "&&" -> "and____CBR_inline"
+      | name -> name)
   | "ExternalReference" ->
       (* let m = j |> J.member "module" |> J.to_string in *)
       let i = j |> J.member "identifier" |> J.to_string in
@@ -63,13 +68,15 @@ let evar_of_json : Json.t -> string =
 let pctor_of_json : Json.t -> string * string list =
  fun j ->
   match j |> J.member "tag" |> J.to_string with
+  | "ExternalReference" -> (evar_of_json j, [])
   | "DataPattern" ->
       ( j |> J.member "constructor" |> evar_of_json
       , j |> J.member "arguments" |> J.to_list |> List.map ~f:pvar_of_json )
   | "ListPattern" ->
       (match j |> J.member "prefix" |> J.to_list with
       | [] -> ("Nil", [])
-      | [ hd ] -> ("Cons", [ j |> J.member "rest" |> pvar_of_json ])
+      | [ hd ] ->
+          ("Cons", [ pvar_of_json hd; j |> J.member "rest" |> pvar_of_json ])
       | _ -> raise (ParseFail (sprintf "nested list patterns unsupported")))
   | s -> raise (ParseFail (sprintf "unknown constructor pattern tag '%s'" s))
 

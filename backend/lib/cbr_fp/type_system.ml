@@ -104,7 +104,12 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
             @ List.concat cs_args )
       | None ->
           (* raise (IllTyped e)) *)
-          (TDatatype (polymorphic_variant_universe, []), []))
+          let all_cs_args =
+            List.concat_map
+              ~f:(fun a -> snd (constraint_type sigma gamma a))
+              args
+          in
+          (TDatatype (polymorphic_variant_universe, []), all_cs_args))
   | EBase (BEInt _) -> (TBase BTInt, [])
   | EBase (BEFloat _) -> (TBase BTFloat, [])
   | EBase (BEString _) -> (TBase BTString, [])
@@ -189,6 +194,9 @@ let check : datatype_env -> typ_env -> exp -> typ -> unit =
  fun sigma gamma e tau ->
   let _ = unify_exn [ (infer sigma gamma e, tau) ] in
   ()
+
+let check_sub : datatype_env -> typ_env -> exp -> typ -> Typ.sub =
+ fun sigma gamma e tau -> unify_exn [ (infer sigma gamma e, tau) ]
 
 let well_typed : datatype_env * typ_env * env -> unit =
  fun (sigma, gamma, env) ->

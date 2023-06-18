@@ -4,35 +4,87 @@ let main_elm : string -> Yojson.Basic.t =
  fun input ->
   let open Cbr_fp in
   let stdlib_fname = "backend/bin/Stdlib.json" in
-  let sigma, gamma, env =
+  let stdlib_sigma, stdlib_gamma, stdlib_env =
     In_channel.with_file stdlib_fname ~f:(fun file ->
         Parse_json.definitions (In_channel.input_all file))
   in
   try
-    let name, orig_typ, rhs = Parse_json.variable_definition input in
+    let name, (orig_typ_binders, orig_typ), orig_rhs =
+      Parse_json.variable_definition input
+    in
     let fvs =
       Set.to_list
-        (Set.diff (Exp.free_variables rhs) (String.Set.singleton name))
+        (Set.diff
+           (Exp.free_variables orig_rhs)
+           (Set.add (Map.key_set stdlib_gamma) name))
     in
-    let rhs = Exp.build_abs fvs rhs in
-    let typ = Typ.generalize (Type_system.infer sigma gamma rhs) in
-    let gamma = gamma |> Map.add_exn ~key:name ~data:typ in
-    let env = Map.add_exn env ~key:name ~data:rhs in
-    let () = Type_system.well_typed (sigma, gamma, env) in
-    let problem = Synthesis.problem_of_definitions (sigma, gamma, env) name in
+    (* Build env *)
+    let recursive_call =
+      Exp.build_app (Lang.EVar name) (List.map ~f:(fun fv -> Lang.EVar fv) fvs)
+    in
+    let new_rhs =
+      Exp.build_abs
+        fvs
+        (Exp.replace_subexp
+           ~old_subexp:(Lang.EVar name)
+           ~new_subexp:recursive_call
+           orig_rhs)
+    in
+    let env = Map.add_exn stdlib_env ~key:name ~data:new_rhs in
+    (* Build typ env *)
+    let proto_new_typ_scheme =
+      ( orig_typ_binders
+      , Typ.build_arr
+          (List.map fvs ~f:(fun _ -> Typ.fresh_type_var ()))
+          orig_typ )
+    in
+    let proto_gamma =
+      stdlib_gamma |> Map.add_exn ~key:name ~data:proto_new_typ_scheme
+    in
+    let subst =
+      Type_system.check_sub
+        stdlib_sigma
+        proto_gamma
+        new_rhs
+        (Typ.instantiate proto_new_typ_scheme)
+    in
+    let new_typ_scheme =
+      Typ.generalize
+        (Typ.apply_sub subst (Typ.instantiate proto_new_typ_scheme))
+    in
+    let gamma = Map.update proto_gamma name ~f:(fun _ -> new_typ_scheme) in
+    let () = Type_system.well_typed (stdlib_sigma, gamma, env) in
+    let problem =
+      Synthesis.problem_of_definitions (stdlib_sigma, gamma, env) name
+    in
     match Synthesis.solve ~use_unification:true ~depth:3 problem with
     | None -> `Assoc [ ("status", `String "SynthFail") ]
-    | Some solution ->
+    | Some wrapped_solution ->
         (try
-           Type_system.check sigma gamma solution (Typ.instantiate typ);
-           let params, inside = Exp.decompose_abs (Exp.clean solution) in
+           Type_system.check
+             stdlib_sigma
+             gamma
+             wrapped_solution
+             (Typ.instantiate new_typ_scheme);
+           let params, inside =
+             wrapped_solution
+             |> Exp.replace_subexp
+                  ~old_subexp:recursive_call
+                  ~new_subexp:(Lang.EVar name)
+             |> Exp.clean
+             |> Exp.decompose_abs
+           in
            let solution =
              Exp.build_abs (List.drop params (List.length fvs)) inside
            in
            `Assoc
              [ ("status", `String "Success")
              ; ( "solution"
-               , `String (Unparse_elm.definition name orig_typ solution) )
+               , `String
+                   (Unparse_elm.definition
+                      name
+                      (orig_typ_binders, orig_typ)
+                      solution) )
              ]
          with
         | Type_system.IllTyped e ->

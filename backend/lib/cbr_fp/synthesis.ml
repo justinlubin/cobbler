@@ -6,7 +6,9 @@ open Lang
 let inline : env -> exp -> exp =
  fun env e ->
   Map.fold env ~init:e ~f:(fun ~key:lhs ~data:rhs acc ->
-      Exp.substitute (lhs, rhs) acc)
+      if String.is_suffix ~suffix:"____CBR_builtin" lhs
+      then acc
+      else Exp.substitute (lhs, rhs) acc)
 
 let norm : datatype_env -> typ_env -> env -> exp -> exp =
  fun sigma gamma env e ->
@@ -85,9 +87,7 @@ let problem_of_definitions : datatype_env * typ_env * env -> string -> problem =
   ; gamma
   ; env =
       Map.mapi env ~f:(fun ~key:name ~data:old_rhs ->
-          match Recursion_scheme.rewrite sigma env name with
-          | Some new_rhs -> new_rhs
-          | None -> old_rhs)
+          Recursion_scheme.rewrite sigma name old_rhs)
   ; name
   }
 
@@ -142,6 +142,23 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
                stdlib
                normalized_candidate_body
            in
+           (* Useful debugging snippet: *)
+           (* let () =
+             if String.equal
+                  (Exp.show_single candidate_body)
+                  ""
+             then
+               failwith
+                 (sprintf
+                    "%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s"
+                    (Exp.show_single reference)
+                    (Exp.show_single candidate_body)
+                    (Exp.show_single normalized_reference_body)
+                    (Exp.show_single normalized_candidate_body)
+                    (Unification.show_term normalized_reference_body_uniterm)
+                    (Unification.show_term normalized_candidate_body_uniterm))
+             else ()
+           in *)
            match
              Unification.unify
                1000
