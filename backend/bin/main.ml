@@ -136,7 +136,7 @@ let main_python : string -> Yojson.Basic.t =
           ]
   with
   | Parse.ParseFail s ->
-      `Assoc [ ("status", `String "ParseFail"); ("reason", `String s) ]
+      `Assoc [ ("status", `String "IRParseFail"); ("reason", `String s) ]
 
 let () =
   let input = In_channel.input_all In_channel.stdin in

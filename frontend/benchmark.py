@@ -66,18 +66,25 @@ def python(tree):
     """Benchmarks a Python script, assuming that it is represented as a Python
     AST object"""
     stats = {}
-    stats["orig code"] = util.csv_str_encode(ast.dump(tree))
+    stats["orig code"] = util.csv_str_encode(ast.unparse(tree))
 
     try:
         env, body = extract.python(tree)
-    except extract.NoExtractionException:
+        stats["status"] = "TODO Extracted!"
+        stats["synthed code"] = util.csv_str_encode(
+            "# CBR env\n" + ast.unparse(env) + "\n# CBR body\n" + ast.unparse(body)
+        )
+        return stats
+    except extract.NoExtractionException as e:
         stats["status"] = "ExtractFail"
+        stats["reason"] = repr(e)
         return stats
 
     try:
         sexp = python_to_ir.parse(body)
-    except python_to_ir.UnsupportedFeatureException:
-        stats["status"] = "ParseFail"
+    except Exception as e:
+        stats["status"] = "IRConversionFail"
+        stats["reason"] = repr(e)
         return stats
 
     start = timer()
@@ -98,7 +105,7 @@ def python(tree):
 
     if synthesis_result["status"] == "Success":
         stats["synthed code"] = util.csv_str_encode(
-            (ast.dump(env) + "\n" + synthesis_result["solution"])
+            (ast.unparse(env) + "\n" + synthesis_result["solution"])
         )
 
     return stats

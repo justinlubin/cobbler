@@ -16,7 +16,9 @@ let rec pat_of_sexp : Sexp.t -> pat =
 and expr_of_sexp : Sexp.t -> expr =
  fun sexp ->
   match sexp with
-  | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] -> Num (int_of_string n)
+  | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] ->
+      (try Num (int_of_string n) with
+      | Failure _ -> raise (ParseFail (sprintf "could not parse number %s" n)))
   | Sexp.List [ Sexp.Atom "Index"; iter; index ] ->
       Index (expr_of_sexp iter, expr_of_sexp index)
   | Sexp.List (Sexp.Atom "Call" :: name :: args) ->

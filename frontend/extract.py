@@ -1,4 +1,7 @@
 import ast
+import re
+
+python_regex = re.compile(r"(\w++) *+=.*+\nfor .++\n( ++.*+\n)++return \1$")
 
 
 class NoExtractionException(Exception):
@@ -36,8 +39,8 @@ def python(tree):
     objects (env, body)."""
 
     if isinstance(tree, ast.Module) and len(tree.body) > 0:
-        if not isinstance(tree.body[-1], ast.Return):
-            tree.body[-1] = ast.Return(value=tree.body[-1])
+        if isinstance(tree.body[-1], ast.Expr):
+            tree.body[-1] = ast.Return(value=tree.body[-1].value)
 
     classifier = VarClassifier()
     classifier.visit(tree)
@@ -49,6 +52,15 @@ def python(tree):
     extractor.visit(tree)
     env_ast = extractor.env_ast
     body_ast = extractor.body_ast
+    body_text = ast.unparse(body_ast)
+    if not "np." in body_text:
+        raise NoExtractionException("does not contain np.")
+    if "pd." in body_text:
+        raise NoExtractionException("contains pd.")
+    if "{}" in body_text:
+        raise NoExtractionException("contains {}")
+    if not python_regex.match(body_text):
+        raise NoExtractionException("does not pass python_regex")
     return env_ast, body_ast
 
 
@@ -127,10 +139,6 @@ class Extractor(ast.NodeVisitor):
         self.body_stmts.append(node)
 
     def visit_AugAssign(self, node: ast.AugAssign):
-        if len(node.targets) > 1:
-            raise NoExtractionException(
-                "multiple assignment targets in Extractor.visit_AugAssign"
-            )
         var = self.visit(node.target)
         if var in self.input_vars:
             self.env_stmts.append(node)
