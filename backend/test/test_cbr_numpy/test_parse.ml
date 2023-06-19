@@ -52,7 +52,7 @@ let expected_env2 =
       , ( [ "x"; "y" ]
         , [ Assign
               ( PName "out"
-              , Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]) )
+              , Call (Name "np.zeros", [ Call (Name "len", [ Name "x" ]) ]) )
           ; For
               ( PName "i"
               , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
@@ -77,7 +77,7 @@ let expected_env3 =
         , [ Assign
               ( PName "out"
               , Call
-                  ( Name "zeros"
+                  ( Name "np.zeros"
                   , [ Call (Name "len", [ Name "x" ])
                     ; Call (Name "len", [ Index (Name "y", Num 0) ])
                     ] ) )
@@ -120,8 +120,8 @@ let expected_env3 =
     ]
 
 let expected_block3 =
-  [ Assign (PName "x", Call (Name "zeros", [ Num 2; Num 2 ]))
-  ; Assign (PName "y", Call (Name "zeros", [ Num 2; Num 2 ]))
+  [ Assign (PName "x", Call (Name "np.zeros", [ Num 2; Num 2 ]))
+  ; Assign (PName "y", Call (Name "np.zeros", [ Num 2; Num 2 ]))
   ; Assign (PName "i", Num 1)
   ; Assign (PIndex (PIndex (PName "x", Num 0), Num 0), Num 3)
   ; Assign (PIndex (PIndex (PName "y", Num 1), Num 0), Num 5)

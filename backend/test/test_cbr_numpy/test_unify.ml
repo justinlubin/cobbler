@@ -50,7 +50,7 @@ let reference7 : program =
 
 let s8 : string =
   "( ()\n\
-  \    ((Assign z (Call zeros (Call len x)))\n\
+  \    ((Assign z (Call np.zeros (Call len x)))\n\
   \    (For i (Call range (Call len x)) ((Assign (Index z i) (Call * (Index x \
    i) (Index y i)))))\n\
   \    (Return z))\n\
@@ -61,7 +61,8 @@ let reference8 : program = program_of_str s8
 let reference9 : program =
   ( Cbr_numpy.Env.np_env
   , [ Assign
-        (PName "out", Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]))
+        ( PName "out"
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "x" ]) ]) )
     ; For
         ( PName "i"
         , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
@@ -78,7 +79,7 @@ let reference10 : program =
   , [ Assign
         ( PName "y"
         , Call
-            ( Name "zeros"
+            ( Name "np.zeros"
             , [ Call
                   ( Name "+"
                   , [ Call
@@ -175,7 +176,8 @@ let candidate8 : program =
   ( String.Map.empty
   , [ Assign
         ( PHole (Array, "a")
-        , Call (Name "zeros", [ Call (Name "len", [ Hole (Array, "b") ]) ]) )
+        , Call (Name "np.zeros", [ Call (Name "len", [ Hole (Array, "b") ]) ])
+        )
     ; For
         ( PHole (Number, "c")
         , Call (Name "range", [ Call (Name "len", [ Hole (Array, "b") ]) ])
@@ -194,7 +196,8 @@ let candidate8' : program =
   ( String.Map.empty
   , [ Assign
         ( PHole (Array, "a")
-        , Call (Name "zeros", [ Call (Name "len", [ Hole (Array, "b") ]) ]) )
+        , Call (Name "np.zeros", [ Call (Name "len", [ Hole (Array, "b") ]) ])
+        )
     ; For
         ( PHole (Number, "c")
         , Call (Name "range", [ Call (Name "len", [ Hole (Array, "b") ]) ])
@@ -213,7 +216,8 @@ let candidate9 : program =
   ( Cbr_numpy.Env.np_env
   , [ Assign
         ( PHole (Array, "out")
-        , Call (Name "zeros", [ Call (Name "len", [ Hole (Array, "x") ]) ]) )
+        , Call (Name "np.zeros", [ Call (Name "len", [ Hole (Array, "x") ]) ])
+        )
     ; For
         ( PHole (Array, "i")
         , Call (Name "range", [ Call (Name "len", [ Hole (Array, "x") ]) ])
@@ -234,8 +238,8 @@ let candidate9' : program =
   ( Cbr_numpy.Env.np_env
   , [ Return
         (Call
-           ( Name "where"
-           , [ Call (Name "gt", [ Hole (Array, "x"); Hole (Array, "z") ])
+           ( Name "np.where"
+           , [ Call (Name "np.greater", [ Hole (Array, "x"); Hole (Array, "z") ])
              ; Hole (Number, "pos")
              ; Hole (Number, "neg")
              ] ))
@@ -245,9 +249,10 @@ let candidate10 : program =
   ( Env.np_env
   , [ Return
         (Call
-           ( Name "convolve_valid"
-           , [ Hole (Array, "x"); Call (Name "ones", [ Hole (Number, "w") ]) ]
-           ))
+           ( Name "np.convolve_valid"
+           , [ Hole (Array, "x")
+             ; Call (Name "np.ones", [ Hole (Number, "w") ])
+             ] ))
     ] )
   |> Inline.inline_program
   |> Partial_eval.partial_eval_program

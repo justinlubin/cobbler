@@ -68,14 +68,25 @@ class IRParser(ast.NodeVisitor):
     def visit_Assign(self, node):
         if len(node.targets) > 1:
             raise UnsupportedFeatureException("Multiple assignments")
-        return SList([SAtom("Assign"), self.visit(node.targets[0]), self.visit(node.value)])
+        return SList(
+            [SAtom("Assign"), self.visit(node.targets[0]), self.visit(node.value)]
+        )
 
     def visit_Attribute(self, node):
-        className = self.getClassName(node.value)
-        if className == "Name":
-            return SAtom(node.attr)
-        else:
-            raise UnsupportedFeatureException("Unsupported attribute feature")
+        name = ""
+        while True:
+            className = self.getClassName(node)
+            if className == "Attribute":
+                name = node.attr + "." + name
+                node = node.value
+            elif className == "Name":
+                name = node.id + "." + name
+                break
+            else:
+                raise UnsupportedFeatureException(
+                    f"Unsupported attribute feature '{className}' in {ast.dump(node)}"
+                )
+        return SAtom(name[:-1])
 
     def visit_Name(self, node):
         return SAtom(node.id)
@@ -105,12 +116,21 @@ class IRParser(ast.NodeVisitor):
             op = SAtom("==")
         elif type(node.ops[0]) == ast.NotEq:
             op = SAtom("!=")
-        return SList([SAtom("Call"), op, self.visit(node.left), self.visit(node.comparators[0])])
+        else:
+            op = node.ops[0].__class__.__name__
+        return SList(
+            [SAtom("Call"), op, self.visit(node.left), self.visit(node.comparators[0])]
+        )
 
     def visit_UnaryOp(self, node: ast.UnaryOp):
         if type(node.op) == ast.USub:
             expr = self.visit(node.operand)
-            if type(expr) == SList and len(expr.l) > 1 and type(expr.l[0]) == SAtom and expr.l[0].a == "Num":
+            if (
+                type(expr) == SList
+                and len(expr.l) > 1
+                and type(expr.l[0]) == SAtom
+                and expr.l[0].a == "Num"
+            ):
                 num = int(expr.l[1].a)
                 expr.l[1].a = f"{-1*num}"
                 return expr
@@ -126,7 +146,13 @@ class IRParser(ast.NodeVisitor):
     def visit_AugAssign(self, node):
         target = self.visit(node.target)
         return SList(
-            [SAtom("Assign"), target, SList([SAtom("Call"), self.visit(node.op), target, self.visit(node.value)])]
+            [
+                SAtom("Assign"),
+                target,
+                SList(
+                    [SAtom("Call"), self.visit(node.op), target, self.visit(node.value)]
+                ),
+            ]
         )
 
     def visit_Index(self, node):
@@ -169,13 +195,23 @@ class IRParser(ast.NodeVisitor):
         return SList([SAtom("Num"), SAtom(str(node.n))])
 
     def visit_Call(self, node):
-        return SList([SAtom("Call"), self.visit(node.func)] + [self.visit(arg) for arg in node.args])
+        return SList(
+            [SAtom("Call"), self.visit(node.func)]
+            + [self.visit(arg) for arg in node.args]
+        )
 
     def visit_Operator(self, node):
         return SAtom(self.getClassName(node))
 
     def visit_BinOp(self, node):
-        return SList([SAtom("Call"), self.visit(node.op), self.visit(node.left), self.visit(node.right)])
+        return SList(
+            [
+                SAtom("Call"),
+                self.visit(node.op),
+                self.visit(node.left),
+                self.visit(node.right),
+            ]
+        )
 
     def visit_Arg(self, node):
         print(node.arg)

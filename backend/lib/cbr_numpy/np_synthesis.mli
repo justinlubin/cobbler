@@ -6,10 +6,12 @@
 
 open Lang
 
-(** [solve depth program_type target] uses top down enumeration with search space of level [depth]
+(** [solve depth target] uses top down enumeration with search space of level [depth]
     to enumerate candidate program sketches, which are then canonicalized with partial eval
     and inlining and unified against [target] to determine a match. If any sketches match,
     the resulting substitution is made in the original sketch and outputed. If no solution
-    is found, [None] is returned. The starting sketch is a hole with type [program_type].
+    is found, [None] is returned.
 *)
-val solve : int -> ?debug:bool -> hole_type -> program -> bool -> program option
+val solve : int -> ?debug:bool -> program -> bool -> program option
+
+val canonicalize : program -> program

@@ -6,7 +6,7 @@
 open Core
 
 (** [search ~max_iterations ~initial_space ~grow ~correct] repeatedly applies
-    [grow] to [initial_candidates] at most [max_iterations] times searching for 
+    [grow] to [initial_candidates] at most [max_iterations] times searching for
     any value that satisfies the [correct] predicate. For more information, see
     {{: https://people.csail.mit.edu/asolar/SynthesisCourse/Lecture3.htm }
     Lecture 3 of Armando Solar-Lezama's synthesis notes }. *)
@@ -24,7 +24,7 @@ val bottom_up
     maps candidate programs to final programs. *)
 val top_down
   :  max_iterations:int
-  -> start:'e
+  -> start:'e list
   -> expand:(int -> 'e -> 'e list)
   -> correct:('e -> 'e option)
   -> 'e option

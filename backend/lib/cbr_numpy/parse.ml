@@ -16,7 +16,9 @@ let rec pat_of_sexp : Sexp.t -> pat =
 and expr_of_sexp : Sexp.t -> expr =
  fun sexp ->
   match sexp with
-  | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] -> Num (int_of_string n)
+  | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] ->
+      (try Num (int_of_string n) with
+      | Failure _ -> raise (ParseFail (sprintf "could not parse number %s" n)))
   | Sexp.List [ Sexp.Atom "Index"; iter; index ] ->
       Index (expr_of_sexp iter, expr_of_sexp index)
   | Sexp.List (Sexp.Atom "Call" :: name :: args) ->
@@ -161,11 +163,11 @@ let pp_program : ?channel:Out_channel.t -> program -> unit =
 let rec py_str_of_sexp : Sexp.t -> string =
  fun sexp ->
   match sexp with
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "negate"; p1 ] ->
+      Printf.sprintf "-%s" (py_str_of_sexp p1)
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "len"; p1 ] ->
       Printf.sprintf "len(%s)" (py_str_of_sexp p1)
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "mul"; p1; p2 ] ->
-      "np.multiply(" ^ py_str_of_sexp p1 ^ ", " ^ py_str_of_sexp p2 ^ ")"
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "convolve_valid"; p1; p2 ] ->
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.convolve_valid"; p1; p2 ] ->
       "np.convolve("
       ^ py_str_of_sexp p1
       ^ ", "
@@ -179,16 +181,17 @@ let rec py_str_of_sexp : Sexp.t -> string =
           Printf.sprintf "np.ones(%s)" (py_str_of_sexp size)
       | _ ->
           Printf.sprintf
-            "np.empty(%s).fill(%s)"
+            "np.full(%s, %s)"
             (py_str_of_sexp size)
             (py_str_of_sexp value))
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "gt"; p1; p2 ] ->
-      Printf.sprintf "np.greater(%s,%s)" (py_str_of_sexp p1) (py_str_of_sexp p2)
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "broadcast"; p1 ] ->
       Printf.sprintf "%s" (py_str_of_sexp p1)
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "sliceToEnd"; p1; p2 ] ->
+      Printf.sprintf "%s[%s:]" (py_str_of_sexp p1) (py_str_of_sexp p2)
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "sliceUntil"; p1; p2 ] ->
+      Printf.sprintf "%s[:%s]" (py_str_of_sexp p1) (py_str_of_sexp p2)
   | Sexp.List (Sexp.Atom "Call" :: Sexp.Atom fn :: args) ->
-      "np."
-      ^ fn
+      fn
       ^ "("
       ^ (List.map ~f:py_str_of_sexp args |> String.concat ~sep:", ")
       ^ ")"

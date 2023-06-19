@@ -124,10 +124,14 @@ let main_python : string -> Yojson.Basic.t =
  fun input ->
   let open Cbr_numpy in
   try
-    let target = input |> Sexp.of_string |> Parse.program_of_sexp in
-    match
-      Cbr_numpy.Np_synthesis.solve 4 ~debug:false Lang.Array target true
-    with
+    let target =
+      input
+      |> Sexp.of_string
+      |> Parse.program_of_sexp
+      |> Np_synthesis.canonicalize
+    in
+    (* let () = failwith (target |> snd |> [%show: Lang.block]) in *)
+    match Np_synthesis.solve 1 ~debug:false target true with
     | None -> `Assoc [ ("status", `String "SynthFail") ]
     | Some e ->
         `Assoc
@@ -136,7 +140,7 @@ let main_python : string -> Yojson.Basic.t =
           ]
   with
   | Parse.ParseFail s ->
-      `Assoc [ ("status", `String "ParseFail"); ("reason", `String s) ]
+      `Assoc [ ("status", `String "IRParseFail"); ("reason", `String s) ]
 
 let () =
   let input = In_channel.input_all In_channel.stdin in

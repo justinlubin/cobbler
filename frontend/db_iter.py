@@ -6,7 +6,9 @@ import ast
 
 def elm_json(sample_limit=None):
     """Iterates through The Stack database, yielding elm-format JSON
-    representations of Elm function/variable definitions from Elm files"""
+    representations of Elm function/variable definitions from Elm files.
+
+    The Elm database has 90,637 samples."""
     ds = datasets.load_dataset(
         "bigcode/the-stack",
         data_dir="data/elm",
@@ -36,7 +38,9 @@ def elm_json(sample_limit=None):
 
 def python(sample_limit=None):
     """Iterates through The Stack database, yielding Python AST objects from
-    Jupyter Notebook cells"""
+    Jupyter Notebook cells.
+
+    The Python database has between 1,450,000 and 1,460,000 samples."""
     ds = datasets.load_dataset(
         "bigcode/the-stack",
         data_dir="data/jupyter-notebook",

@@ -5,4 +5,4 @@ for i in range(len(x)):
         y[i] = 1
     else:
         y[i] = -1
-return y
+y

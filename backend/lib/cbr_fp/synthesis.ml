@@ -127,7 +127,7 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
   Option.map
     (Cbr_framework.Enumerative_search.top_down
        ~max_iterations:depth
-       ~start:(EHole (Util.gensym "start", reference_codomain))
+       ~start:[ EHole (Util.gensym "start", reference_codomain) ]
        ~expand:(expand grammar)
        ~correct:
          (if use_unification
