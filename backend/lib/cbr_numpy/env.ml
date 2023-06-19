@@ -21,6 +21,16 @@ let sum_defn =
     ; Return (Hole (Number, "sum_count"))
     ] )
 
+let sub_body =
+  [ Assign
+      ( PHole (Number, "sub_count")
+      , Call
+          ( Name "-"
+          , [ Hole (Number, "sub_count")
+            ; Index (Name "sub_1", Hole (Number, "sub_i"))
+            ] ) )
+  ]
+
 let mul_body =
   [ Assign
       ( PIndex (PHole (Array, "mul_result"), Hole (Number, "mul_i"))
@@ -35,7 +45,7 @@ let mul_defn =
   ( [ "mul_1"; "mul_2" ]
   , [ Assign
         ( PHole (Array, "mul_result")
-        , Call (Name "zeros", [ Call (Name "len", [ Name "mul_1" ]) ]) )
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "mul_1" ]) ]) )
     ; For
         ( PHole (Number, "mul_i")
         , Call (Name "range", [ Call (Name "len", [ Name "mul_1" ]) ])
@@ -57,12 +67,35 @@ let add_defn =
   ( [ "add_1"; "add_2" ]
   , [ Assign
         ( PHole (Array, "add_result")
-        , Call (Name "zeros", [ Call (Name "len", [ Name "add_1" ]) ]) )
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "add_1" ]) ]) )
     ; For
         ( PHole (Number, "add_i")
         , Call (Name "range", [ Call (Name "len", [ Name "add_1" ]) ])
         , add_body )
     ; Return (Hole (Array, "add_result"))
+    ] )
+
+let subtract_body =
+  [ Assign
+      ( PIndex (PHole (Array, "subtract_result"), Hole (Number, "subtract_i"))
+      , Call
+          ( Name "-"
+          , [ Index (Name "subtract_1", Hole (Number, "subtract_i"))
+            ; Index (Name "subtract_2", Hole (Number, "subtract_i"))
+            ] ) )
+  ]
+
+let subtract_defn =
+  ( [ "subtract_1"; "subtract_2" ]
+  , [ Assign
+        ( PHole (Array, "subtract_result")
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "subtract_1" ]) ])
+        )
+    ; For
+        ( PHole (Number, "subtract_i")
+        , Call (Name "range", [ Call (Name "len", [ Name "subtract_1" ]) ])
+        , subtract_body )
+    ; Return (Hole (Array, "subtract_result"))
     ] )
 
 let div_body =
@@ -79,7 +112,7 @@ let div_defn =
   ( [ "div_1"; "div_2" ]
   , [ Assign
         ( PHole (Array, "div_result")
-        , Call (Name "zeros", [ Call (Name "len", [ Name "div_1" ]) ]) )
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "div_1" ]) ]) )
     ; For
         ( PHole (Number, "div_i")
         , Call (Name "range", [ Call (Name "len", [ Name "div_1" ]) ])
@@ -89,7 +122,7 @@ let div_defn =
 
 let ones_defn =
   ( [ "n" ]
-  , [ Assign (PHole (Array, "ones_result"), Call (Name "zeros", [ Name "n" ]))
+  , [ Assign (PHole (Array, "ones_result"), Call (Name "np.zeros", [ Name "n" ]))
     ; For
         ( PHole (Number, "ones_i")
         , Call (Name "range", [ Name "n" ])
@@ -114,7 +147,7 @@ let eq_defn =
   ( [ "eq_1"; "eq_2" ]
   , [ Assign
         ( PHole (Array, "eq_result")
-        , Call (Name "zeros", [ Call (Name "len", [ Name "eq_1" ]) ]) )
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "eq_1" ]) ]) )
     ; For
         ( PHole (Number, "eq_i")
         , Call (Name "range", [ Call (Name "len", [ Name "eq_1" ]) ])
@@ -136,7 +169,7 @@ let gt_defn =
   ( [ "gt_1"; "gt_2" ]
   , [ Assign
         ( PHole (Array, "gt_result")
-        , Call (Name "zeros", [ Call (Name "len", [ Name "gt_1" ]) ]) )
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "gt_1" ]) ]) )
     ; For
         ( PHole (Number, "gt_i")
         , Call (Name "range", [ Call (Name "len", [ Name "gt_1" ]) ])
@@ -161,7 +194,8 @@ let where_num_defn =
   ( [ "cond"; "then"; "else" ]
   , [ Assign
         ( PHole (Array, "where_result")
-        , Call (Name "zeros", [ Call (Name "len", [ Hole (Array, "arr") ]) ]) )
+        , Call (Name "np.zeros", [ Call (Name "len", [ Hole (Array, "arr") ]) ])
+        )
     ; For
         ( PHole (Number, "where_i")
         , Call (Name "range", [ Call (Name "len", [ Hole (Array, "arr") ]) ])
@@ -186,7 +220,8 @@ let where_arr_defn =
   ( [ "cond"; "then"; "else" ]
   , [ Assign
         ( PHole (Array, "where_result")
-        , Call (Name "zeros", [ Call (Name "len", [ Hole (Array, "arr") ]) ]) )
+        , Call (Name "np.zeros", [ Call (Name "len", [ Hole (Array, "arr") ]) ])
+        )
     ; For
         ( PHole (Number, "where_i")
         , Call (Name "range", [ Call (Name "len", [ Hole (Array, "arr") ]) ])
@@ -206,7 +241,7 @@ let roll_defn =
   ( [ "x"; "shift" ]
   , [ Assign
         ( PHole (Array, "roll_result")
-        , Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]) )
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "x" ]) ]) )
     ; For
         ( PHole (Number, "roll_i")
         , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
@@ -219,7 +254,7 @@ let convolve_valid_defn =
   , [ Assign
         ( PHole (Array, "conv_result")
         , Call
-            ( Name "zeros"
+            ( Name "np.zeros"
             , [ Call
                   ( Name "+"
                   , [ Call
@@ -285,14 +320,15 @@ let convolve_valid_defn =
 
 let np_env : env =
   String.Map.of_alist_exn
-    [ ("sum", sum_defn)
-    ; ("mul", mul_defn)
-    ; ("div", div_defn)
-    ; ("add", add_defn)
-    ; ("ones", ones_defn)
-    ; ("eq", eq_defn)
-    ; ("gt", gt_defn)
-    ; ("where", where_arr_defn)
-    ; ("roll", roll_defn)
-    ; ("convolve_valid", convolve_valid_defn)
+    [ ("np.sum", sum_defn)
+    ; ("np.multiply", mul_defn)
+    ; ("np.divide", div_defn)
+    ; ("np.add", add_defn)
+    ; ("np.subtract", subtract_defn)
+    ; ("np.ones", ones_defn)
+    ; ("np.equal", eq_defn)
+    ; ("np.greater", gt_defn)
+    ; ("np.where", where_arr_defn)
+    ; ("np.roll", roll_defn)
+    ; ("np.convolve_valid", convolve_valid_defn)
     ]

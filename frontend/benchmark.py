@@ -69,12 +69,12 @@ def python(tree):
     stats["orig code"] = util.csv_str_encode(ast.unparse(tree))
 
     try:
-        env, body = extract.python(tree)
-        stats["status"] = "TODO Extracted!"
-        stats["synthed code"] = util.csv_str_encode(
-            "# CBR env\n" + ast.unparse(env) + "\n# CBR body\n" + ast.unparse(body)
-        )
-        return stats
+        env, body, output_variable = extract.python(tree)
+        # stats["status"] = "TODO Extracted!"
+        # stats["synthed code"] = util.csv_str_encode(
+        #     "# CBR env\n" + ast.unparse(env) + "\n# CBR body\n" + ast.unparse(body)
+        # )
+        # return stats
     except extract.NoExtractionException as e:
         stats["status"] = "ExtractFail"
         stats["reason"] = repr(e)
@@ -105,7 +105,11 @@ def python(tree):
 
     if synthesis_result["status"] == "Success":
         stats["synthed code"] = util.csv_str_encode(
-            (ast.unparse(env) + "\n" + synthesis_result["solution"])
+            (
+                ast.unparse(env)
+                + f"\n{output_variable} = "
+                + synthesis_result["solution"]
+            ).strip()
         )
 
     return stats

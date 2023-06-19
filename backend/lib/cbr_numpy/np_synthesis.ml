@@ -9,47 +9,52 @@ let expand : int -> expr -> expr list =
     | Str s -> [ Str s ]
     | Name id -> [ Name id ]
     | Hole (Number, _) ->
-        [ Call (Name "sum", [ Hole (Array, Util.gensym "hole") ]) ]
+        [ Call (Name "np.sum", [ Hole (Array, Util.gensym "hole") ]) ]
     | Hole (Array, _) ->
         [ Call
-            ( Name "mul"
+            ( Name "np.multiply"
             , [ Hole (Array, Util.gensym "hole")
               ; Hole (Array, Util.gensym "hole")
               ] )
         ; Call
-            ( Name "add"
+            ( Name "np.divide"
             , [ Hole (Array, Util.gensym "hole")
               ; Hole (Array, Util.gensym "hole")
               ] )
         ; Call
-            ( Name "div"
+            ( Name "np.add"
             , [ Hole (Array, Util.gensym "hole")
               ; Hole (Array, Util.gensym "hole")
               ] )
         ; Call
-            ( Name "eq"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call (Name "ones", [ Hole (Number, Util.gensym "hole") ])
-        ; Call
-            ( Name "gt"
+            ( Name "np.subtract"
             , [ Hole (Array, Util.gensym "hole")
               ; Hole (Array, Util.gensym "hole")
               ] )
         ; Call
-            ( Name "where"
+            ( Name "np.equal"
+            , [ Hole (Array, Util.gensym "hole")
+              ; Hole (Array, Util.gensym "hole")
+              ] )
+        ; Call (Name "np.ones", [ Hole (Number, Util.gensym "hole") ])
+        ; Call
+            ( Name "np.greater"
+            , [ Hole (Array, Util.gensym "hole")
+              ; Hole (Array, Util.gensym "hole")
+              ] )
+        ; Call
+            ( Name "np.where"
             , [ Hole (Array, Util.gensym "hole")
               ; Hole (Array, Util.gensym "hole")
               ; Hole (Array, Util.gensym "hole")
               ] )
         ; Call
-            ( Name "roll"
+            ( Name "np.roll"
             , [ Hole (Array, Util.gensym "hole")
               ; Hole (Number, Util.gensym "hole")
               ] )
         ; Call
-            ( Name "convolve_valid"
+            ( Name "np.convolve_valid"
             , [ Hole (Array, Util.gensym "hole")
               ; Hole (Array, Util.gensym "hole")
               ] )
@@ -99,6 +104,54 @@ let substitute_expr : expr -> substitutions -> expr =
 let canonicalize : program -> program =
  fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
 
+let rec simplify : expr -> expr =
+ fun e ->
+  match e with
+  | Index (e1, e2) -> Index (simplify e1, simplify e2)
+  | Call (fn, args) ->
+      let fn = simplify fn in
+      let args = List.map ~f:simplify args in
+      (match (fn, args) with
+      | Name "len", [ Call (Name "sliceToEnd", [ a; x ]) ]
+      | Name "len", [ Call (Name "sliceUntil", [ a; x ]) ] ->
+          simplify (Call (Name "-", [ Call (Name "len", [ a ]); x ]))
+      | ( Name "sliceToEnd"
+        , [ a; Call (Name "-", [ Call (Name "len", [ a' ]); x ]) ] )
+        when [%eq: expr] a a' ->
+          simplify
+            (Call (Name "sliceToEnd", [ a; Call (Name "negate", [ x ]) ]))
+      | ( Name "sliceUntil"
+        , [ a; Call (Name "-", [ Call (Name "len", [ a' ]); x ]) ] )
+        when [%eq: expr] a a' ->
+          simplify
+            (Call (Name "sliceUntil", [ a; Call (Name "negate", [ x ]) ]))
+      | _ -> Call (fn, args))
+  | Num _ | Str _ | Name _ | Hole (_, _) -> e
+
+let rec cap_second_arguments : expr -> expr =
+ fun e ->
+  match e with
+  | Index (e1, e2) -> Index (cap_second_arguments e1, cap_second_arguments e2)
+  | Call (fn, args) ->
+      (match (fn, args) with
+      | ( ( Name "np.multiply"
+          | Name "np.divide"
+          | Name "np.add"
+          | Name "np.subtract"
+          | Name "np.equal"
+          | Name "np.greater"
+          | Name "np.convolve_valid" )
+        , [ arg1; arg2 ] ) ->
+          Call
+            ( fn
+            , [ arg1
+              ; Call (Name "sliceUntil", [ arg2; Call (Name "len", [ arg1 ]) ])
+              ] )
+      | _ -> failwith "TODO")
+  | Num _ | Str _ | Name _ | Hole (_, _) -> e
+
+let clean : expr -> expr = fun e -> simplify (cap_second_arguments e)
+
 let solve : int -> ?debug:bool -> hole_type -> program -> bool -> program option
   =
  fun depth ?(debug = false) program_type target use_egraphs ->
@@ -111,8 +164,13 @@ let solve : int -> ?debug:bool -> hole_type -> program -> bool -> program option
   in
   let correct : expr -> expr option =
    fun e ->
-    (* if debug then print_endline (Parse.sexp_of_expr e |> Sexp.to_string) else (); *)
     let canonical = canonicalize (np_env, [ Return e ]) in
+    (* if String.is_substring ~substring:"subtract" ([%show: expr] e)
+    then (
+      Printf.eprintf "%s\n" ([%show: expr] e);
+      Printf.eprintf "%s\n" (canonical |> snd |> [%show: block]);
+      Printf.eprintf "%s\n" (target |> snd |> [%show: block]))
+    else (); *)
     match unify ~pattern:canonical with
     | Some sub -> Some (substitute_expr e sub)
     | None -> None
@@ -124,5 +182,5 @@ let solve : int -> ?debug:bool -> hole_type -> program -> bool -> program option
       ~expand
       ~correct
   with
-  | Some ans -> Some (np_env, [ Return ans ])
+  | Some ans -> Some (np_env, [ Return (clean ans) ])
   | None -> None

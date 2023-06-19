@@ -1,7 +1,9 @@
 import ast
 import re
 
-python_regex = re.compile(r"(\w++) *+=.*+\nfor .++\n( ++.*+\n)++return \1$")
+python_regex = re.compile(
+    r"(\w++) *+= *+(0|np\.zeros|np\.empty).*+\nfor .++\n( ++.*+\n)++return \1$"
+)
 
 
 class NoExtractionException(Exception):
@@ -41,6 +43,10 @@ def python(tree):
     if isinstance(tree, ast.Module) and len(tree.body) > 0:
         if isinstance(tree.body[-1], ast.Expr):
             tree.body[-1] = ast.Return(value=tree.body[-1].value)
+        else:
+            raise NoExtractionException("final line is not variable")
+    else:
+        raise NoExtractionException("empty")
 
     classifier = VarClassifier()
     classifier.visit(tree)
@@ -61,7 +67,7 @@ def python(tree):
         raise NoExtractionException("contains {}")
     if not python_regex.match(body_text):
         raise NoExtractionException("does not pass python_regex")
-    return env_ast, body_ast
+    return env_ast, body_ast, tree.body[-1].value.id
 
 
 # Python helper code

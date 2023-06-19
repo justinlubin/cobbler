@@ -13,3 +13,5 @@ open Lang
     is found, [None] is returned. The starting sketch is a hole with type [program_type].
 *)
 val solve : int -> ?debug:bool -> hole_type -> program -> bool -> program option
+
+val canonicalize : program -> program
