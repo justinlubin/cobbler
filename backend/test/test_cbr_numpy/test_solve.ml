@@ -5,6 +5,9 @@ open Lang
 open Parse
 open Util
 
+let cap : string -> string -> expr =
+ fun y x -> Call (Name "sliceUntil", [ Name y; Call (Name "len", [ Name x ]) ])
+
 let target1 : program =
   ( Cbr_numpy.Env.np_env
   , [ Assign (PName "c", Num 0)
@@ -49,7 +52,7 @@ let target2 : program =
 
 let s3 : string =
   "( ()\n\
-  \    ((Assign z (Call zeros (Call len x)))\n\
+  \    ((Assign z (Call np.zeros (Call len x)))\n\
   \    (For i (Call range (Call len x)) ((Assign (Index z i) (Call * (Index x \
    i) (Index y i)))))\n\
   \    (Return z)\n\
@@ -64,7 +67,7 @@ let target4 : program = Parse.program_of_str s4
 let target5 : program =
   ( Cbr_numpy.Env.np_env
   , [ Assign
-        (PName "z", Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]))
+        (PName "z", Call (Name "np.zeros", [ Call (Name "len", [ Name "x" ]) ]))
     ; For
         ( PName "i"
         , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
@@ -86,7 +89,8 @@ let target5 : program =
 let target6 : program =
   ( Cbr_numpy.Env.np_env
   , [ Assign
-        (PName "out", Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]))
+        ( PName "out"
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "x" ]) ]) )
     ; For
         ( PName "i"
         , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
@@ -116,7 +120,8 @@ let target6 : program =
 let target7 : program =
   ( Cbr_numpy.Env.np_env
   , [ Assign
-        (PName "out", Call (Name "zeros", [ Call (Name "len", [ Name "x" ]) ]))
+        ( PName "out"
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "x" ]) ]) )
     ; For
         ( PName "i"
         , Call (Name "range", [ Call (Name "len", [ Name "x" ]) ])
@@ -133,7 +138,7 @@ let target8 : program =
   , [ Assign
         ( PName "y"
         , Call
-            ( Name "zeros"
+            ( Name "np.zeros"
             , [ Call
                   ( Name "+"
                   , [ Call
@@ -177,21 +182,28 @@ let target8 : program =
     ] )
 
 let solution1 : program =
-  (Cbr_numpy.Env.np_env, [ Return (Call (Name "sum", [ Name "x" ])) ])
+  (Cbr_numpy.Env.np_env, [ Return (Call (Name "np.sum", [ Name "x" ])) ])
 
 let solution2 : program =
   ( Cbr_numpy.Env.np_env
-  , [ Return (Call (Name "sum", [ Call (Name "mul", [ Name "x"; Name "y" ]) ]))
+  , [ Return
+        (Call
+           ( Name "np.sum"
+           , [ Call (Name "np.multiply", [ Name "x"; cap "y" "x" ]) ] ))
     ] )
 
 let solution3 : program =
-  (Cbr_numpy.Env.np_env, [ Return (Call (Name "mul", [ Name "x"; Name "y" ])) ])
+  ( Cbr_numpy.Env.np_env
+  , [ Return (Call (Name "np.multiply", [ Name "x"; cap "y" "x" ])) ] )
 
 let solution5 : program =
   ( Cbr_numpy.Env.np_env
   , [ Return
         (Call
-           (Name "mul", [ Call (Name "mul", [ Name "x"; Name "y" ]); Name "w" ]))
+           ( Name "np.multiply"
+           , [ Call (Name "np.multiply", [ Name "x"; cap "y" "x" ])
+             ; cap "w" "x"
+             ] ))
     ] )
 
 let no_sol_target : program =
@@ -203,8 +215,10 @@ let solution7 : program =
   ( Cbr_numpy.Env.np_env
   , [ Return
         (Call
-           ( Name "where"
-           , [ Call (Name "gt", [ Name "x"; Call (Name "broadcast", [ Num 0 ]) ])
+           ( Name "np.where"
+           , [ Call
+                 ( Name "np.greater"
+                 , [ Name "x"; Call (Name "broadcast", [ Num 0 ]) ] )
              ; Call (Name "broadcast", [ Num 1 ])
              ; Call (Name "broadcast", [ Num (-1) ])
              ] ))
@@ -214,8 +228,8 @@ let solution8 : program =
   ( Env.np_env
   , [ Return
         (Call
-           ( Name "convolve_valid"
-           , [ Name "x"; Call (Name "ones", [ Name "window_size" ]) ] ))
+           ( Name "np.convolve_valid"
+           , [ Name "x"; Call (Name "np.ones", [ Name "window_size" ]) ] ))
     ] )
 
 let egraph_bools = [ true; false ]
@@ -223,7 +237,7 @@ let egraph_bools = [ true; false ]
 let%test_unit "np_solve 1" =
   [%test_result: program list]
     (List.map egraph_bools ~f:(fun use_egraphs ->
-         match solve 1 ~debug:false Number target1 use_egraphs with
+         match solve 1 ~debug:false target1 use_egraphs with
          | Some p -> p
          | None -> failwith "no solution"))
     ~expect:(repeat solution1 (List.length egraph_bools))
@@ -231,7 +245,7 @@ let%test_unit "np_solve 1" =
 let%test_unit "np_solve 1'" =
   [%test_result: program list]
     (List.map egraph_bools ~f:(fun use_egraphs ->
-         match solve 1 Number target1' use_egraphs with
+         match solve 1 target1' use_egraphs with
          | Some p -> p
          | None -> failwith "no solution"))
     ~expect:(repeat solution1 (List.length egraph_bools))
@@ -239,57 +253,50 @@ let%test_unit "np_solve 1'" =
 let%test_unit "np_solve 2" =
   [%test_result: program list]
     (List.map egraph_bools ~f:(fun use_egraphs ->
-         match solve 2 Number target2 use_egraphs with
+         match solve 2 target2 use_egraphs with
          | Some p -> p
          | None -> failwith "no solution"))
     ~expect:(repeat solution2 (List.length egraph_bools))
 
 let%test_unit "np_solve 2: not enough depth" =
   [%test_result: program option list]
-    (List.map egraph_bools ~f:(fun use_egraphs ->
-         solve 1 Number target2 use_egraphs))
+    (List.map egraph_bools ~f:(fun use_egraphs -> solve 1 target2 use_egraphs))
     ~expect:(repeat None (List.length egraph_bools))
 
 let%test_unit "np_solve 3" =
   [%test_result: program list]
     (List.map egraph_bools ~f:(fun use_egraphs ->
-         match solve 1 ~debug:false Array target3 use_egraphs with
+         match solve 1 ~debug:false target3 use_egraphs with
          | Some p -> p
          | None -> failwith "no solution"))
     ~expect:(repeat solution3 (List.length egraph_bools))
 
-let%test_unit "np_solve 3: wrong starting hole type" =
+let%test_unit "np_solve no solution" =
   [%test_result: program option list]
     (List.map egraph_bools ~f:(fun use_egraphs ->
-         solve 2 Number target3 use_egraphs))
+         solve 3 no_sol_target use_egraphs))
     ~expect:(repeat None (List.length egraph_bools))
 
 let%test_unit "np_solve no solution" =
   [%test_result: program option list]
     (List.map egraph_bools ~f:(fun use_egraphs ->
-         solve 3 Number no_sol_target use_egraphs))
-    ~expect:(repeat None (List.length egraph_bools))
-
-let%test_unit "np_solve no solution" =
-  [%test_result: program option list]
-    (List.map egraph_bools ~f:(fun use_egraphs ->
-         solve 1 ~debug:false Number target4 use_egraphs))
+         solve 1 ~debug:false target4 use_egraphs))
     ~expect:(repeat None (List.length egraph_bools))
 
 let%test_unit "np_solve 2 muls" =
   [%test_result: program option list]
     (List.map egraph_bools ~f:(fun use_egraphs ->
-         solve 2 ~debug:false Array target5 use_egraphs))
+         solve 2 ~debug:false target5 use_egraphs))
     ~expect:[ Some solution5; None ]
 
 let%test_unit "np_solve where" =
   [%test_result: program option list]
     (List.map egraph_bools ~f:(fun use_egraphs ->
-         solve 2 ~debug:false Array target7 use_egraphs))
+         solve 2 ~debug:false target7 use_egraphs))
     ~expect:[ Some solution7; None ]
 
 let%test_unit "np_solve rolling sum" =
   [%test_result: program option list]
     (List.map egraph_bools ~f:(fun use_egraphs ->
-         solve 2 ~debug:false Array target8 use_egraphs))
+         solve 2 ~debug:false target8 use_egraphs))
     ~expect:[ Some solution8; None ]

@@ -18,16 +18,20 @@ let rec partial_eval_expr : expr -> expr =
             (Call (Name "np.zeros", [ Call (Name "len", args) ]))
       | Name "-" ->
           (match args with
-          | [ Call (Name "len", [ a ]); offset ] ->
+          | [ Call (Name "len", [ a ]); Num offset ] ->
               partial_eval_expr
-                (Call (Name "len", [ Call (Name "sliceToEnd", [ a; offset ]) ]))
+                (Call
+                   (Name "len", [ Call (Name "sliceToEnd", [ a; Num offset ]) ]))
           | _ -> Call (Name "-", List.map ~f:partial_eval_expr args))
       | Name "len" ->
           (match partial_eval_expr (List.hd_exn args) with
           | Call (Name "np.multiply", args)
           | Call (Name "np.divide", args)
           | Call (Name "np.add", args)
-          | Call (Name "np.equal", args) ->
+          | Call (Name "np.subtract", args)
+          | Call (Name "np.equal", args)
+          | Call (Name "np.greater", args)
+          | Call (Name "np.where", args) ->
               partial_eval_expr (Call (Name "len", [ List.hd_exn args ]))
           | Call (Name "np.ones", args)
           | Call (Name "np.zeros", args)

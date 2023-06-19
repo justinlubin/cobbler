@@ -8,7 +8,8 @@ let env = Map.empty (module String)
 
 let p1 =
   ( env
-  , [ Return (Call (Name "len", [ Call (Name "mul", [ Name "x"; Name "y" ]) ]))
+  , [ Return
+        (Call (Name "len", [ Call (Name "np.multiply", [ Name "x"; Name "y" ]) ]))
     ] )
 
 let expect1 = (env, [ Return (Call (Name "len", [ Name "x" ])) ])
@@ -17,7 +18,7 @@ let p2 =
   ( env
   , [ Assign
         ( PIndex (PName "a", Num 1)
-        , Index (Call (Name "mul", [ Name "x"; Name "y" ]), Num 0) )
+        , Index (Call (Name "np.multiply", [ Name "x"; Name "y" ]), Num 0) )
     ; Return (Name "a")
     ] )
 

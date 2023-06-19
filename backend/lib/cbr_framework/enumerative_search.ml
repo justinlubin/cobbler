@@ -23,7 +23,7 @@ let bottom_up :
 let top_down :
       'e.
       max_iterations:int
-      -> start:'e
+      -> start:'e list
       -> expand:(int -> 'e -> 'e list)
       -> correct:('e -> 'e option)
       -> 'e option
@@ -38,4 +38,4 @@ let top_down :
       | Some e -> Some e
       | None -> top_down' (iterations + 1) new_candidates)
   in
-  top_down' 0 [ start ]
+  top_down' 0 start

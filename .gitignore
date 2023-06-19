@@ -5,5 +5,7 @@ _coverage
 elm-stuff
 backend/after_eqsat.txt
 backend/before_eqsat.txt
+before_eqsat.txt
+after_eqsat.txt
 __pycache__
 data/*

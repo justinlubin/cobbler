@@ -112,6 +112,7 @@ let rec simplify : expr -> expr =
       let fn = simplify fn in
       let args = List.map ~f:simplify args in
       (match (fn, args) with
+      (* Slicing *)
       | Name "len", [ Call (Name "sliceToEnd", [ a; x ]) ]
       | Name "len", [ Call (Name "sliceUntil", [ a; x ]) ] ->
           simplify (Call (Name "-", [ Call (Name "len", [ a ]); x ]))
@@ -120,11 +121,32 @@ let rec simplify : expr -> expr =
         when [%eq: expr] a a' ->
           simplify
             (Call (Name "sliceToEnd", [ a; Call (Name "negate", [ x ]) ]))
+      | Name "sliceToEnd", [ a; Num 0 ] -> a
+      | Name "sliceToEnd", [ Call (Name "broadcast", [ n ]); _ ] ->
+          Call (Name "broadcast", [ n ])
       | ( Name "sliceUntil"
         , [ a; Call (Name "-", [ Call (Name "len", [ a' ]); x ]) ] )
         when [%eq: expr] a a' ->
           simplify
             (Call (Name "sliceUntil", [ a; Call (Name "negate", [ x ]) ]))
+      | Name "sliceUntil", [ a; Call (Name "len", [ a' ]) ]
+        when [%eq: expr] a a' -> a
+      | Name "sliceUntil", [ Call (Name "broadcast", [ n ]); _ ] ->
+          Call (Name "broadcast", [ n ])
+      (* Propagation *)
+      | ( Name "len"
+        , [ Call
+              ( Name
+                  ( "np.multiply"
+                  | "np.divide"
+                  | "np.add"
+                  | "np.subtract"
+                  | "np.equal"
+                  | "np.greater"
+                  | "np.where" )
+              , args' )
+          ] ) -> simplify (Call (Name "len", [ List.hd_exn args' ]))
+      (* Default *)
       | _ -> Call (fn, args))
   | Num _ | Str _ | Name _ | Hole (_, _) -> e
 
@@ -133,28 +155,28 @@ let rec cap_second_arguments : expr -> expr =
   match e with
   | Index (e1, e2) -> Index (cap_second_arguments e1, cap_second_arguments e2)
   | Call (fn, args) ->
+      let fn = cap_second_arguments fn in
+      let args = List.map ~f:cap_second_arguments args in
       (match (fn, args) with
       | ( ( Name "np.multiply"
           | Name "np.divide"
           | Name "np.add"
           | Name "np.subtract"
           | Name "np.equal"
-          | Name "np.greater"
-          | Name "np.convolve_valid" )
+          | Name "np.greater" )
         , [ arg1; arg2 ] ) ->
           Call
             ( fn
             , [ arg1
               ; Call (Name "sliceUntil", [ arg2; Call (Name "len", [ arg1 ]) ])
               ] )
-      | _ -> failwith "TODO")
+      | _ -> Call (fn, args))
   | Num _ | Str _ | Name _ | Hole (_, _) -> e
 
 let clean : expr -> expr = fun e -> simplify (cap_second_arguments e)
 
-let solve : int -> ?debug:bool -> hole_type -> program -> bool -> program option
-  =
- fun depth ?(debug = false) program_type target use_egraphs ->
+let solve : int -> ?debug:bool -> program -> bool -> program option =
+ fun depth ?(debug = false) target use_egraphs ->
   let unify : pattern:program -> substitutions option =
     if use_egraphs
     then (
@@ -178,7 +200,8 @@ let solve : int -> ?debug:bool -> hole_type -> program -> bool -> program option
   match
     Cbr_framework.Enumerative_search.top_down
       ~max_iterations:depth
-      ~start:(Hole (program_type, Util.gensym "hole"))
+      ~start:
+        [ Hole (Array, Util.gensym "hole"); Hole (Number, Util.gensym "hole") ]
       ~expand
       ~correct
   with
