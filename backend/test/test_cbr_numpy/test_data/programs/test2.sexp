@@ -11,7 +11,7 @@
                   ((Assign out (Call + out (Index x i)))))
 	   (Return out)))
         (mul (x y)
-           ((Assign out (Call zeros (Call len x)))
+           ((Assign out (Call np.zeros (Call len x)))
             (For i (Call range (Call len x))
                ((Assign (Index out i) (Call * (Index x i) (Index y i)))))
 	    (Return out)
