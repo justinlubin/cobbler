@@ -16,6 +16,7 @@ let rec partial_eval_expr : expr -> expr =
       | Name "np.zeros_like" ->
           partial_eval_expr
             (Call (Name "np.zeros", [ Call (Name "len", args) ]))
+      | Name "np.arange" -> partial_eval_expr (Call (Name "range", args))
       | Name "-" ->
           (match args with
           | [ Call (Name "len", [ a ]); Num offset ] ->
@@ -38,6 +39,8 @@ let rec partial_eval_expr : expr -> expr =
           | Call (Name "broadcast", args)
           | Call (Name "fill", _ :: args) ->
               partial_eval_expr (List.hd_exn args)
+          | Call (Name "np.random.randint_size", [ _; _; s ]) ->
+              partial_eval_expr s
           (* | Call (Name "sliceToEnd", [ a; offset ]) ->
               partial_eval_expr
                 (Call (Name "-", [ Call (Name "len", [ a ]); offset ])) *)
