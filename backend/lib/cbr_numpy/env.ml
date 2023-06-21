@@ -318,6 +318,13 @@ let convolve_valid_defn =
     ; Return (Hole (Number, "conv_result"))
     ] )
 
+let randint_size_defn =
+  ( ["low";"high";"size"]
+  , [ Assign (PHole (Array, "x"), Call (Name "np.zeros", [Name "size"]))
+    ; For (PHole (Number, "i"), Call (Name "range", [Name "size"]), [Assign (PIndex (PHole (Array, "x"), Hole (Number, "i")), Call (Name "np.random.randint", [Name "low"; Name "high"]))])
+    ; Return (Hole (Array, "x"))])
+
+
 let np_env : env =
   String.Map.of_alist_exn
     [ ("np.sum", sum_defn)
@@ -331,4 +338,5 @@ let np_env : env =
     ; ("np.where", where_arr_defn)
     ; ("np.roll", roll_defn)
     ; ("np.convolve_valid", convolve_valid_defn)
+    ; ("np.random.randint_size", randint_size_defn)
     ]
