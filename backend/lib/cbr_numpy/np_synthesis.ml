@@ -8,6 +8,8 @@ let expand : int -> expr -> expr list =
     | Num n -> [ Num n ]
     | Str s -> [ Str s ]
     | Name id -> [ Name id ]
+    | Hole (List, s) ->
+        [ Call (Name "np.tolist", [ Hole (Array, Util.gensym "hole") ]) ]
     | Hole (Number, _) ->
         [ Call (Name "np.sum", [ Hole (Array, Util.gensym "hole") ]) ]
     | Hole (Array, _) ->
@@ -64,6 +66,13 @@ let expand : int -> expr -> expr list =
               ; Hole (Number, Util.gensym "hole")
               ; Hole (Number, Util.gensym "hole")
               ] )
+        ; Call
+            ( Name "np.random.randint_size"
+            , [ Hole (Number, Util.gensym "hole")
+              ; Hole (Number, Util.gensym "hole")
+              ; Hole (Number, Util.gensym "hole")
+              ] )
+        ; Call (Name "range", [ Hole (Number, Util.gensym "hole") ])
         ]
     | Index (head, index) ->
         let expanded_head = expand' head in
@@ -87,7 +96,7 @@ let expand : int -> expr -> expr list =
               List.map ~f:(fun e' -> [ e'; e2; e3 ]) expanded_e1
               @ List.map ~f:(fun e' -> [ e1; e'; e3 ]) expanded_e2
               @ List.map ~f:(fun e' -> [ e1; e2; e' ]) expanded_e3
-          (* only handles unary 2-ary, and 3-ary function calls *)
+          (* only handles unary, 2-ary, and 3-ary function calls *)
           | _ -> []
         in
         List.map ~f:(fun fn' -> Call (fn', args)) expanded_fn
@@ -103,7 +112,10 @@ let substitute_expr : expr -> substitutions -> expr =
     | Name id -> Name id
     | Index (hd, index) -> Index (substitute hd, substitute index)
     | Call (fn, args) -> Call (substitute fn, List.map ~f:substitute args)
-    | Hole (_, h) -> Map.find_exn subs h
+    | Hole (_, h) as e' ->
+        (match Map.find subs h with
+        | Some binding -> binding
+        | None -> e')
   in
   substitute e
 
@@ -130,6 +142,8 @@ let rec simplify : expr -> expr =
       | Name "sliceToEnd", [ a; Num 0 ] -> a
       | Name "sliceToEnd", [ Call (Name "broadcast", [ n ]); _ ] ->
           Call (Name "broadcast", [ n ])
+      | Name "sliceUntil", [ Call (Name "range", [ _ ]); x ] ->
+          simplify (Call (Name "range", [ x ]))
       | ( Name "sliceUntil"
         , [ a; Call (Name "-", [ Call (Name "len", [ a' ]); x ]) ] )
         when [%eq: expr] a a' ->
@@ -149,9 +163,21 @@ let rec simplify : expr -> expr =
                   | "np.subtract"
                   | "np.equal"
                   | "np.greater"
+                  | "np.tolist"
                   | "np.where" )
-              , args' )
-          ] ) -> simplify (Call (Name "len", [ List.hd_exn args' ]))
+              , hd :: _ )
+          ] ) -> simplify (Call (Name "len", [ hd ]))
+      | ( Name "len"
+        , [ Call
+              ( ( Name "np.ones"
+                | Name "range"
+                | Name "np.zeros"
+                | Name "broadcast"
+                | Name "fill" )
+              , hd :: _ )
+          ] ) -> simplify hd
+      | Name "len", [ Call (Name "np.random.randint_size", [ _; _; s ]) ] ->
+          simplify s
       (* Default *)
       | _ -> Call (fn, args))
   | Num _ | Str _ | Name _ | Hole (_, _) -> e
@@ -193,21 +219,27 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
-    (* if String.is_substring ~substring:"subtract" ([%show: expr] e)
+    (* if String.is_substring ~substring:"tolist" ([%show: expr] e)
     then (
       Printf.eprintf "%s\n" ([%show: expr] e);
       Printf.eprintf "%s\n" (canonical |> snd |> [%show: block]);
-      Printf.eprintf "%s\n" (target |> snd |> [%show: block]))
+      Printf.eprintf "%s\n" (target |> snd |> [%show: block]);
+      Printf.eprintf "-------------------------\n")
     else (); *)
     match unify ~pattern:canonical with
-    | Some sub -> Some (substitute_expr e sub)
+    | Some sub ->
+        (try Some (substitute_expr e sub) with
+        | _ -> failwith ([%show: expr] e))
     | None -> None
   in
   match
     Cbr_framework.Enumerative_search.top_down
       ~max_iterations:depth
       ~start:
-        [ Hole (Array, Util.gensym "hole"); Hole (Number, Util.gensym "hole") ]
+        [ Hole (Array, Util.gensym "hole")
+        ; Hole (Number, Util.gensym "hole")
+        ; Hole (List, Util.gensym "hole")
+        ]
       ~expand
       ~correct
   with

@@ -220,6 +220,33 @@ class IRParser(ast.NodeVisitor):
     def visit_Return(self, node):
         return SList([SAtom("Return"), self.visit(node.value)])
 
+    def visit_List(self, node):
+        if not node.elts:
+            return SAtom("__emptyList")
+        else:
+            raise UnsupportedFeatureException("Non-empty list literal")
+
+    def visit_Expr(self, node):
+        if (
+            isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Attribute)
+            and node.value.func.attr == "append"
+        ):
+            if len(node.value.args) != 1:
+                raise UnsupportedFeatureException("Incorrectly called append")
+            var = self.visit(node.value.func.value)
+            new_val = self.visit(node.value.args[0])
+            return SList(
+                [
+                    SAtom("Assign"),
+                    var,
+                    SList([SAtom("Call"), SAtom("__immutableAppend"), var, new_val]),
+                ]
+            )
+        else:
+            raise UnsupportedFeatureException("Non-append side effect")
+
     def generic_visit(self, node):
         name = self.getClassName(node)
+        print(ast.dump(node))
         raise UnsupportedFeatureException(name)
