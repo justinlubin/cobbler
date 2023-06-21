@@ -31,7 +31,7 @@ Once that is done, see `./garnet --help`.
 
 ### Other dependencies
 
-1. This project also depends on [elm-format](https://github.com/avh4/elm-format) (tested with version 0.8.7), which is installable via `npm`
+- This project also depends on [elm-format](https://github.com/avh4/elm-format) (tested with version 0.8.7), which is installable via `npm`
 
 ## Running tests
 
