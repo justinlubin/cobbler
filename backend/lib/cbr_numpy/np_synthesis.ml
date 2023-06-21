@@ -62,7 +62,8 @@ let expand : int -> expr -> expr list =
             ( Name "np.random.randint_size"
             , [ Hole (Number, Util.gensym "hole")
               ; Hole (Number, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")])
+              ; Hole (Number, Util.gensym "hole")
+              ] )
         ]
     | Index (head, index) ->
         let expanded_head = expand' head in

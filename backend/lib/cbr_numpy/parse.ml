@@ -173,7 +173,8 @@ let rec py_str_of_sexp : Sexp.t -> string =
       ^ ", "
       ^ py_str_of_sexp p2
       ^ ",'valid')"
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.random.randint_size"; p1; p2; p3] ->
+  | Sexp.List
+      [ Sexp.Atom "Call"; Sexp.Atom "np.random.randint_size"; p1; p2; p3 ] ->
       "np.random.randint("
       ^ py_str_of_sexp p1
       ^ ", "

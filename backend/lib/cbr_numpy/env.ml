@@ -319,11 +319,17 @@ let convolve_valid_defn =
     ] )
 
 let randint_size_defn =
-  ( ["low";"high";"size"]
-  , [ Assign (PHole (Array, "x"), Call (Name "np.zeros", [Name "size"]))
-    ; For (PHole (Number, "i"), Call (Name "range", [Name "size"]), [Assign (PIndex (PHole (Array, "x"), Hole (Number, "i")), Call (Name "np.random.randint", [Name "low"; Name "high"]))])
-    ; Return (Hole (Array, "x"))])
-
+  ( [ "low"; "high"; "size" ]
+  , [ Assign (PHole (Array, "x"), Call (Name "np.zeros", [ Name "size" ]))
+    ; For
+        ( PHole (Number, "i")
+        , Call (Name "range", [ Name "size" ])
+        , [ Assign
+              ( PIndex (PHole (Array, "x"), Hole (Number, "i"))
+              , Call (Name "np.random.randint", [ Name "low"; Name "high" ]) )
+          ] )
+    ; Return (Hole (Array, "x"))
+    ] )
 
 let np_env : env =
   String.Map.of_alist_exn
