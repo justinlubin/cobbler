@@ -12,6 +12,7 @@ let rec pat_of_sexp : Sexp.t -> pat =
       PIndex (pat_of_sexp p, expr_of_sexp e)
   | Sexp.List [ Sexp.Atom "Number_Hole"; Sexp.Atom hole ] -> PHole (Number, hole)
   | Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ] -> PHole (Array, hole)
+  | Sexp.List [ Sexp.Atom "List_Hole"; Sexp.Atom hole ] -> PHole (List, hole)
   | _ -> raise (ParseFail ("Invalid pattern: " ^ Sexp.to_string sexp))
 
 and expr_of_sexp : Sexp.t -> expr =
@@ -28,6 +29,7 @@ and expr_of_sexp : Sexp.t -> expr =
   | Sexp.Atom name -> Name name
   | Sexp.List [ Sexp.Atom "Num_Hole"; Sexp.Atom hole ] -> Hole (Number, hole)
   | Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ] -> Hole (Array, hole)
+  | Sexp.List [ Sexp.Atom "List_Hole"; Sexp.Atom hole ] -> Hole (List, hole)
   | _ -> raise (ParseFail ("Invalid expression: " ^ Sexp.to_string sexp))
 
 let rec stmt_of_sexp : Sexp.t -> stmt =
