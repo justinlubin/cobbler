@@ -1,9 +1,7 @@
 import ast
 import re
 
-python_regex = re.compile(
-    r"(\w++) *+= *+(0|np\.zeros|np\.empty).*+\nfor .++\n( ++.*+\n)++return \1$"
-)
+python_regex = re.compile(r"(\w++) *+=.*+\nfor .++\n( ++.*+\n)++return \1$")
 
 
 class NoExtractionException(Exception):
@@ -52,20 +50,16 @@ def python(tree):
     classifier.visit(tree)
     if not classifier.found_for:
         raise NoExtractionException("for loop not found")
-    input_vars = classifier.input_vars
     output_vars = classifier.output_vars
-    extractor = Extractor(input_vars, output_vars)
+    extractor = Extractor(output_vars)
     extractor.visit(tree)
     env_ast = extractor.env_ast
     body_ast = extractor.body_ast
     body_text = ast.unparse(body_ast)
-    if not "np." in body_text:
-        raise NoExtractionException("does not contain np.")
     if "pd." in body_text:
         raise NoExtractionException("contains pd.")
-    if "{}" in body_text:
-        raise NoExtractionException("contains {}")
     if not python_regex.match(body_text):
+        print(body_text)
         raise NoExtractionException("does not pass python_regex")
     return env_ast, body_ast, tree.body[-1].value.id
 
@@ -75,7 +69,6 @@ def python(tree):
 
 class VarClassifier(ast.NodeVisitor):
     def __init__(self) -> None:
-        self.input_vars = set()
         self.output_vars = set()
         self.in_for = False
         self.found_for = False
@@ -92,19 +85,24 @@ class VarClassifier(ast.NodeVisitor):
             raise NoExtractionException("multiple assignment targets in VarClassifier")
         var = self.visit(node.targets[0])
         if self.in_for:
-            if var in self.input_vars:
-                self.input_vars.remove(var)
             self.output_vars.add(var)
-        else:
-            self.input_vars.add(var)
 
     def visit_AugAssign(self, node: ast.AugAssign):
         var = self.visit(node.target)
         if self.in_for:
-            if var in self.input_vars:
-                self.output_vars.add(var)
-        else:
-            self.input_vars.add(var)
+            self.output_vars.add(var)
+
+    def visit_Call(self, node):
+        self.visit(node.func)
+        for arg in node.args:
+            self.visit(arg)
+        if (
+            self.in_for
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "append"
+            and isinstance(node.func.value, ast.Name)
+        ):
+            self.output_vars.add(node.func.value.id)
 
     def visit_For(self, node: ast.For):
         inner_loop = self.in_for
@@ -117,8 +115,7 @@ class VarClassifier(ast.NodeVisitor):
 
 
 class Extractor(ast.NodeVisitor):
-    def __init__(self, input_vars, output_vars) -> None:
-        self.input_vars = input_vars
+    def __init__(self, output_vars) -> None:
         self.output_vars = output_vars
         self.env_stmts = []
         self.body_stmts = []
@@ -136,20 +133,20 @@ class Extractor(ast.NodeVisitor):
                 "multiple assignment targets in Extractor.visit_Assign"
             )
         var = self.visit(node.targets[0])
-        if var in self.input_vars:
-            self.env_stmts.append(node)
-        else:
+        if var in self.output_vars:
             self.body_stmts.append(node)
+        else:
+            self.env_stmts.append(node)
 
     def visit_For(self, node: ast.For):
         self.body_stmts.append(node)
 
     def visit_AugAssign(self, node: ast.AugAssign):
         var = self.visit(node.target)
-        if var in self.input_vars:
-            self.env_stmts.append(node)
-        else:
+        if var in self.output_vars:
             self.body_stmts.append(node)
+        else:
+            self.env_stmts.append(node)
 
     def visit_Module(self, node):
         self.num_modules += 1

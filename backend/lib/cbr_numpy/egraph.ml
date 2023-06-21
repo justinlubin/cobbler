@@ -260,6 +260,7 @@ module L = struct
         in
         let t =
           match hole_type with
+          | "List" -> List
           | "Number" -> Number
           | "Arr" -> Array
           | _ -> failwith ("Invalid hole type: " ^ hole_type)
@@ -287,6 +288,7 @@ module L = struct
         Printf.sprintf
           "Hole_%s_%s"
           (match t with
+          | List -> "List"
           | Number -> "Number"
           | Array -> "Arr")
           h

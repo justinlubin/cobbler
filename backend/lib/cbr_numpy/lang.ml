@@ -3,6 +3,7 @@ open Core
 type hole_type =
   | Number
   | Array
+  | List
 [@@deriving compare, eq, show, hash]
 
 type id = string [@@deriving sexp, compare, eq, show, hash]

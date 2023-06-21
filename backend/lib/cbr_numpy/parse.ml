@@ -2,6 +2,7 @@ open Lang
 open Core
 
 exception ParseFail of string
+exception UnparseFail of string
 
 let rec pat_of_sexp : Sexp.t -> pat =
  fun sexp ->
@@ -11,6 +12,7 @@ let rec pat_of_sexp : Sexp.t -> pat =
       PIndex (pat_of_sexp p, expr_of_sexp e)
   | Sexp.List [ Sexp.Atom "Number_Hole"; Sexp.Atom hole ] -> PHole (Number, hole)
   | Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ] -> PHole (Array, hole)
+  | Sexp.List [ Sexp.Atom "List_Hole"; Sexp.Atom hole ] -> PHole (List, hole)
   | _ -> raise (ParseFail ("Invalid pattern: " ^ Sexp.to_string sexp))
 
 and expr_of_sexp : Sexp.t -> expr =
@@ -27,6 +29,7 @@ and expr_of_sexp : Sexp.t -> expr =
   | Sexp.Atom name -> Name name
   | Sexp.List [ Sexp.Atom "Num_Hole"; Sexp.Atom hole ] -> Hole (Number, hole)
   | Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ] -> Hole (Array, hole)
+  | Sexp.List [ Sexp.Atom "List_Hole"; Sexp.Atom hole ] -> Hole (List, hole)
   | _ -> raise (ParseFail ("Invalid expression: " ^ Sexp.to_string sexp))
 
 let rec stmt_of_sexp : Sexp.t -> stmt =
@@ -82,6 +85,7 @@ let rec sexp_of_pat : pat -> Sexp.t =
   | PHole (Number, name) ->
       Sexp.List [ Sexp.Atom "Number_Hole"; Sexp.Atom name ]
   | PHole (Array, name) -> Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom name ]
+  | PHole (List, name) -> Sexp.List [ Sexp.Atom "List_Hole"; Sexp.Atom name ]
 
 and sexp_of_expr : expr -> Sexp.t =
  fun e ->
@@ -96,6 +100,7 @@ and sexp_of_expr : expr -> Sexp.t =
   | Name name -> Sexp.Atom name
   | Hole (Number, hole) -> Sexp.List [ Sexp.Atom "Num_Hole"; Sexp.Atom hole ]
   | Hole (Array, hole) -> Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ]
+  | Hole (List, hole) -> Sexp.List [ Sexp.Atom "List_Hole"; Sexp.Atom hole ]
 
 let rec sexp_of_stmt : stmt -> Sexp.t =
  fun s ->
@@ -167,6 +172,8 @@ let rec py_str_of_sexp : Sexp.t -> string =
       Printf.sprintf "-%s" (py_str_of_sexp p1)
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "len"; p1 ] ->
       Printf.sprintf "len(%s)" (py_str_of_sexp p1)
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "range"; p1 ] ->
+      Printf.sprintf "np.arange(%s)" (py_str_of_sexp p1)
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.convolve_valid"; p1; p2 ] ->
       "np.convolve("
       ^ py_str_of_sexp p1
@@ -182,6 +189,8 @@ let rec py_str_of_sexp : Sexp.t -> string =
       ^ ", size="
       ^ py_str_of_sexp p3
       ^ ")"
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.tolist"; p1 ] ->
+      "list(" ^ py_str_of_sexp p1 ^ ")"
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "fill"; value; size ] ->
       (match value with
       | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "0" ] ->
@@ -207,8 +216,13 @@ let rec py_str_of_sexp : Sexp.t -> string =
   | Sexp.List [ Sexp.Atom "Return"; right ] -> py_str_of_sexp right
   | Sexp.List [ right ] -> py_str_of_sexp right
   | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] -> n
+  | Sexp.List [ Sexp.Atom "Num_Hole"; _ ]
+  | Sexp.List [ Sexp.Atom "Array_Hole"; _ ]
+  | Sexp.List [ Sexp.Atom "List_Hole"; _ ] -> "?"
   | Sexp.Atom a -> a
-  | _ -> raise (ParseFail ("Invalid expression: " ^ Sexp.to_string sexp))
+  | _ ->
+      raise
+        (UnparseFail ("Invalid expression to unparse: " ^ Sexp.to_string sexp))
 
 and py_str_of_block : block -> string =
  fun block -> block |> sexp_of_block |> py_str_of_sexp
