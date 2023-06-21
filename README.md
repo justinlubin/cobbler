@@ -24,10 +24,14 @@ Once that is done, see `./garnet --help`.
 
 ### Installing Python dependencies
 
-1. If you haven't already, [install Python](https://www.python.org/)
+1. If you haven't already, [install Python](https://www.python.org/) version 3.11 or greater
 2. From the project's root directory, run `cd frontend`
 3. *Optional: If you use virtual environments, create a new one for this project now. The next step will use `pip` to install the necessary Python packages.*
 4. Run `make deps`
+
+### Other dependencies
+
+1. This project also depends on [elm-format](https://github.com/avh4/elm-format) (tested with version 0.8.7), which is installable via `npm`
 
 ## Running tests
 
