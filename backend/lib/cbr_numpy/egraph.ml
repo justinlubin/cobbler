@@ -263,6 +263,7 @@ module L = struct
           | "List" -> List
           | "Number" -> Number
           | "Arr" -> Array
+          | "Constant" -> Constant
           | _ -> failwith ("Invalid hole type: " ^ hole_type)
         in
         HoleOp (t, name)
@@ -290,6 +291,7 @@ module L = struct
           (match t with
           | List -> "List"
           | Number -> "Number"
+          | Constant -> "Constant"
           | Array -> "Arr")
           h
     | IdOp id -> id

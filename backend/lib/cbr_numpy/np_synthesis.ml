@@ -8,6 +8,7 @@ let expand : int -> expr -> expr list =
     | Num n -> [ Num n ]
     | Str s -> [ Str s ]
     | Name id -> [ Name id ]
+    | Hole (Constant, s) -> []
     | Hole (List, s) ->
         [ Call (Name "np.tolist", [ Hole (Array, Util.gensym "hole") ]) ]
     | Hole (Number, _) ->
@@ -46,7 +47,7 @@ let expand : int -> expr -> expr list =
         ; Call
             ( Name "np.full"
             , [ Hole (Number, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")
+              ; Hole (Constant, Util.gensym "hole")
               ] )
         ; Call
             ( Name "np.greater"
@@ -113,7 +114,21 @@ let expand : int -> expr -> expr list =
   in
   expand' e
 
-let substitute_expr : expr -> substitutions -> expr =
+(* Fails if substitution does not respect hole type *)
+
+exception IncorrectSubstitutionType
+
+let rec binding_ok : hole_type -> expr -> bool =
+ fun tau e ->
+  match tau with
+  | Constant ->
+      (match e with
+      | Num _ | Str _ | Name _ | Hole (_, _) -> true
+      | Index (e1, e2) -> binding_ok tau e1 && binding_ok tau e2
+      | Call (_, _) -> false)
+  | _ -> true
+
+let substitute_expr : expr -> substitutions -> expr option =
  fun e subs ->
   let rec substitute = function
     | Num n -> Num n
@@ -121,12 +136,16 @@ let substitute_expr : expr -> substitutions -> expr =
     | Name id -> Name id
     | Index (hd, index) -> Index (substitute hd, substitute index)
     | Call (fn, args) -> Call (substitute fn, List.map ~f:substitute args)
-    | Hole (_, h) as e' ->
+    | Hole (tau, h) as e' ->
         (match Map.find subs h with
-        | Some binding -> binding
+        | Some binding ->
+            if binding_ok tau binding
+            then binding
+            else raise IncorrectSubstitutionType
         | None -> e')
   in
-  substitute e
+  try Some (substitute e) with
+  | IncorrectSubstitutionType -> None
 
 let canonicalize : program -> program =
  fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
@@ -179,14 +198,9 @@ let rec simplify : expr -> expr =
                   | "np.where" )
               , hd :: _ )
           ] ) -> simplify (Call (Name "len", [ hd ]))
-      | ( Name "len"
-        , [ Call
-              ( ( Name "np.full"
-                | Name "range"
-                | Name "np.zeros"
-                | Name "broadcast" )
-              , hd :: _ )
-          ] ) -> simplify hd
+      | Name "len", [ Call (Name ("range" | "broadcast" | "np.zeros"), [ hd ]) ]
+        -> simplify hd
+      | Name "len", [ Call (Name "np.full", [ hd; _ ]) ] -> simplify hd
       | Name "len", [ Call (Name "np.random.randint_size", [ _; _; s ]) ] ->
           simplify s
       (* Default *)
@@ -280,11 +294,15 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
     else (); *)
     match unify ~pattern:canonical with
     | Some sub ->
-        let possible_solution = substitute_expr e sub in
-        if Set.is_empty
-             (Set.inter (referenced_vars possible_solution) target_loop_vars)
-        then Some possible_solution
-        else None
+        (match substitute_expr e sub with
+        | Some possible_solution ->
+            if Set.is_empty
+                 (Set.inter
+                    (referenced_vars possible_solution)
+                    target_loop_vars)
+            then Some possible_solution
+            else None
+        | None -> None)
     | None -> None
   in
   match

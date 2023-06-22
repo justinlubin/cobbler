@@ -37,13 +37,13 @@ let rec partial_eval_expr : expr -> expr =
           | Call (Name "np.tolist", args)
           | Call (Name "np.where", args) ->
               partial_eval_expr (Call (Name "len", [ List.hd_exn args ]))
-          | Call (Name "range", args)
           | Call (Name "np.ones", args)
           | Call (Name "np.zeros", args)
           | Call (Name "broadcast", args)
           | Call (Name "np.full", args) -> partial_eval_expr (List.hd_exn args)
           | Call (Name "np.random.randint_size", [ _; _; s ]) ->
               partial_eval_expr s
+          | Call (Name "range", [ hd ]) -> partial_eval_expr hd
           | _ -> Call (Name "len", args))
       | _ -> Call (fn, args))
   | Index (e1, e2) ->
@@ -96,7 +96,7 @@ let rec partial_eval_expr : expr -> expr =
               ] )
       | Call (Name "np.zeros", _), _ -> Num 0
       | Call (Name "np.full", [ _; v ]), _ -> partial_eval_expr v
-      | Call (Name "range", _), i -> partial_eval_expr i
+      | Call (Name "range", [ _ ]), i -> partial_eval_expr i
       | _ ->
           (* print_endline ("e1: " ^ (Parse.sexp_of_expr e1 |> Core.Sexp.to_string)); *)
           Index (e1, e2))
