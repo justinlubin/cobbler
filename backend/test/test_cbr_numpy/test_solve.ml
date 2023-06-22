@@ -229,7 +229,8 @@ let solution8 : program =
   , [ Return
         (Call
            ( Name "np.convolve_valid"
-           , [ Name "x"; Call (Name "np.ones", [ Name "window_size" ]) ] ))
+           , [ Name "x"; Call (Name "np.full", [ Name "window_size"; Num 1 ]) ]
+           ))
     ] )
 
 let egraph_bools = [ true; false ]

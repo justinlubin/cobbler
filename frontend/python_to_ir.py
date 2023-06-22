@@ -103,6 +103,9 @@ class IRParser(ast.NodeVisitor):
     def visit_Div(self, node):
         return SAtom("/")
 
+    def visit_Pow(self, node):
+        return SAtom("**")
+
     def visit_Compare(self, node: ast.Compare):
         if type(node.ops[0]) == ast.Gt:
             op = SAtom(">")
@@ -214,7 +217,6 @@ class IRParser(ast.NodeVisitor):
         )
 
     def visit_Arg(self, node):
-        print(node.arg)
         return SAtom(node.arg)
 
     def visit_Return(self, node):
@@ -248,5 +250,5 @@ class IRParser(ast.NodeVisitor):
 
     def generic_visit(self, node):
         name = self.getClassName(node)
-        print(ast.dump(node))
+        # print(ast.dump(node))
         raise UnsupportedFeatureException(name)

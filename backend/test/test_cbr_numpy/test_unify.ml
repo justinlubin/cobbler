@@ -75,52 +75,54 @@ let reference9 : program =
     ] )
 
 let reference10 : program =
-  ( Cbr_numpy.Env.np_env
-  , [ Assign
-        ( PName "y"
-        , Call
-            ( Name "np.zeros"
-            , [ Call
-                  ( Name "+"
-                  , [ Call
-                        ( Name "-"
-                        , [ Call (Name "len", [ Name "x" ])
-                          ; Name "window_size"
-                          ] )
-                    ; Num 1
-                    ] )
-              ] ) )
-    ; For
-        ( PName "i"
-        , Call
-            ( Name "range"
-            , [ Call
-                  ( Name "+"
-                  , [ Call
-                        ( Name "-"
-                        , [ Call (Name "len", [ Name "x" ])
-                          ; Name "window_size"
-                          ] )
-                    ; Num 1
-                    ] )
-              ] )
-        , [ Assign (PName "s", Num 0)
-          ; For
-              ( PName "j"
-              , Call (Name "range", [ Name "window_size" ])
-              , [ Assign
-                    ( PName "s"
-                    , Call
-                        ( Name "+"
-                        , [ Name "s"
-                          ; Index
-                              (Name "x", Call (Name "+", [ Name "i"; Name "j" ]))
-                          ] ) )
+  Partial_eval.partial_eval_program
+    ( Cbr_numpy.Env.np_env
+    , [ Assign
+          ( PName "y"
+          , Call
+              ( Name "np.zeros"
+              , [ Call
+                    ( Name "+"
+                    , [ Call
+                          ( Name "-"
+                          , [ Call (Name "len", [ Name "x" ])
+                            ; Name "window_size"
+                            ] )
+                      ; Num 1
+                      ] )
+                ] ) )
+      ; For
+          ( PName "i"
+          , Call
+              ( Name "range"
+              , [ Call
+                    ( Name "+"
+                    , [ Call
+                          ( Name "-"
+                          , [ Call (Name "len", [ Name "x" ])
+                            ; Name "window_size"
+                            ] )
+                      ; Num 1
+                      ] )
                 ] )
-          ; Assign (PIndex (PName "y", Name "i"), Name "s")
-          ] )
-    ; Return (Name "y")
-    ] )
+          , [ Assign (PName "s", Num 0)
+            ; For
+                ( PName "j"
+                , Call (Name "range", [ Name "window_size" ])
+                , [ Assign
+                      ( PName "s"
+                      , Call
+                          ( Name "+"
+                          , [ Name "s"
+                            ; Index
+                                ( Name "x"
+                                , Call (Name "+", [ Name "i"; Name "j" ]) )
+                            ] ) )
+                  ] )
+            ; Assign (PIndex (PName "y", Name "i"), Name "s")
+            ] )
+      ; Return (Name "y")
+      ] )
 
 let candidate1 : program =
   ( String.Map.empty
@@ -251,7 +253,7 @@ let candidate10 : program =
         (Call
            ( Name "np.convolve_valid"
            , [ Hole (Array, "x")
-             ; Call (Name "np.ones", [ Hole (Number, "w") ])
+             ; Call (Name "np.full", [ Hole (Number, "w"); Num 1 ])
              ] ))
     ] )
   |> Inline.inline_program

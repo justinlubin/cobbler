@@ -59,7 +59,6 @@ def python(tree):
     if "pd." in body_text:
         raise NoExtractionException("contains pd.")
     if not python_regex.match(body_text):
-        print(body_text)
         raise NoExtractionException("does not pass python_regex")
     return env_ast, body_ast, tree.body[-1].value.id
 

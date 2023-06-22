@@ -34,11 +34,20 @@ let expand : int -> expr -> expr list =
               ; Hole (Array, Util.gensym "hole")
               ] )
         ; Call
+            ( Name "np.power"
+            , [ Hole (Array, Util.gensym "hole")
+              ; Hole (Array, Util.gensym "hole")
+              ] )
+        ; Call
             ( Name "np.equal"
             , [ Hole (Array, Util.gensym "hole")
               ; Hole (Array, Util.gensym "hole")
               ] )
-        ; Call (Name "np.ones", [ Hole (Number, Util.gensym "hole") ])
+        ; Call
+            ( Name "np.full"
+            , [ Hole (Number, Util.gensym "hole")
+              ; Hole (Number, Util.gensym "hole")
+              ] )
         ; Call
             ( Name "np.greater"
             , [ Hole (Array, Util.gensym "hole")
@@ -142,6 +151,8 @@ let rec simplify : expr -> expr =
       | Name "sliceToEnd", [ a; Num 0 ] -> a
       | Name "sliceToEnd", [ Call (Name "broadcast", [ n ]); _ ] ->
           Call (Name "broadcast", [ n ])
+      | Name "sliceUntil", [ Call (Name "np.full", [ _; v ]); x ] ->
+          simplify (Call (Name "np.full", [ x; v ]))
       | Name "sliceUntil", [ Call (Name "range", [ _ ]); x ] ->
           simplify (Call (Name "range", [ x ]))
       | ( Name "sliceUntil"
@@ -161,6 +172,7 @@ let rec simplify : expr -> expr =
                   | "np.divide"
                   | "np.add"
                   | "np.subtract"
+                  | "np.power"
                   | "np.equal"
                   | "np.greater"
                   | "np.tolist"
@@ -169,11 +181,10 @@ let rec simplify : expr -> expr =
           ] ) -> simplify (Call (Name "len", [ hd ]))
       | ( Name "len"
         , [ Call
-              ( ( Name "np.ones"
+              ( ( Name "np.full"
                 | Name "range"
                 | Name "np.zeros"
-                | Name "broadcast"
-                | Name "fill" )
+                | Name "broadcast" )
               , hd :: _ )
           ] ) -> simplify hd
       | Name "len", [ Call (Name "np.random.randint_size", [ _; _; s ]) ] ->
@@ -194,6 +205,7 @@ let rec cap_second_arguments : expr -> expr =
           | Name "np.divide"
           | Name "np.add"
           | Name "np.subtract"
+          | Name "np.power"
           | Name "np.equal"
           | Name "np.greater" )
         , [ arg1; arg2 ] ) ->
@@ -207,8 +219,44 @@ let rec cap_second_arguments : expr -> expr =
 
 let clean : expr -> expr = fun e -> simplify (cap_second_arguments e)
 
+let rec base_pat_name : pat -> id option =
+ fun p ->
+  match p with
+  | PName x -> Some x
+  | PIndex (p', _) -> base_pat_name p'
+  | PHole (_, _) -> None
+
+let rec referenced_vars : expr -> String.Set.t =
+ fun e ->
+  match e with
+  | Name x -> String.Set.singleton x
+  | Index (e1, e2) -> Set.union (referenced_vars e1) (referenced_vars e2)
+  | Call (head, args) ->
+      String.Set.union_list
+        (referenced_vars head :: List.map ~f:referenced_vars args)
+  | Str _ | Num _ | Hole (_, _) -> String.Set.empty
+
+let rec loop_vars_stmt : stmt -> String.Set.t =
+ fun s ->
+  match s with
+  | For (p, _, b) ->
+      let vs = loop_vars_block b in
+      (match base_pat_name p with
+      | Some x -> Set.add vs x
+      | None -> vs)
+  | If (_, then_branch, else_branch) ->
+      Set.union (loop_vars_block then_branch) (loop_vars_block else_branch)
+  | Assign (_, _) | Return _ -> String.Set.empty
+
+and loop_vars_block : block -> String.Set.t =
+ fun b -> b |> List.map ~f:loop_vars_stmt |> String.Set.union_list
+
+let loop_vars : program -> String.Set.t = fun (_, b) -> loop_vars_block b
+
 let solve : int -> ?debug:bool -> program -> bool -> program option =
  fun depth ?(debug = false) target use_egraphs ->
+  let target = canonicalize target in
+  let target_loop_vars = loop_vars target in
   let unify : pattern:program -> substitutions option =
     if use_egraphs
     then (
@@ -219,7 +267,11 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
-    (* if String.is_substring ~substring:"tolist" ([%show: expr] e)
+    (* if String.is_substring ~substring:"np.convolve_valid" ([%show: expr] e)
+       && String.is_substring ~substring:"np.full" ([%show: expr] e)
+       && String.is_substring
+            ~substring:"window_size"
+            ([%show: block] (snd target))
     then (
       Printf.eprintf "%s\n" ([%show: expr] e);
       Printf.eprintf "%s\n" (canonical |> snd |> [%show: block]);
@@ -228,8 +280,11 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
     else (); *)
     match unify ~pattern:canonical with
     | Some sub ->
-        (try Some (substitute_expr e sub) with
-        | _ -> failwith ([%show: expr] e))
+        let possible_solution = substitute_expr e sub in
+        if Set.is_empty
+             (Set.inter (referenced_vars possible_solution) target_loop_vars)
+        then Some possible_solution
+        else None
     | None -> None
   in
   match

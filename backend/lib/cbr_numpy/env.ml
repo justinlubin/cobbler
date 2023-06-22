@@ -120,17 +120,40 @@ let div_defn =
     ; Return (Hole (Array, "div_result"))
     ] )
 
-let ones_defn =
-  ( [ "n" ]
-  , [ Assign (PHole (Array, "ones_result"), Call (Name "np.zeros", [ Name "n" ]))
+let power_body =
+  [ Assign
+      ( PIndex (PHole (Array, "pow_result"), Hole (Number, "pow_i"))
+      , Call
+          ( Name "**"
+          , [ Index (Name "pow_1", Hole (Number, "pow_i"))
+            ; Index (Name "pow_2", Hole (Number, "pow_i"))
+            ] ) )
+  ]
+
+let power_defn =
+  ( [ "pow_1"; "pow_2" ]
+  , [ Assign
+        ( PHole (Array, "pow_result")
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "pow_1" ]) ]) )
     ; For
-        ( PHole (Number, "ones_i")
-        , Call (Name "range", [ Name "n" ])
+        ( PHole (Number, "pow_i")
+        , Call (Name "range", [ Call (Name "len", [ Name "pow_1" ]) ])
+        , subtract_body )
+    ; Return (Hole (Array, "pow_result"))
+    ] )
+
+let full_defn =
+  ( [ "size"; "value" ]
+  , [ Assign
+        (PHole (Array, "full_result"), Call (Name "np.zeros", [ Name "size" ]))
+    ; For
+        ( PHole (Number, "full_i")
+        , Call (Name "range", [ Name "size" ])
         , [ Assign
-              ( PIndex (PHole (Array, "ones_result"), Hole (Number, "ones_i"))
-              , Num 1 )
+              ( PIndex (PHole (Array, "full_result"), Hole (Number, "full_i"))
+              , Name "value" )
           ] )
-    ; Return (Hole (Array, "ones_result"))
+    ; Return (Hole (Array, "full_result"))
     ] )
 
 let eq_body =
@@ -368,7 +391,8 @@ let np_env : env =
     ; ("np.divide", div_defn)
     ; ("np.add", add_defn)
     ; ("np.subtract", subtract_defn)
-    ; ("np.ones", ones_defn)
+    ; ("np.power", power_defn)
+    ; ("np.full", full_defn)
     ; ("np.equal", eq_defn)
     ; ("np.greater", gt_defn)
     ; ("np.where", where_arr_defn)

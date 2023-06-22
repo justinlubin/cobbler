@@ -191,7 +191,7 @@ let rec py_str_of_sexp : Sexp.t -> string =
       ^ ")"
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.tolist"; p1 ] ->
       "list(" ^ py_str_of_sexp p1 ^ ")"
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "fill"; value; size ] ->
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.full"; size; value ] ->
       (match value with
       | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "0" ] ->
           Printf.sprintf "np.zeros(%s)" (py_str_of_sexp size)
