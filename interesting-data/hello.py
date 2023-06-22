@@ -1,4 +1,4 @@
-lst = []
-for i in range(100000):
-    lst.append(random.randint(1, 100000))
-lst
+L = []
+for n in range(12):
+    L.append(n**2)
+L

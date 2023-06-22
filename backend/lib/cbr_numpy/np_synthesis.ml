@@ -2,88 +2,58 @@ open Lang
 open Env
 open Core
 
-let expand : int -> expr -> expr list =
- fun _ e ->
+let make_grammar_entry
+    :  String.Set.t -> required:String.Set.t -> string -> hole_type list
+    -> expr option
+  =
+ fun fvs ~required lhs rhs ->
+  if Set.is_subset required ~of_:fvs
+  then
+    Some
+      (Call (Name lhs, List.map rhs ~f:(fun t -> Hole (t, Util.gensym "hole"))))
+  else None
+
+let make_grammar_entries
+    : String.Set.t -> (string * string list * hole_type list) list -> expr list
+  =
+ fun fvs entries ->
+  entries
+  |> List.filter_map ~f:(fun (lhs, req, rhs) ->
+         make_grammar_entry fvs ~required:(String.Set.of_list req) lhs rhs)
+
+let make_grammar : String.Set.t -> hole_type -> expr list =
+ fun fvs tau ->
+  match tau with
+  | Constant -> []
+  | List -> make_grammar_entries fvs [ ("np.tolist", [], [ Array ]) ]
+  | Number -> make_grammar_entries fvs [ ("np.sum", [ "+" ], [ Array ]) ]
+  | Array ->
+      make_grammar_entries
+        fvs
+        [ ("np.multiply", [ "*" ], [ Array; Array ])
+        ; ("np.divide", [ "/" ], [ Array; Array ])
+        ; ("np.add", [ "+" ], [ Array; Array ])
+        ; ("np.subtract", [ "-" ], [ Array; Array ])
+        ; ("np.power", [ "**" ], [ Array; Array ])
+        ; ("np.equal", [ "==" ], [ Array; Array ])
+        ; ("np.full", [], [ Number; Constant ])
+        ; ("np.greater", [ ">" ], [ Array; Array ])
+        ; ("np.where", [], [ Array; Array; Array ])
+        ; ("np.roll", [], [ Array; Number ])
+        ; ("np.convolve_valid", [], [ Array; Array ])
+        ; ( "np.random.randint_size"
+          , [ "np.random.randint" ]
+          , [ Number; Number; Number ] )
+        ; ("range", [], [ Number ])
+        ]
+
+let expand : String.Set.t -> int -> expr -> expr list =
+ fun fvs _ e ->
   let rec expand' = function
     | Num n -> [ Num n ]
     | Str s -> [ Str s ]
     | Name id -> [ Name id ]
-    | Hole (Constant, s) -> []
-    | Hole (List, s) ->
-        [ Call (Name "np.tolist", [ Hole (Array, Util.gensym "hole") ]) ]
-    | Hole (Number, _) ->
-        [ Call (Name "np.sum", [ Hole (Array, Util.gensym "hole") ]) ]
-    | Hole (Array, _) ->
-        [ Call
-            ( Name "np.multiply"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.divide"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.add"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.subtract"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.power"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.equal"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.full"
-            , [ Hole (Number, Util.gensym "hole")
-              ; Hole (Constant, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.greater"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.where"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.roll"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.convolve_valid"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.random.randint_size"
-            , [ Hole (Number, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.random.randint_size"
-            , [ Hole (Number, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")
-              ] )
-        ; Call (Name "range", [ Hole (Number, Util.gensym "hole") ])
-        ]
+    | Hole (tau, _) -> make_grammar fvs tau
     | Index (head, index) ->
         let expanded_head = expand' head in
         let expanded_index = expand' index in
@@ -240,15 +210,33 @@ let rec base_pat_name : pat -> id option =
   | PIndex (p', _) -> base_pat_name p'
   | PHole (_, _) -> None
 
-let rec referenced_vars : expr -> String.Set.t =
+let rec referenced_vars_expr : expr -> String.Set.t =
  fun e ->
   match e with
   | Name x -> String.Set.singleton x
-  | Index (e1, e2) -> Set.union (referenced_vars e1) (referenced_vars e2)
+  | Index (e1, e2) ->
+      Set.union (referenced_vars_expr e1) (referenced_vars_expr e2)
   | Call (head, args) ->
       String.Set.union_list
-        (referenced_vars head :: List.map ~f:referenced_vars args)
+        (referenced_vars_expr head :: List.map ~f:referenced_vars_expr args)
   | Str _ | Num _ | Hole (_, _) -> String.Set.empty
+
+and referenced_vars_stmt : stmt -> String.Set.t =
+ fun s ->
+  match s with
+  | For (_, e, b) ->
+      Set.union (referenced_vars_expr e) (referenced_vars_block b)
+  | If (cond, then_branch, else_branch) ->
+      referenced_vars_expr cond
+      |> Set.union (referenced_vars_block then_branch)
+      |> Set.union (referenced_vars_block else_branch)
+  | Assign (_, e) | Return e -> referenced_vars_expr e
+
+and referenced_vars_block : block -> String.Set.t =
+ fun b -> b |> List.map ~f:referenced_vars_stmt |> String.Set.union_list
+
+and referenced_vars : program -> String.Set.t =
+ fun (_, b) -> referenced_vars_block b
 
 let rec loop_vars_stmt : stmt -> String.Set.t =
  fun s ->
@@ -298,7 +286,7 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
         | Some possible_solution ->
             if Set.is_empty
                  (Set.inter
-                    (referenced_vars possible_solution)
+                    (referenced_vars_expr possible_solution)
                     target_loop_vars)
             then Some possible_solution
             else None
@@ -313,7 +301,7 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
         ; Hole (Number, Util.gensym "hole")
         ; Hole (List, Util.gensym "hole")
         ]
-      ~expand
+      ~expand:(expand (referenced_vars target))
       ~correct
   with
   | Some ans -> Some (np_env, [ Return (clean ans) ])

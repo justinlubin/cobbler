@@ -126,7 +126,7 @@ let main_python : string -> Yojson.Basic.t =
   try
     let target = input |> Sexp.of_string |> Parse.program_of_sexp in
     (* let () = failwith (target |> snd |> [%show: Lang.block]) in *)
-    match Np_synthesis.solve 3 ~debug:false target true with
+    match Np_synthesis.solve 4 ~debug:false target true with
     | None -> `Assoc [ ("status", `String "SynthFail") ]
     | Some e ->
         `Assoc
