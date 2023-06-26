@@ -35,12 +35,12 @@ def elm_json(block):
 
 def python(tree):
     """Tries to extract a synthesis input from a Python script, assuming that
-    it is represented as a Python AST object. Returns a pair of Python AST
-    objects (env, body)."""
+    it is represented as a Python AST object. Returns a tuple of (pre AST,
+    body AST, post AST, variable name)."""
 
     if isinstance(tree, ast.Module) and len(tree.body) > 0:
         if isinstance(tree.body[-1], ast.Expr):
-            tree.body[-1] = ast.Return(value=tree.body[-1].value)
+            last_return = ast.Return(value=tree.body[-1].value)
         else:
             raise NoExtractionException("final line is not variable")
     else:
@@ -48,19 +48,23 @@ def python(tree):
 
     classifier = VarClassifier()
     classifier.visit(tree)
-    if not classifier.found_for:
-        raise NoExtractionException("for loop not found")
     output_vars = classifier.output_vars
+
     extractor = Extractor(output_vars)
     extractor.visit(tree)
-    env_ast = extractor.env_ast
+    pre_ast = extractor.pre_ast
     body_ast = extractor.body_ast
+    post_ast = extractor.post_ast
+
+    body_ast.body.append(last_return)
+
     body_text = ast.unparse(body_ast)
     if "pd." in body_text:
         raise NoExtractionException("contains pd.")
     if not python_regex.match(body_text):
         raise NoExtractionException("does not pass python_regex")
-    return env_ast, body_ast, tree.body[-1].value.id
+
+    return pre_ast, body_ast, post_ast, last_return.value.id
 
 
 # Python helper code
@@ -69,8 +73,8 @@ def python(tree):
 class VarClassifier(ast.NodeVisitor):
     def __init__(self) -> None:
         self.output_vars = set()
-        self.in_for = False
         self.found_for = False
+        self.in_output_area = False
         super().__init__()
 
     def visit_Name(self, node):
@@ -83,12 +87,12 @@ class VarClassifier(ast.NodeVisitor):
         if len(node.targets) > 1:
             raise NoExtractionException("multiple assignment targets in VarClassifier")
         var = self.visit(node.targets[0])
-        if self.in_for:
+        if self.in_output_area:
             self.output_vars.add(var)
 
     def visit_AugAssign(self, node: ast.AugAssign):
         var = self.visit(node.target)
-        if self.in_for:
+        if self.in_output_area:
             self.output_vars.add(var)
 
     def visit_Call(self, node):
@@ -96,7 +100,7 @@ class VarClassifier(ast.NodeVisitor):
         for arg in node.args:
             self.visit(arg)
         if (
-            self.in_for
+            self.in_output_area
             and isinstance(node.func, ast.Attribute)
             and node.func.attr == "append"
             and isinstance(node.func.value, ast.Name)
@@ -104,21 +108,23 @@ class VarClassifier(ast.NodeVisitor):
             self.output_vars.add(node.func.value.id)
 
     def visit_For(self, node: ast.For):
-        inner_loop = self.in_for
-        self.in_for = True
+        if self.in_output_area:
+            for stmt in node.body:
+                self.visit(stmt)
+        elif not self.found_for:
+            self.in_output_area = True
+            for stmt in node.body:
+                self.visit(stmt)
+            self.in_output_area = False
         self.found_for = True
-        for stmt in node.body:
-            self.visit(stmt)
-        if not inner_loop:
-            self.in_for = False
 
 
 class Extractor(ast.NodeVisitor):
     def __init__(self, output_vars) -> None:
         self.output_vars = output_vars
-        self.env_stmts = []
-        self.body_stmts = []
+        self.stmts = {"pre": [], "body": [], "post": []}
         self.num_modules = 0
+        self.state = "pre"
 
     def visit_Name(self, node):
         return node.id
@@ -132,33 +138,26 @@ class Extractor(ast.NodeVisitor):
                 "multiple assignment targets in Extractor.visit_Assign"
             )
         var = self.visit(node.targets[0])
-        if var in self.output_vars:
-            self.body_stmts.append(node)
-        else:
-            self.env_stmts.append(node)
+        if self.state == "pre" and var in self.output_vars:
+            self.state = "body"
+        self.stmts[self.state].append(node)
 
     def visit_For(self, node: ast.For):
-        self.body_stmts.append(node)
-
-    def visit_AugAssign(self, node: ast.AugAssign):
-        var = self.visit(node.target)
-        if var in self.output_vars:
-            self.body_stmts.append(node)
-        else:
-            self.env_stmts.append(node)
+        if self.state == "pre":
+            self.state = "body"
+        self.stmts[self.state].append(node)
+        if self.state == "body":
+            self.state = "post"
 
     def visit_Module(self, node):
         self.num_modules += 1
-        for stmt in node.body:
-            self.visit(stmt)
         if self.num_modules > 1:
             raise NoExtractionException("Multiple modules in Extractor.visit_Module")
-        self.num_modules = 0
-        self.env_ast = ast.Module(self.env_stmts, [])
-        self.body_ast = ast.Module(self.body_stmts, [])
+        for stmt in node.body:
+            self.visit(stmt)
+        self.pre_ast = ast.Module(self.stmts["pre"], [])
+        self.body_ast = ast.Module(self.stmts["body"], [])
+        self.post_ast = ast.Module(self.stmts["post"], [])
 
     def generic_visit(self, node):
-        self.env_stmts.append(node)
-
-    def visit_Return(self, node):
-        self.body_stmts.append(node)
+        self.stmts[self.state].append(node)
