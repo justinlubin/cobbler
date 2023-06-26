@@ -78,7 +78,7 @@ class IRParser(ast.NodeVisitor):
         while True:
             className = self.getClassName(node)
             if className == "Attribute":
-                chain.insert(0, node.attr)
+                chain.append(node.attr)
                 node = node.value
             elif className == "Name":
                 base = node.id
@@ -88,11 +88,11 @@ class IRParser(ast.NodeVisitor):
                     f"Unsupported attribute feature '{className}' in {ast.dump(node)}"
                 )
         if base == "np":
-            return SAtom("np" + "." + ".".join(chain))
+            return SAtom("np" + "." + ".".join(reversed(chain)))
 
         ret = SAtom(base)
         for c in chain:
-            ret = SList([SAtom("Call"), SAtom(c), ret])
+            ret = SList([SAtom("Call"), SAtom("__memberAccess"), SAtom(c), ret])
 
         return ret
 

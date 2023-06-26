@@ -184,6 +184,8 @@ let rec unwind_call_head : Sexp.t -> string option =
 let rec py_str_of_sexp : Sexp.t -> string =
  fun sexp ->
   match sexp with
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "__memberAccess"; p1; p2 ] ->
+      Printf.sprintf "%s.%s" (py_str_of_sexp p1) (py_str_of_sexp p2)
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "negate"; p1 ] ->
       Printf.sprintf "-%s" (py_str_of_sexp p1)
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "len"; p1 ] ->
