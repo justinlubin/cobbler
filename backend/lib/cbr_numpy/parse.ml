@@ -173,14 +173,6 @@ let pp_program : ?channel:Out_channel.t -> program -> unit =
   sexp_of_program p |> Sexp.pp_hum formatter;
   Format.pp_print_flush formatter ()
 
-let rec unwind_call_head : Sexp.t -> string option =
- fun t ->
-  match t with
-  | Sexp.Atom fn -> Some fn
-  | Sexp.List [ Sexp.Atom "Call"; left; Sexp.Atom right ] ->
-      left |> unwind_call_head |> Option.map ~f:(fun l -> l ^ "." ^ right)
-  | _ -> None
-
 let rec py_str_of_sexp : Sexp.t -> string =
  fun sexp ->
   match sexp with
@@ -227,14 +219,10 @@ let rec py_str_of_sexp : Sexp.t -> string =
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "sliceUntil"; p1; p2 ] ->
       Printf.sprintf "%s[:%s]" (py_str_of_sexp p1) (py_str_of_sexp p2)
   | Sexp.List (Sexp.Atom "Call" :: fn :: args) ->
-      (match unwind_call_head fn with
-      | Some head ->
-          head
-          ^ "("
-          ^ (List.map ~f:py_str_of_sexp args |> String.concat ~sep:", ")
-          ^ ")"
-      | None ->
-          raise (UnparseFail ("Invalid function head: " ^ Sexp.to_string sexp)))
+      py_str_of_sexp fn
+      ^ "("
+      ^ (List.map ~f:py_str_of_sexp args |> String.concat ~sep:", ")
+      ^ ")"
   | Sexp.List [ Sexp.Atom "Return"; right ] -> py_str_of_sexp right
   | Sexp.List [ right ] -> py_str_of_sexp right
   | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] -> n

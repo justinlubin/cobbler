@@ -375,11 +375,11 @@ let randint_size_defn =
     ] )
 
 let tolist_defn =
-  ( [ "arg" ]
+  ( [ "arg"; "amount" ]
   , [ Assign (PHole (List, "xs"), Name "__emptyList")
     ; For
         ( PHole (Number, "i")
-        , Call (Name "range", [ Call (Name "len", [ Name "arg" ]) ])
+        , Call (Name "range", [ Name "amount" ])
         , [ Assign
               ( PHole (List, "xs")
               , Call
@@ -401,7 +401,7 @@ let copy_defn =
               ( PIndex (PHole (Array, "y"), Hole (Number, "i"))
               , Index (Name "arg", Hole (Number, "i")) )
           ] )
-    ; Return (Hole (Array, "xs"))
+    ; Return (Hole (Array, "y"))
     ] )
 
 (* let arange_defn =

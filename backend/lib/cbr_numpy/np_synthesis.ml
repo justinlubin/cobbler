@@ -25,7 +25,7 @@ let make_grammar : String.Set.t -> hole_type -> expr list =
  fun fvs tau ->
   match tau with
   | Constant -> []
-  | List -> make_grammar_entries fvs [ ("np.tolist", [], [ Array ]) ]
+  | List -> make_grammar_entries fvs [ ("np.tolist", [], [ Array; Constant ]) ]
   | Number ->
       make_grammar_entries
         fvs
@@ -48,7 +48,7 @@ let make_grammar : String.Set.t -> hole_type -> expr list =
           , [ "np.random.randint" ]
           , [ Number; Number; Number ] )
         ; ("range", [], [ Number ])
-        ; ("np.copy", [], [ Array; Number ])
+        ; ("np.copy", [], [ Array; Constant ])
         ]
 
 let expand : String.Set.t -> int -> expr -> expr list =
@@ -92,14 +92,16 @@ let expand : String.Set.t -> int -> expr -> expr list =
 
 exception IncorrectSubstitutionType
 
-let rec binding_ok : hole_type -> expr -> bool =
+let rec is_constant : expr -> bool = function
+  | Num _ | Str _ | Name _ | Hole (_, _) -> true
+  | Index (e1, e2) -> is_constant e1 && is_constant e2
+  | Call (Name "len", [ arg ]) -> is_constant arg
+  | Call (_, _) -> false
+
+let binding_ok : hole_type -> expr -> bool =
  fun tau e ->
   match tau with
-  | Constant ->
-      (match e with
-      | Num _ | Str _ | Name _ | Hole (_, _) -> true
-      | Index (e1, e2) -> binding_ok tau e1 && binding_ok tau e2
-      | Call (_, _) -> false)
+  | Constant -> is_constant e
   | _ -> true
 
 let substitute_expr : expr -> substitutions -> expr option =
@@ -124,11 +126,11 @@ let substitute_expr : expr -> substitutions -> expr option =
 let canonicalize : program -> program =
  fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
 
-let fuzzy_eq : expr -> expr -> bool =
+let eq_len : expr -> expr -> bool =
  fun e1 e2 ->
-  [%eq: expr] e1 e2
-  || [%eq: expr] e1 (Call (Name "np.copy", [ e2 ]))
-  || [%eq: expr] (Call (Name "np.copy", [ e1 ])) e2
+  [%eq: expr]
+    (Partial_eval.partial_eval_expr (Call (Name "len", [ e1 ])))
+    (Partial_eval.partial_eval_expr (Call (Name "len", [ e2 ])))
 
 let rec simplify : expr -> expr =
  fun e ->
@@ -138,17 +140,25 @@ let rec simplify : expr -> expr =
       let fn = simplify fn in
       let args = List.map ~f:simplify args in
       (match (fn, args) with
+      (* tolist *)
+      | Name "np.tolist", [ arg; amount ] ->
+          simplify
+            (Call
+               (Name "sliceUntil", [ Call (Name "np.tolist", [ arg ]); amount ]))
       (* Copy *)
       | Name "np.copy", [ arg; amount ] ->
           simplify
             (Call (Name "sliceUntil", [ Call (Name "np.copy", [ arg ]); amount ]))
+      | ( Name "np.copy"
+        , [ (Call (Call (Name "np.vectorize", args'), [ x ]) as inner) ] ) ->
+          simplify inner
       (* Slicing *)
       | Name "len", [ Call (Name "sliceToEnd", [ a; x ]) ]
       | Name "len", [ Call (Name "sliceUntil", [ a; x ]) ] ->
           simplify (Call (Name "-", [ Call (Name "len", [ a ]); x ]))
       | ( Name "sliceToEnd"
         , [ a; Call (Name "-", [ Call (Name "len", [ a' ]); x ]) ] )
-        when fuzzy_eq a a' ->
+        when eq_len a a' ->
           simplify
             (Call (Name "sliceToEnd", [ a; Call (Name "negate", [ x ]) ]))
       | Name "sliceToEnd", [ a; Num 0 ] -> a
@@ -160,11 +170,11 @@ let rec simplify : expr -> expr =
           simplify (Call (Name "range", [ x ]))
       | ( Name "sliceUntil"
         , [ a; Call (Name "-", [ Call (Name "len", [ a' ]); x ]) ] )
-        when fuzzy_eq a a' ->
+        when eq_len a a' ->
           simplify
             (Call (Name "sliceUntil", [ a; Call (Name "negate", [ x ]) ]))
-      | Name "sliceUntil", [ a; Call (Name "len", [ a' ]) ] when fuzzy_eq a a'
-        -> a
+      | Name "sliceUntil", [ a; Call (Name "len", [ a' ]) ] when eq_len a a' ->
+          a
       | Name "sliceUntil", [ Call (Name "broadcast", [ n ]); _ ] ->
           Call (Name "broadcast", [ n ])
       (* Propagation *)
@@ -178,7 +188,6 @@ let rec simplify : expr -> expr =
                   | "np.power"
                   | "np.equal"
                   | "np.greater"
-                  | "np.tolist"
                   | "np.where" )
               , hd :: _ )
           ] ) -> simplify (Call (Name "len", [ hd ]))
@@ -323,20 +332,13 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
-    (* if String.is_substring ~substring:"np.convolve_valid" ([%show: expr] e)
-       && String.is_substring ~substring:"np.full" ([%show: expr] e)
-       && String.is_substring
-            ~substring:"window_size"
-            ([%show: block] (snd target))
-            h
-            :noh
-
+    if String.is_substring ~substring:"list" ([%show: expr] e)
     then (
       Printf.eprintf "%s\n" ([%show: expr] e);
       Printf.eprintf "%s\n" (canonical |> snd |> [%show: block]);
       Printf.eprintf "%s\n" (target |> snd |> [%show: block]);
       Printf.eprintf "-------------------------\n")
-    else (); *)
+    else ();
     match unify ~pattern:canonical with
     | Some sub ->
         (match substitute_expr e sub with

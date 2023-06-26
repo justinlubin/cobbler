@@ -125,8 +125,11 @@ let main_python : string -> Yojson.Basic.t =
   let open Cbr_numpy in
   try
     let target = input |> Sexp.of_string |> Parse.program_of_sexp in
-    (* let () = failwith (target |> snd |> [%show: Lang.block]) in *)
-    match Np_synthesis.solve 4 ~debug:false target true with
+    (* let () =
+      failwith
+        (target |> Np_synthesis.canonicalize |> snd |> [%show: Lang.block])
+    in *)
+    match Np_synthesis.solve 1 ~debug:false target true with
     | None -> `Assoc [ ("status", `String "SynthFail") ]
     | Some e ->
         `Assoc

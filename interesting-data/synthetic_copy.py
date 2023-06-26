@@ -1,4 +1,4 @@
-y = np.zeros(10)
-for i in range(10):
+y = np.zeros(len(x))
+for i in range(len(x)):
     y[i] = x[i]
 y

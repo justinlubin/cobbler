@@ -5,6 +5,8 @@
 
 open Lang
 
+val partial_eval_expr : expr -> expr
+
 (** [partial_eval_program p] partially evaluates p by making 
     the following transformations:
 
