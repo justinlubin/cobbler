@@ -255,6 +255,46 @@ and loop_vars_block : block -> String.Set.t =
 
 let loop_vars : program -> String.Set.t = fun (_, b) -> loop_vars_block b
 
+exception EarlyCutoff of string
+
+let possible_types : program -> hole_type list =
+ fun (_, b) ->
+  match List.last_exn b with
+  | Return (Name var) ->
+      (match
+         List.find_map_exn b ~f:(fun s ->
+             match s with
+             | Assign (PName lhs, rhs) when String.equal lhs var -> Some rhs
+             | _ -> None)
+       with
+      (* Success cases *)
+      | Num (0 | 1) -> [ Number ]
+      | Call (Name "np.zeros", _) -> [ Array ]
+      | Name "__emptyList" -> [ List ]
+      (* Failure cases *)
+      | Num n ->
+          raise
+            (EarlyCutoff
+               (sprintf
+                  "target variable starts as unsupported number %s"
+                  (string_of_int n)))
+      | Index (_, _) -> raise (EarlyCutoff "target variable starts as index")
+      | Call (Name fn, _) ->
+          raise
+            (EarlyCutoff
+               (sprintf
+                  "target variable starts as unsupported function '%s'"
+                  fn))
+      | Call (_, _) ->
+          raise (EarlyCutoff "target variable starts as complex function call")
+      | Str s ->
+          raise
+            (EarlyCutoff (sprintf "target variable starts as string '%s'" s))
+      | Name n ->
+          raise (EarlyCutoff (sprintf "target variable starts as name '%s'" n))
+      | Hole (_, _) -> failwith "user input has a hole")
+  | _ -> failwith "first statement not an assignment"
+
 let solve : int -> ?debug:bool -> program -> bool -> program option =
  fun depth ?(debug = false) target use_egraphs ->
   let target = canonicalize target in
@@ -274,6 +314,9 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
        && String.is_substring
             ~substring:"window_size"
             ([%show: block] (snd target))
+            h
+            :noh
+
     then (
       Printf.eprintf "%s\n" ([%show: expr] e);
       Printf.eprintf "%s\n" (canonical |> snd |> [%show: block]);
@@ -297,10 +340,9 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
     Cbr_framework.Enumerative_search.top_down
       ~max_iterations:depth
       ~start:
-        [ Hole (Array, Util.gensym "hole")
-        ; Hole (Number, Util.gensym "hole")
-        ; Hole (List, Util.gensym "hole")
-        ]
+        (target
+        |> possible_types
+        |> List.map ~f:(fun t -> Hole (t, Util.gensym "hole")))
       ~expand:(expand (referenced_vars target))
       ~correct
   with
