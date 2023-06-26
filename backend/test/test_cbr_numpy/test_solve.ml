@@ -1,6 +1,5 @@
 open Cbr_numpy
 open Core
-open Np_synthesis
 open Lang
 open Parse
 open Util
@@ -208,8 +207,10 @@ let solution5 : program =
 
 let no_sol_target : program =
   ( Cbr_numpy.Env.np_env
-  , [ Assign (PName "x", Num 0); Return (Call (Name "+", [ Name "x"; Num 1 ])) ]
-  )
+  , [ Assign (PName "x", Num 0)
+    ; Assign (PName "y", Call (Name "+", [ Name "x"; Num 1 ]))
+    ; Return (Name "y")
+    ] )
 
 let solution7 : program =
   ( Cbr_numpy.Env.np_env
@@ -234,6 +235,11 @@ let solution8 : program =
     ] )
 
 let egraph_bools = [ true; false ]
+
+let solve : int -> ?debug:bool -> program -> bool -> program option =
+ fun depth ?(debug = false) target use_egraphs ->
+  try Np_synthesis.solve depth ~debug target use_egraphs with
+  | Np_synthesis.EarlyCutoff _ -> None
 
 let%test_unit "np_solve 1" =
   [%test_result: program list]

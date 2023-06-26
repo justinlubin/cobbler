@@ -359,7 +359,7 @@ let possible_types : program -> hole_type list =
       | Name n ->
           raise (EarlyCutoff (sprintf "target variable starts as name '%s'" n))
       | Hole (_, _) -> failwith "user input has a hole")
-  | _ -> failwith "first statement not an assignment"
+  | _ -> raise (EarlyCutoff "last statement not a variable return")
 
 let solve : int -> ?debug:bool -> program -> bool -> program option =
  fun depth ?(debug = false) target use_egraphs ->
