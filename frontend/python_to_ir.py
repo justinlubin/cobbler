@@ -73,20 +73,28 @@ class IRParser(ast.NodeVisitor):
         )
 
     def visit_Attribute(self, node):
-        name = ""
+        chain = []
+        base = None
         while True:
             className = self.getClassName(node)
             if className == "Attribute":
-                name = node.attr + "." + name
+                chain.append(node.attr)
                 node = node.value
             elif className == "Name":
-                name = node.id + "." + name
+                base = node.id
                 break
             else:
                 raise UnsupportedFeatureException(
                     f"Unsupported attribute feature '{className}' in {ast.dump(node)}"
                 )
-        return SAtom(name[:-1])
+        if base == "np":
+            return SAtom("np" + "." + ".".join(reversed(chain)))
+
+        ret = SAtom(base)
+        for c in chain:
+            ret = SList([SAtom("Call"), SAtom("__memberAccess"), SAtom(c), ret])
+
+        return ret
 
     def visit_Name(self, node):
         return SAtom(node.id)
@@ -102,6 +110,9 @@ class IRParser(ast.NodeVisitor):
 
     def visit_Div(self, node):
         return SAtom("/")
+
+    def visit_Pow(self, node):
+        return SAtom("**")
 
     def visit_Compare(self, node: ast.Compare):
         if type(node.ops[0]) == ast.Gt:
@@ -195,10 +206,10 @@ class IRParser(ast.NodeVisitor):
         return SList([SAtom("Num"), SAtom(str(node.n))])
 
     def visit_Call(self, node):
-        return SList(
-            [SAtom("Call"), self.visit(node.func)]
-            + [self.visit(arg) for arg in node.args]
-        )
+        fn = self.visit(node.func)
+        if fn == "print":
+            raise UnsupportedFeatureException("Print statement")
+        return SList([SAtom("Call"), fn] + [self.visit(arg) for arg in node.args])
 
     def visit_Operator(self, node):
         return SAtom(self.getClassName(node))
@@ -214,7 +225,6 @@ class IRParser(ast.NodeVisitor):
         )
 
     def visit_Arg(self, node):
-        print(node.arg)
         return SAtom(node.arg)
 
     def visit_Return(self, node):
@@ -240,7 +250,7 @@ class IRParser(ast.NodeVisitor):
                 [
                     SAtom("Assign"),
                     var,
-                    SList([SAtom("Call"), SAtom("__immutableAppend"), var, new_val]),
+                    SList([SAtom("Call"), SAtom("np.append"), var, new_val]),
                 ]
             )
         else:
@@ -248,5 +258,5 @@ class IRParser(ast.NodeVisitor):
 
     def generic_visit(self, node):
         name = self.getClassName(node)
-        print(ast.dump(node))
+        # print(ast.dump(node))
         raise UnsupportedFeatureException(name)

@@ -4,6 +4,7 @@ type hole_type =
   | Number
   | Array
   | List
+  | Constant
 [@@deriving compare, eq, show, hash]
 
 type id = string [@@deriving sexp, compare, eq, show, hash]

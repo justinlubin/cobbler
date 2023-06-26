@@ -2,78 +2,62 @@ open Lang
 open Env
 open Core
 
-let expand : int -> expr -> expr list =
- fun _ e ->
+let make_grammar_entry
+    :  String.Set.t -> required:String.Set.t -> string -> hole_type list
+    -> expr option
+  =
+ fun fvs ~required lhs rhs ->
+  if Set.is_subset required ~of_:fvs
+  then
+    Some
+      (Call (Name lhs, List.map rhs ~f:(fun t -> Hole (t, Util.gensym "hole"))))
+  else None
+
+let make_grammar_entries
+    : String.Set.t -> (string * string list * hole_type list) list -> expr list
+  =
+ fun fvs entries ->
+  entries
+  |> List.filter_map ~f:(fun (lhs, req, rhs) ->
+         make_grammar_entry fvs ~required:(String.Set.of_list req) lhs rhs)
+
+let make_grammar : String.Set.t -> hole_type -> expr list =
+ fun fvs tau ->
+  match tau with
+  | Constant -> []
+  | List -> make_grammar_entries fvs [ ("np.tolist", [], [ Array; Constant ]) ]
+  | Number ->
+      make_grammar_entries
+        fvs
+        [ ("np.sum", [ "+" ], [ Array ]); ("np.prod", [ "*" ], [ Array ]) ]
+  | Array ->
+      make_grammar_entries
+        fvs
+        [ ("np.multiply", [ "*" ], [ Array; Array ])
+        ; ("np.divide", [ "/" ], [ Array; Array ])
+        ; ("np.add", [ "+" ], [ Array; Array ])
+        ; ("np.subtract", [ "-" ], [ Array; Array ])
+        ; ("np.power", [ "**" ], [ Array; Array ])
+        ; ("np.equal", [ "==" ], [ Array; Array ])
+        ; ("np.full", [], [ Number; Constant ])
+        ; ("np.greater", [ ">" ], [ Array; Array ])
+        ; ("np.where", [], [ Array; Array; Array ])
+        ; ("np.roll", [], [ Array; Number ])
+        ; ("np.convolve_valid", [], [ Array; Array ])
+        ; ( "np.random.randint_size"
+          , [ "np.random.randint" ]
+          , [ Number; Number; Number ] )
+        ; ("range", [], [ Number ])
+        ; ("np.copy", [], [ Array; Constant ])
+        ]
+
+let expand : String.Set.t -> int -> expr -> expr list =
+ fun fvs _ e ->
   let rec expand' = function
     | Num n -> [ Num n ]
     | Str s -> [ Str s ]
     | Name id -> [ Name id ]
-    | Hole (List, s) ->
-        [ Call (Name "np.tolist", [ Hole (Array, Util.gensym "hole") ]) ]
-    | Hole (Number, _) ->
-        [ Call (Name "np.sum", [ Hole (Array, Util.gensym "hole") ]) ]
-    | Hole (Array, _) ->
-        [ Call
-            ( Name "np.multiply"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.divide"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.add"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.subtract"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.equal"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call (Name "np.ones", [ Hole (Number, Util.gensym "hole") ])
-        ; Call
-            ( Name "np.greater"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.where"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.roll"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.convolve_valid"
-            , [ Hole (Array, Util.gensym "hole")
-              ; Hole (Array, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.random.randint_size"
-            , [ Hole (Number, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")
-              ] )
-        ; Call
-            ( Name "np.random.randint_size"
-            , [ Hole (Number, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")
-              ; Hole (Number, Util.gensym "hole")
-              ] )
-        ; Call (Name "range", [ Hole (Number, Util.gensym "hole") ])
-        ]
+    | Hole (tau, _) -> make_grammar fvs tau
     | Index (head, index) ->
         let expanded_head = expand' head in
         let expanded_index = expand' index in
@@ -104,7 +88,23 @@ let expand : int -> expr -> expr list =
   in
   expand' e
 
-let substitute_expr : expr -> substitutions -> expr =
+(* Fails if substitution does not respect hole type *)
+
+exception IncorrectSubstitutionType
+
+let rec is_constant : expr -> bool = function
+  | Num _ | Str _ | Name _ | Hole (_, _) -> true
+  | Index (e1, e2) -> is_constant e1 && is_constant e2
+  | Call (Name "len", [ arg ]) -> is_constant arg
+  | Call (_, _) -> false
+
+let binding_ok : hole_type -> expr -> bool =
+ fun tau e ->
+  match tau with
+  | Constant -> is_constant e
+  | _ -> true
+
+let substitute_expr : expr -> substitutions -> expr option =
  fun e subs ->
   let rec substitute = function
     | Num n -> Num n
@@ -112,15 +112,25 @@ let substitute_expr : expr -> substitutions -> expr =
     | Name id -> Name id
     | Index (hd, index) -> Index (substitute hd, substitute index)
     | Call (fn, args) -> Call (substitute fn, List.map ~f:substitute args)
-    | Hole (_, h) as e' ->
+    | Hole (tau, h) as e' ->
         (match Map.find subs h with
-        | Some binding -> binding
+        | Some binding ->
+            if binding_ok tau binding
+            then binding
+            else raise IncorrectSubstitutionType
         | None -> e')
   in
-  substitute e
+  try Some (substitute e) with
+  | IncorrectSubstitutionType -> None
 
 let canonicalize : program -> program =
  fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
+
+let eq_len : expr -> expr -> bool =
+ fun e1 e2 ->
+  [%eq: expr]
+    (Partial_eval.partial_eval_expr (Call (Name "len", [ e1 ])))
+    (Partial_eval.partial_eval_expr (Call (Name "len", [ e2 ])))
 
 let rec simplify : expr -> expr =
  fun e ->
@@ -130,29 +140,86 @@ let rec simplify : expr -> expr =
       let fn = simplify fn in
       let args = List.map ~f:simplify args in
       (match (fn, args) with
-      (* Slicing *)
+      (* tolist *)
+      | Name "np.tolist", [ arg; amount ] ->
+          simplify
+            (Call
+               (Name "sliceUntil", [ Call (Name "np.tolist", [ arg ]); amount ]))
+      (* Copy *)
+      | Name "np.copy", [ arg; amount ] ->
+          simplify
+            (Call (Name "sliceUntil", [ Call (Name "np.copy", [ arg ]); amount ]))
+      | ( Name "np.copy"
+        , [ (Call (Call (Name "np.vectorize", args'), [ x ]) as inner) ] ) ->
+          simplify inner
+      (* sliceToEnd *)
       | Name "len", [ Call (Name "sliceToEnd", [ a; x ]) ]
       | Name "len", [ Call (Name "sliceUntil", [ a; x ]) ] ->
           simplify (Call (Name "-", [ Call (Name "len", [ a ]); x ]))
       | ( Name "sliceToEnd"
         , [ a; Call (Name "-", [ Call (Name "len", [ a' ]); x ]) ] )
-        when [%eq: expr] a a' ->
+        when eq_len a a' ->
           simplify
             (Call (Name "sliceToEnd", [ a; Call (Name "negate", [ x ]) ]))
       | Name "sliceToEnd", [ a; Num 0 ] -> a
       | Name "sliceToEnd", [ Call (Name "broadcast", [ n ]); _ ] ->
           Call (Name "broadcast", [ n ])
+      | ( Name "sliceToEnd"
+        , [ Call
+              ( (Name
+                   ( "np.multiply"
+                   | "np.divide"
+                   | "np.add"
+                   | "np.subtract"
+                   | "np.power"
+                   | "np.equal"
+                   | "np.greater"
+                   | "np.where"
+                   | "np.tolist"
+                   | "np.copy" ) as inner_f)
+              , inner_args )
+          ; n
+          ] ) ->
+          simplify
+            (Call
+               ( inner_f
+               , List.map inner_args ~f:(fun a ->
+                     Call (Name "sliceToEnd", [ a; n ])) ))
+      (* sliceUntil *)
+      | Name "sliceUntil", [ Call (Name "np.full", [ _; v ]); x ] ->
+          simplify (Call (Name "np.full", [ x; v ]))
       | Name "sliceUntil", [ Call (Name "range", [ _ ]); x ] ->
           simplify (Call (Name "range", [ x ]))
       | ( Name "sliceUntil"
         , [ a; Call (Name "-", [ Call (Name "len", [ a' ]); x ]) ] )
-        when [%eq: expr] a a' ->
+        when eq_len a a' ->
           simplify
             (Call (Name "sliceUntil", [ a; Call (Name "negate", [ x ]) ]))
-      | Name "sliceUntil", [ a; Call (Name "len", [ a' ]) ]
-        when [%eq: expr] a a' -> a
+      | Name "sliceUntil", [ a; Call (Name "len", [ a' ]) ] when eq_len a a' ->
+          a
       | Name "sliceUntil", [ Call (Name "broadcast", [ n ]); _ ] ->
           Call (Name "broadcast", [ n ])
+      | ( Name "sliceUntil"
+        , [ Call
+              ( (Name
+                   ( "np.multiply"
+                   | "np.divide"
+                   | "np.add"
+                   | "np.subtract"
+                   | "np.power"
+                   | "np.equal"
+                   | "np.greater"
+                   | "np.where"
+                   | "np.tolist"
+                   | "np.copy" ) as inner_f)
+              , inner_args )
+          ; n
+          ] ) ->
+          simplify
+            (Call
+               ( inner_f
+               , List.map inner_args ~f:(fun a ->
+                     Call (Name "sliceUntil", [ a; n ])) ))
       (* Propagation *)
       | ( Name "len"
         , [ Call
@@ -161,21 +228,15 @@ let rec simplify : expr -> expr =
                   | "np.divide"
                   | "np.add"
                   | "np.subtract"
+                  | "np.power"
                   | "np.equal"
                   | "np.greater"
-                  | "np.tolist"
                   | "np.where" )
               , hd :: _ )
           ] ) -> simplify (Call (Name "len", [ hd ]))
-      | ( Name "len"
-        , [ Call
-              ( ( Name "np.ones"
-                | Name "range"
-                | Name "np.zeros"
-                | Name "broadcast"
-                | Name "fill" )
-              , hd :: _ )
-          ] ) -> simplify hd
+      | Name "len", [ Call (Name ("range" | "broadcast" | "np.zeros"), [ hd ]) ]
+        -> simplify hd
+      | Name "len", [ Call (Name "np.full", [ hd; _ ]) ] -> simplify hd
       | Name "len", [ Call (Name "np.random.randint_size", [ _; _; s ]) ] ->
           simplify s
       (* Default *)
@@ -194,6 +255,7 @@ let rec cap_second_arguments : expr -> expr =
           | Name "np.divide"
           | Name "np.add"
           | Name "np.subtract"
+          | Name "np.power"
           | Name "np.equal"
           | Name "np.greater" )
         , [ arg1; arg2 ] ) ->
@@ -207,8 +269,102 @@ let rec cap_second_arguments : expr -> expr =
 
 let clean : expr -> expr = fun e -> simplify (cap_second_arguments e)
 
+let rec base_pat_name : pat -> id option =
+ fun p ->
+  match p with
+  | PName x -> Some x
+  | PIndex (p', _) -> base_pat_name p'
+  | PHole (_, _) -> None
+
+let rec referenced_vars_expr : expr -> String.Set.t =
+ fun e ->
+  match e with
+  | Name x -> String.Set.singleton x
+  | Index (e1, e2) ->
+      Set.union (referenced_vars_expr e1) (referenced_vars_expr e2)
+  | Call (head, args) ->
+      String.Set.union_list
+        (referenced_vars_expr head :: List.map ~f:referenced_vars_expr args)
+  | Str _ | Num _ | Hole (_, _) -> String.Set.empty
+
+and referenced_vars_stmt : stmt -> String.Set.t =
+ fun s ->
+  match s with
+  | For (_, e, b) ->
+      Set.union (referenced_vars_expr e) (referenced_vars_block b)
+  | If (cond, then_branch, else_branch) ->
+      referenced_vars_expr cond
+      |> Set.union (referenced_vars_block then_branch)
+      |> Set.union (referenced_vars_block else_branch)
+  | Assign (_, e) | Return e -> referenced_vars_expr e
+
+and referenced_vars_block : block -> String.Set.t =
+ fun b -> b |> List.map ~f:referenced_vars_stmt |> String.Set.union_list
+
+and referenced_vars : program -> String.Set.t =
+ fun (_, b) -> referenced_vars_block b
+
+let rec loop_vars_stmt : stmt -> String.Set.t =
+ fun s ->
+  match s with
+  | For (p, _, b) ->
+      let vs = loop_vars_block b in
+      (match base_pat_name p with
+      | Some x -> Set.add vs x
+      | None -> vs)
+  | If (_, then_branch, else_branch) ->
+      Set.union (loop_vars_block then_branch) (loop_vars_block else_branch)
+  | Assign (_, _) | Return _ -> String.Set.empty
+
+and loop_vars_block : block -> String.Set.t =
+ fun b -> b |> List.map ~f:loop_vars_stmt |> String.Set.union_list
+
+let loop_vars : program -> String.Set.t = fun (_, b) -> loop_vars_block b
+
+exception EarlyCutoff of string
+
+let possible_types : program -> hole_type list =
+ fun (_, b) ->
+  match List.last_exn b with
+  | Return (Name var) ->
+      (match
+         List.find_map_exn b ~f:(fun s ->
+             match s with
+             | Assign (PName lhs, rhs) when String.equal lhs var -> Some rhs
+             | _ -> None)
+       with
+      (* Success cases *)
+      | Num (0 | 1) -> [ Number ]
+      | Call (Name "np.zeros", _) -> [ Array ]
+      | Name "__emptyList" -> [ List ]
+      (* Failure cases *)
+      | Num n ->
+          raise
+            (EarlyCutoff
+               (sprintf
+                  "target variable starts as unsupported number %s"
+                  (string_of_int n)))
+      | Index (_, _) -> raise (EarlyCutoff "target variable starts as index")
+      | Call (Name fn, _) ->
+          raise
+            (EarlyCutoff
+               (sprintf
+                  "target variable starts as unsupported function '%s'"
+                  fn))
+      | Call (_, _) ->
+          raise (EarlyCutoff "target variable starts as complex function call")
+      | Str s ->
+          raise
+            (EarlyCutoff (sprintf "target variable starts as string '%s'" s))
+      | Name n ->
+          raise (EarlyCutoff (sprintf "target variable starts as name '%s'" n))
+      | Hole (_, _) -> failwith "user input has a hole")
+  | _ -> raise (EarlyCutoff "last statement not a variable return")
+
 let solve : int -> ?debug:bool -> program -> bool -> program option =
  fun depth ?(debug = false) target use_egraphs ->
+  let target = canonicalize target in
+  let target_loop_vars = loop_vars target in
   let unify : pattern:program -> substitutions option =
     if use_egraphs
     then (
@@ -219,7 +375,7 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
-    (* if String.is_substring ~substring:"tolist" ([%show: expr] e)
+    (* if String.is_substring ~substring:"list" ([%show: expr] e)
     then (
       Printf.eprintf "%s\n" ([%show: expr] e);
       Printf.eprintf "%s\n" (canonical |> snd |> [%show: block]);
@@ -228,19 +384,25 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
     else (); *)
     match unify ~pattern:canonical with
     | Some sub ->
-        (try Some (substitute_expr e sub) with
-        | _ -> failwith ([%show: expr] e))
+        (match substitute_expr e sub with
+        | Some possible_solution ->
+            if Set.is_empty
+                 (Set.inter
+                    (referenced_vars_expr possible_solution)
+                    target_loop_vars)
+            then Some possible_solution
+            else None
+        | None -> None)
     | None -> None
   in
   match
     Cbr_framework.Enumerative_search.top_down
       ~max_iterations:depth
       ~start:
-        [ Hole (Array, Util.gensym "hole")
-        ; Hole (Number, Util.gensym "hole")
-        ; Hole (List, Util.gensym "hole")
-        ]
-      ~expand
+        (target
+        |> possible_types
+        |> List.map ~f:(fun t -> Hole (t, Util.gensym "hole")))
+      ~expand:(expand (referenced_vars target))
       ~correct
   with
   | Some ans -> Some (np_env, [ Return (clean ans) ])

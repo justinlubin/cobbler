@@ -13,38 +13,51 @@ let rec partial_eval_expr : expr -> expr =
       let fn = partial_eval_expr fn in
       let args = List.map ~f:partial_eval_expr args in
       (match fn with
+      | Name ("np.copy" | "np.tolist") ->
+          (match args with
+          | [ arg; amount ] ->
+              partial_eval_expr (Call (Name "sliceUntil", [ arg; amount ]))
+          | _ -> Call (fn, args))
+      | Name "np.ones" ->
+          partial_eval_expr (Call (Name "np.full", args @ [ Num 1 ]))
       | Name "np.zeros_like" ->
           partial_eval_expr
             (Call (Name "np.zeros", [ Call (Name "len", args) ]))
       | Name "np.arange" -> partial_eval_expr (Call (Name "range", args))
       | Name "-" ->
           (match args with
-          | [ Call (Name "len", [ a ]); Num offset ] ->
+          | [ Call (Name "len", [ a ]); offset ] ->
               partial_eval_expr
-                (Call
-                   (Name "len", [ Call (Name "sliceToEnd", [ a; Num offset ]) ]))
+                (Call (Name "len", [ Call (Name "sliceToEnd", [ a; offset ]) ]))
           | _ -> Call (Name "-", List.map ~f:partial_eval_expr args))
       | Name "len" ->
           (match partial_eval_expr (List.hd_exn args) with
+          | Call (Name "np.copy", args)
+          | Call (Name "np.tolist", args)
           | Call (Name "np.multiply", args)
           | Call (Name "np.divide", args)
           | Call (Name "np.add", args)
           | Call (Name "np.subtract", args)
+          | Call (Name "np.power", args)
           | Call (Name "np.equal", args)
           | Call (Name "np.greater", args)
-          | Call (Name "np.tolist", args)
+          | Call (Call (Name "np.vectorize", [ _ ]), args)
           | Call (Name "np.where", args) ->
               partial_eval_expr (Call (Name "len", [ List.hd_exn args ]))
           | Call (Name "np.ones", args)
-          | Call (Name "range", args)
           | Call (Name "np.zeros", args)
           | Call (Name "broadcast", args)
-          | Call (Name "fill", _ :: args) ->
-              partial_eval_expr (List.hd_exn args)
+          | Call (Name "np.full", args) -> partial_eval_expr (List.hd_exn args)
           | Call (Name "np.random.randint_size", [ _; _; s ]) ->
               partial_eval_expr s
+          | Call (Name "range", [ hd ]) -> partial_eval_expr hd
           | _ -> Call (Name "len", args))
-      | _ -> Call (fn, args))
+      | _ ->
+          (match args with
+          | [ Index (arg, i) ] ->
+              partial_eval_expr
+                (Index (Call (Call (Name "np.vectorize", [ fn ]), [ arg ]), i))
+          | _ -> Call (fn, args)))
   | Index (e1, e2) ->
       (match (e1, e2) with
       | _, Call (Name "+", [ base; Num offset ])
@@ -69,6 +82,18 @@ let rec partial_eval_expr : expr -> expr =
             , [ partial_eval_expr (Index (x, e2))
               ; partial_eval_expr (Index (y, e2))
               ] )
+      | Call (Name "np.subtract", [ x; y ]), e2 ->
+          Call
+            ( Name "-"
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "np.power", [ x; y ]), e2 ->
+          Call
+            ( Name "**"
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
       | Call (Name "np.equal", [ x; y ]), e2 ->
           Call
             ( Name "=="
@@ -82,8 +107,8 @@ let rec partial_eval_expr : expr -> expr =
               ; partial_eval_expr (Index (y, e2))
               ] )
       | Call (Name "np.zeros", _), _ -> Num 0
-      | Call (Name "np.ones", _), _ -> Num 1
-      | Call (Name "range", _), i -> partial_eval_expr i
+      | Call (Name "np.full", [ _; v ]), _ -> partial_eval_expr v
+      | Call (Name "range", [ _ ]), i -> partial_eval_expr i
       | _ ->
           (* print_endline ("e1: " ^ (Parse.sexp_of_expr e1 |> Core.Sexp.to_string)); *)
           Index (e1, e2))
@@ -94,11 +119,74 @@ and partial_eval_pat : pat -> pat =
   | PName _ | PHole _ -> pat
   | PIndex (l, e) -> PIndex (partial_eval_pat l, partial_eval_expr e)
 
+let rec substitute_in_expr : id -> expr -> expr -> expr =
+ fun lhs rhs e ->
+  match e with
+  (* Main case *)
+  | Name x when String.equal lhs x -> rhs
+  | Name x -> Name x
+  (* Recursive cases *)
+  | Index (e1, e2) ->
+      Index (substitute_in_expr lhs rhs e1, substitute_in_expr lhs rhs e2)
+  | Call (head, args) ->
+      Call
+        ( substitute_in_expr lhs rhs head
+        , List.map ~f:(substitute_in_expr lhs rhs) args )
+  (* Base cases *)
+  | Num _ | Str _ | Hole (_, _) -> e
+
+(* Note: not capture-avoiding! *)
+let rec substitute_in_block : id -> expr -> block -> block =
+ fun lhs rhs b ->
+  b
+  |> List.fold_left ~init:(true, []) ~f:(fun (should_continue, acc) stmt ->
+         if should_continue
+         then (
+           match stmt with
+           | Assign (PName alhs, arhs) when String.equal lhs alhs ->
+               ( false
+               , Assign (PName alhs, substitute_in_expr lhs rhs arhs) :: acc )
+           | Assign (alhs, arhs) ->
+               (true, Assign (alhs, substitute_in_expr lhs rhs arhs) :: acc)
+           | For (PName i, e, body) when String.equal lhs i ->
+               (true, For (PName i, substitute_in_expr lhs rhs e, body) :: acc)
+           | For (i, e, body) ->
+               ( true
+               , For
+                   ( i
+                   , substitute_in_expr lhs rhs e
+                   , substitute_in_block lhs rhs body )
+                 :: acc )
+           | Return e -> (true, Return (substitute_in_expr lhs rhs e) :: acc)
+           | If (cond, then_branch, else_branch) ->
+               ( true
+               , If
+                   ( substitute_in_expr lhs rhs cond
+                   , substitute_in_block lhs rhs then_branch
+                   , substitute_in_block lhs rhs else_branch )
+                 :: acc ))
+         else (false, stmt :: acc))
+  |> snd
+  |> List.rev
+
 let rec partial_eval_stmt : stmt -> stmt =
  fun stmt ->
   match stmt with
   | Assign (pat, e) -> Assign (partial_eval_pat pat, partial_eval_expr e)
-  | For (id, e, body) -> For (id, partial_eval_expr e, partial_eval_block body)
+  | For (id, e, body) ->
+      (match partial_eval_expr e with
+      | Call (Name "range", [ arg ]) ->
+          For (id, partial_eval_expr e, partial_eval_block body)
+      | e' ->
+          (match id with
+          | PName x ->
+              let i = Util.gensym ("i_" ^ x) in
+              partial_eval_stmt
+                (For
+                   ( PName i
+                   , Call (Name "range", [ Call (Name "len", [ e ]) ])
+                   , substitute_in_block x (Index (e, Name i)) body ))
+          | _ -> For (id, e', partial_eval_block body)))
   | Return e -> Return (partial_eval_expr e)
   | If (cond, body, orelse) ->
       If
