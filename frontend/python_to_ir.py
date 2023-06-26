@@ -206,10 +206,10 @@ class IRParser(ast.NodeVisitor):
         return SList([SAtom("Num"), SAtom(str(node.n))])
 
     def visit_Call(self, node):
-        return SList(
-            [SAtom("Call"), self.visit(node.func)]
-            + [self.visit(arg) for arg in node.args]
-        )
+        fn = self.visit(node.func)
+        if fn == "print":
+            raise UnsupportedFeatureException("Print statement")
+        return SList([SAtom("Call"), fn] + [self.visit(arg) for arg in node.args])
 
     def visit_Operator(self, node):
         return SAtom(self.getClassName(node))
@@ -250,7 +250,7 @@ class IRParser(ast.NodeVisitor):
                 [
                     SAtom("Assign"),
                     var,
-                    SList([SAtom("Call"), SAtom("__immutableAppend"), var, new_val]),
+                    SList([SAtom("Call"), SAtom("np.append"), var, new_val]),
                 ]
             )
         else:

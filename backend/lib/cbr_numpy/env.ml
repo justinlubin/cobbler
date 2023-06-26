@@ -383,7 +383,7 @@ let tolist_defn =
         , [ Assign
               ( PHole (List, "xs")
               , Call
-                  ( Name "__immutableAppend"
+                  ( Name "np.append"
                   , [ Hole (List, "xs")
                     ; Index (Name "arg", Hole (Number, "i"))
                     ] ) )

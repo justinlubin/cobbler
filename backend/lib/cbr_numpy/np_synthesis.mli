@@ -6,6 +6,10 @@
 
 open Lang
 
+(** Raised if it is known from the start that synthesis will fail, along with
+    a description of why. *)
+exception EarlyCutoff of string
+
 (** [solve depth target] uses top down enumeration with search space of level [depth]
     to enumerate candidate program sketches, which are then canonicalized with partial eval
     and inlining and unified against [target] to determine a match. If any sketches match,
