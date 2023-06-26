@@ -13,6 +13,11 @@ let rec partial_eval_expr : expr -> expr =
       let fn = partial_eval_expr fn in
       let args = List.map ~f:partial_eval_expr args in
       (match fn with
+      | Name "np.copy" ->
+          (match args with
+          | [ arg; amount ] ->
+              partial_eval_expr (Call (Name "sliceUntil", [ arg; amount ]))
+          | _ -> Call (fn, args))
       | Name "np.ones" ->
           partial_eval_expr (Call (Name "np.full", args @ [ Num 1 ]))
       | Name "np.zeros_like" ->

@@ -48,6 +48,7 @@ let make_grammar : String.Set.t -> hole_type -> expr list =
           , [ "np.random.randint" ]
           , [ Number; Number; Number ] )
         ; ("range", [], [ Number ])
+        ; ("np.copy", [], [ Array; Number ])
         ]
 
 let expand : String.Set.t -> int -> expr -> expr list =
@@ -123,6 +124,12 @@ let substitute_expr : expr -> substitutions -> expr option =
 let canonicalize : program -> program =
  fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
 
+let fuzzy_eq : expr -> expr -> bool =
+ fun e1 e2 ->
+  [%eq: expr] e1 e2
+  || [%eq: expr] e1 (Call (Name "np.copy", [ e2 ]))
+  || [%eq: expr] (Call (Name "np.copy", [ e1 ])) e2
+
 let rec simplify : expr -> expr =
  fun e ->
   match e with
@@ -131,13 +138,17 @@ let rec simplify : expr -> expr =
       let fn = simplify fn in
       let args = List.map ~f:simplify args in
       (match (fn, args) with
+      (* Copy *)
+      | Name "np.copy", [ arg; amount ] ->
+          simplify
+            (Call (Name "sliceUntil", [ Call (Name "np.copy", [ arg ]); amount ]))
       (* Slicing *)
       | Name "len", [ Call (Name "sliceToEnd", [ a; x ]) ]
       | Name "len", [ Call (Name "sliceUntil", [ a; x ]) ] ->
           simplify (Call (Name "-", [ Call (Name "len", [ a ]); x ]))
       | ( Name "sliceToEnd"
         , [ a; Call (Name "-", [ Call (Name "len", [ a' ]); x ]) ] )
-        when [%eq: expr] a a' ->
+        when fuzzy_eq a a' ->
           simplify
             (Call (Name "sliceToEnd", [ a; Call (Name "negate", [ x ]) ]))
       | Name "sliceToEnd", [ a; Num 0 ] -> a
@@ -149,11 +160,11 @@ let rec simplify : expr -> expr =
           simplify (Call (Name "range", [ x ]))
       | ( Name "sliceUntil"
         , [ a; Call (Name "-", [ Call (Name "len", [ a' ]); x ]) ] )
-        when [%eq: expr] a a' ->
+        when fuzzy_eq a a' ->
           simplify
             (Call (Name "sliceUntil", [ a; Call (Name "negate", [ x ]) ]))
-      | Name "sliceUntil", [ a; Call (Name "len", [ a' ]) ]
-        when [%eq: expr] a a' -> a
+      | Name "sliceUntil", [ a; Call (Name "len", [ a' ]) ] when fuzzy_eq a a'
+        -> a
       | Name "sliceUntil", [ Call (Name "broadcast", [ n ]); _ ] ->
           Call (Name "broadcast", [ n ])
       (* Propagation *)

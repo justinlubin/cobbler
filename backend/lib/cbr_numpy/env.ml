@@ -391,6 +391,19 @@ let tolist_defn =
     ; Return (Hole (Array, "xs"))
     ] )
 
+let copy_defn =
+  ( [ "arg"; "amount" ]
+  , [ Assign (PHole (Array, "y"), Call (Name "np.zeros", [ Name "amount" ]))
+    ; For
+        ( PHole (Number, "i")
+        , Call (Name "range", [ Name "amount" ])
+        , [ Assign
+              ( PIndex (PHole (Array, "y"), Hole (Number, "i"))
+              , Index (Name "arg", Hole (Number, "i")) )
+          ] )
+    ; Return (Hole (Array, "xs"))
+    ] )
+
 (* let arange_defn =
   ( [ "hi" ]
   , [ Assign (PHole (Array, "x"), Call (Name "np.zeros", [ Name "hi" ]))
@@ -421,4 +434,5 @@ let np_env : env =
     ; ("np.convolve_valid", convolve_valid_defn)
     ; ("np.random.randint_size", randint_size_defn)
     ; ("np.tolist", tolist_defn) (* ; ("np.arange", arange_defn) *)
+    ; ("np.copy", copy_defn)
     ]
