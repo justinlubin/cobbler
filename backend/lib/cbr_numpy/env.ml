@@ -21,6 +21,26 @@ let sum_defn =
     ; Return (Hole (Number, "sum_count"))
     ] )
 
+let prod_body =
+  [ Assign
+      ( PHole (Number, "prod_count")
+      , Call
+          ( Name "*"
+          , [ Hole (Number, "prod_count")
+            ; Index (Name "prod_1", Hole (Number, "prod_i"))
+            ] ) )
+  ]
+
+let prod_defn =
+  ( [ "prod_1" ]
+  , [ Assign (PHole (Number, "prod_count"), Num 1)
+    ; For
+        ( PHole (Number, "prod_i")
+        , Call (Name "range", [ Call (Name "len", [ Name "prod_1" ]) ])
+        , prod_body )
+    ; Return (Hole (Number, "prod_count"))
+    ] )
+
 let sub_body =
   [ Assign
       ( PHole (Number, "sub_count")
@@ -387,6 +407,7 @@ let tolist_defn =
 let np_env : env =
   String.Map.of_alist_exn
     [ ("np.sum", sum_defn)
+    ; ("np.prod", prod_defn)
     ; ("np.multiply", mul_defn)
     ; ("np.divide", div_defn)
     ; ("np.add", add_defn)

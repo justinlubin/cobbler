@@ -26,7 +26,10 @@ let make_grammar : String.Set.t -> hole_type -> expr list =
   match tau with
   | Constant -> []
   | List -> make_grammar_entries fvs [ ("np.tolist", [], [ Array ]) ]
-  | Number -> make_grammar_entries fvs [ ("np.sum", [ "+" ], [ Array ]) ]
+  | Number ->
+      make_grammar_entries
+        fvs
+        [ ("np.sum", [ "+" ], [ Array ]); ("np.prod", [ "*" ], [ Array ]) ]
   | Array ->
       make_grammar_entries
         fvs
