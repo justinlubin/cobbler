@@ -140,7 +140,10 @@ let main_python : string -> Yojson.Basic.t =
   | Parse.ParseFail s ->
       `Assoc [ ("status", `String "IRParseFail"); ("reason", `String s) ]
   | Np_synthesis.EarlyCutoff s ->
-      `Assoc [ ("status", `String "EarlyCutoff"); ("reason", `String s) ]
+      `Assoc
+        [ ("status", `String "SynthFail")
+        ; ("reason", `String (sprintf "EarlyCutoff: %s" s))
+        ]
 
 let () =
   let input = In_channel.input_all In_channel.stdin in
