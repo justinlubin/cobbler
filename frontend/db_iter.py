@@ -49,6 +49,7 @@ def python(sample_limit=None):
     )
 
     count = 0
+    code_so_far = ""
     for sample in iter(ds):
         if count > sample_limit:
             break
@@ -56,14 +57,15 @@ def python(sample_limit=None):
             nb_dict = json.loads(sample["content"])
             for cell in nb_dict["cells"]:
                 if cell["cell_type"] == "code":
-                    code = None
+                    cell_code = None
                     if type(cell["source"]) == str:
-                        code = cell["source"]
+                        cell_code = cell["source"]
                     elif type(cell["source"]) == list:
-                        code = "\n".join(cell["source"])
+                        cell_code = "\n".join(cell["source"])
                     else:
                         continue
-                    yield sample["max_stars_repo_path"], ast.parse(code)
+                    yield sample["max_stars_repo_path"], cell_code, code_so_far
+                    code_so_far += cell_code + "\n"
         except Exception as e:
             print("[db_iter.python_cell exception]", e)
         count += 1

@@ -93,7 +93,13 @@ def refactor_helper(language=None):
         sys.exit(1)
 
 
-def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=100):
+def benchmark_helper(
+        path=None,
+        generator=None,
+        benchmarker=None,
+        unsafe_eval=None,
+        sample_limit=100
+):
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(
             f,
@@ -103,13 +109,21 @@ def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=1
         writer.writeheader()
         previous_path = None
         sample_num = 0
-        for sample_path, block in generator(sample_limit=sample_limit):
+        is_python = generator == db_iter.python and benchmarker == benchmark.python # TODO: make this more elegant
+        for generator_output in generator(sample_limit=sample_limit):
+            if is_python:
+                sample_path, block, blocks_so_far = generator_output
+            else:
+                sample_path, block = generator_output
             if sample_path != previous_path:
                 if previous_path is not None:
                     sample_num += 1
                     print(f"Completed '{previous_path}' ({sample_num}/{sample_limit})")
                 previous_path = sample_path
-            stats = benchmarker(block)
+            if is_python:
+                stats = benchmarker(block, blocks_so_far, toggle_eval=unsafe_eval)
+            else:
+                stats = benchmarker(block)
             writer.writerow(stats)
         print(f"Completed '{previous_path}' ({sample_num+1}/{sample_limit})")
 
@@ -274,6 +288,11 @@ if __name__ == "__main__":
         help="the maximum number of samples (files) to draw from the database (default: 20)",
     )
     benchmark_parser.add_argument(
+        "--unsafe-eval",
+        action=argparse.BooleanOptionalAction,
+        help="evaluate benchmarking code from the database (WARNING: this will run arbitrary code, which is highly unsafe)",
+    )
+    benchmark_parser.add_argument(
         "path_to_tsv",
         type=pathlib.Path,
         help="the path to write the benchmarking tsv to",
@@ -402,6 +421,7 @@ if __name__ == "__main__":
                 path=args.path_to_tsv,
                 generator=db_iter.elm_json,
                 benchmarker=benchmark.elm_json,
+                unsafe_eval=args.unsafe_eval,
                 sample_limit=args.sample_limit,
             )
         if args.language == "python":
@@ -409,6 +429,7 @@ if __name__ == "__main__":
                 path=args.path_to_tsv,
                 generator=db_iter.python,
                 benchmarker=benchmark.python,
+                unsafe_eval=args.unsafe_eval,
                 sample_limit=args.sample_limit,
             )
     elif args.subcommand == "view-benchmark":

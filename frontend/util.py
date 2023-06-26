@@ -25,7 +25,13 @@ def csv_str_decode(s):
 def exec_eval(tree):
     """Executes a Python AST and evals the last line"""
     last = ast.Expression(tree.body.pop().value)
-    _globals, _locals = {}, {}
+
+    # define built in functions, disabling user input and filesystem access
+    enabled_builtins = vars(__builtins__)
+    enabled_builtins.pop('input')
+    enabled_builtins.pop('open')
+    enabled_builtins['print'] = lambda x: None
+    _globals, _locals = {'__builtins__': enabled_builtins}, {}
 
     # disable IO
     with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
@@ -38,7 +44,6 @@ def exec_eval(tree):
         output = eval(compile(last, "<string>", mode="eval"), _globals, _locals)
         end = timer()
 
-    # return (output, execution time)
     return output, end - start
 
 
