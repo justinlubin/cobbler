@@ -129,7 +129,7 @@ let main_python : string -> Yojson.Basic.t =
       failwith
         (target |> Np_synthesis.canonicalize |> snd |> [%show: Lang.block])
     in *)
-    match Np_synthesis.solve 1 ~debug:false target true with
+    match Np_synthesis.solve 4 ~debug:false target true with
     | None -> `Assoc [ ("status", `String "SynthFail") ]
     | Some e ->
         `Assoc

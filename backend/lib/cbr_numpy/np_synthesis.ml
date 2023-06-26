@@ -152,7 +152,7 @@ let rec simplify : expr -> expr =
       | ( Name "np.copy"
         , [ (Call (Call (Name "np.vectorize", args'), [ x ]) as inner) ] ) ->
           simplify inner
-      (* Slicing *)
+      (* sliceToEnd *)
       | Name "len", [ Call (Name "sliceToEnd", [ a; x ]) ]
       | Name "len", [ Call (Name "sliceUntil", [ a; x ]) ] ->
           simplify (Call (Name "-", [ Call (Name "len", [ a ]); x ]))
@@ -164,6 +164,28 @@ let rec simplify : expr -> expr =
       | Name "sliceToEnd", [ a; Num 0 ] -> a
       | Name "sliceToEnd", [ Call (Name "broadcast", [ n ]); _ ] ->
           Call (Name "broadcast", [ n ])
+      | ( Name "sliceToEnd"
+        , [ Call
+              ( (Name
+                   ( "np.multiply"
+                   | "np.divide"
+                   | "np.add"
+                   | "np.subtract"
+                   | "np.power"
+                   | "np.equal"
+                   | "np.greater"
+                   | "np.where"
+                   | "np.tolist"
+                   | "np.copy" ) as inner_f)
+              , inner_args )
+          ; n
+          ] ) ->
+          simplify
+            (Call
+               ( inner_f
+               , List.map inner_args ~f:(fun a ->
+                     Call (Name "sliceToEnd", [ a; n ])) ))
+      (* sliceUntil *)
       | Name "sliceUntil", [ Call (Name "np.full", [ _; v ]); x ] ->
           simplify (Call (Name "np.full", [ x; v ]))
       | Name "sliceUntil", [ Call (Name "range", [ _ ]); x ] ->
@@ -177,6 +199,27 @@ let rec simplify : expr -> expr =
           a
       | Name "sliceUntil", [ Call (Name "broadcast", [ n ]); _ ] ->
           Call (Name "broadcast", [ n ])
+      | ( Name "sliceUntil"
+        , [ Call
+              ( (Name
+                   ( "np.multiply"
+                   | "np.divide"
+                   | "np.add"
+                   | "np.subtract"
+                   | "np.power"
+                   | "np.equal"
+                   | "np.greater"
+                   | "np.where"
+                   | "np.tolist"
+                   | "np.copy" ) as inner_f)
+              , inner_args )
+          ; n
+          ] ) ->
+          simplify
+            (Call
+               ( inner_f
+               , List.map inner_args ~f:(fun a ->
+                     Call (Name "sliceUntil", [ a; n ])) ))
       (* Propagation *)
       | ( Name "len"
         , [ Call
@@ -332,13 +375,13 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
-    if String.is_substring ~substring:"list" ([%show: expr] e)
+    (* if String.is_substring ~substring:"list" ([%show: expr] e)
     then (
       Printf.eprintf "%s\n" ([%show: expr] e);
       Printf.eprintf "%s\n" (canonical |> snd |> [%show: block]);
       Printf.eprintf "%s\n" (target |> snd |> [%show: block]);
       Printf.eprintf "-------------------------\n")
-    else ();
+    else (); *)
     match unify ~pattern:canonical with
     | Some sub ->
         (match substitute_expr e sub with

@@ -12,53 +12,51 @@ let rec partial_eval_expr : expr -> expr =
   | Call (fn, args) ->
       let fn = partial_eval_expr fn in
       let args = List.map ~f:partial_eval_expr args in
-      (match args with
-      | [ Index (arg, i) ] ->
+      (match fn with
+      | Name ("np.copy" | "np.tolist") ->
+          (match args with
+          | [ arg; amount ] ->
+              partial_eval_expr (Call (Name "sliceUntil", [ arg; amount ]))
+          | _ -> Call (fn, args))
+      | Name "np.ones" ->
+          partial_eval_expr (Call (Name "np.full", args @ [ Num 1 ]))
+      | Name "np.zeros_like" ->
           partial_eval_expr
-            (Index (Call (Call (Name "np.vectorize", [ fn ]), [ arg ]), i))
-      | _ ->
-          (match fn with
-          | Name ("np.copy" | "np.tolist") ->
-              (match args with
-              | [ arg; amount ] ->
-                  partial_eval_expr (Call (Name "sliceUntil", [ arg; amount ]))
-              | _ -> Call (fn, args))
-          | Name "np.ones" ->
-              partial_eval_expr (Call (Name "np.full", args @ [ Num 1 ]))
-          | Name "np.zeros_like" ->
+            (Call (Name "np.zeros", [ Call (Name "len", args) ]))
+      | Name "np.arange" -> partial_eval_expr (Call (Name "range", args))
+      | Name "-" ->
+          (match args with
+          | [ Call (Name "len", [ a ]); offset ] ->
               partial_eval_expr
-                (Call (Name "np.zeros", [ Call (Name "len", args) ]))
-          | Name "np.arange" -> partial_eval_expr (Call (Name "range", args))
-          | Name "-" ->
-              (match args with
-              | [ Call (Name "len", [ a ]); offset ] ->
-                  partial_eval_expr
-                    (Call
-                       (Name "len", [ Call (Name "sliceToEnd", [ a; offset ]) ]))
-              | _ -> Call (Name "-", List.map ~f:partial_eval_expr args))
-          | Name "len" ->
-              (match partial_eval_expr (List.hd_exn args) with
-              | Call (Name "np.copy", args)
-              | Call (Name "np.tolist", args)
-              | Call (Name "np.multiply", args)
-              | Call (Name "np.divide", args)
-              | Call (Name "np.add", args)
-              | Call (Name "np.subtract", args)
-              | Call (Name "np.power", args)
-              | Call (Name "np.equal", args)
-              | Call (Name "np.greater", args)
-              | Call (Call (Name "np.vectorize", [ _ ]), args)
-              | Call (Name "np.where", args) ->
-                  partial_eval_expr (Call (Name "len", [ List.hd_exn args ]))
-              | Call (Name "np.ones", args)
-              | Call (Name "np.zeros", args)
-              | Call (Name "broadcast", args)
-              | Call (Name "np.full", args) ->
-                  partial_eval_expr (List.hd_exn args)
-              | Call (Name "np.random.randint_size", [ _; _; s ]) ->
-                  partial_eval_expr s
-              | Call (Name "range", [ hd ]) -> partial_eval_expr hd
-              | _ -> Call (Name "len", args))
+                (Call (Name "len", [ Call (Name "sliceToEnd", [ a; offset ]) ]))
+          | _ -> Call (Name "-", List.map ~f:partial_eval_expr args))
+      | Name "len" ->
+          (match partial_eval_expr (List.hd_exn args) with
+          | Call (Name "np.copy", args)
+          | Call (Name "np.tolist", args)
+          | Call (Name "np.multiply", args)
+          | Call (Name "np.divide", args)
+          | Call (Name "np.add", args)
+          | Call (Name "np.subtract", args)
+          | Call (Name "np.power", args)
+          | Call (Name "np.equal", args)
+          | Call (Name "np.greater", args)
+          | Call (Call (Name "np.vectorize", [ _ ]), args)
+          | Call (Name "np.where", args) ->
+              partial_eval_expr (Call (Name "len", [ List.hd_exn args ]))
+          | Call (Name "np.ones", args)
+          | Call (Name "np.zeros", args)
+          | Call (Name "broadcast", args)
+          | Call (Name "np.full", args) -> partial_eval_expr (List.hd_exn args)
+          | Call (Name "np.random.randint_size", [ _; _; s ]) ->
+              partial_eval_expr s
+          | Call (Name "range", [ hd ]) -> partial_eval_expr hd
+          | _ -> Call (Name "len", args))
+      | _ ->
+          (match args with
+          | [ Index (arg, i) ] ->
+              partial_eval_expr
+                (Index (Call (Call (Name "np.vectorize", [ fn ]), [ arg ]), i))
           | _ -> Call (fn, args)))
   | Index (e1, e2) ->
       (match (e1, e2) with
