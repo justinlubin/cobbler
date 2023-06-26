@@ -207,10 +207,8 @@ let solution5 : program =
 
 let no_sol_target : program =
   ( Cbr_numpy.Env.np_env
-  , [ Assign (PName "x", Num 0)
-    ; Assign (PName "y", Call (Name "+", [ Name "x"; Num 1 ]))
-    ; Return (Name "y")
-    ] )
+  , [ Assign (PName "x", Num 0); Return (Call (Name "+", [ Name "x"; Num 1 ])) ]
+  )
 
 let solution7 : program =
   ( Cbr_numpy.Env.np_env
