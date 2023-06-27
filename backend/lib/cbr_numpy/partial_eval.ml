@@ -55,8 +55,16 @@ let rec partial_eval_expr : expr -> expr =
               partial_eval_expr s
           | Call (Name "range", [ hd ]) -> partial_eval_expr hd
           | _ -> Call (Name "len", args))
-      | Name ("+" | "*" | "/" | "**" | "==" | ">" | "np.random.randint") ->
-          Call (fn, args)
+      | Name
+          ( "+"
+          | "*"
+          | "/"
+          | "**"
+          | "=="
+          | ">"
+          | "np.random.randint"
+          | "np.append"
+          | "__memberAccess" ) -> Call (fn, args)
       | _ ->
           let np_array_object x = Call (Name "np.array_object", [ x ]) in
           (match args with

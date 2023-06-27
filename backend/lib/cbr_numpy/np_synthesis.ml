@@ -96,6 +96,8 @@ let rec is_constant : expr -> bool = function
   | Num _ | Str _ | Name _ | Hole (_, _) -> true
   | Index (e1, e2) -> is_constant e1 && is_constant e2
   | Call (Name "len", [ arg ]) -> is_constant arg
+  | Call (Call (Name "__memberAccess", [ arg1; arg2 ]), []) ->
+      is_constant arg1 && is_constant arg2
   | Call (_, _) -> false
 
 let binding_ok : hole_type -> expr -> bool =

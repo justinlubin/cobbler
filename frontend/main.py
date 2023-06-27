@@ -268,7 +268,7 @@ def check_no_worse_helper(before_path=None, after_path=None):
         zip(before_statuses, after_statuses)
     ):
         if before_status == "Success" and after_status != "Success":
-            row_failures.append(str(i + 1))
+            row_failures.append(str(i + 2))
 
     if row_failures != []:
         print("[ERROR] The following rows got worse:", ", ".join(row_failures))

@@ -94,7 +94,7 @@ class IRParser(ast.NodeVisitor):
 
         ret = SAtom(base)
         for c in chain:
-            ret = SList([SAtom("Call"), SAtom("__memberAccess"), SAtom(c), ret])
+            ret = SList([SAtom("Call"), SAtom("__memberAccess"), ret, SAtom(c)])
 
         return ret
 
