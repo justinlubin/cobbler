@@ -187,7 +187,7 @@ module L = struct
 
   type op =
     | ProgOp
-    | BlockOp
+    | BlockOp of int
     | IdOp of id
     | ForOp
     | AssignOp
@@ -203,7 +203,7 @@ module L = struct
 
   let op : 'a shape -> op = function
     | Prog _ -> ProgOp
-    | Block (_, block) -> BlockOp
+    | Block (_, block) -> BlockOp (List.length block)
     | Stmt (SFor, _) -> ForOp
     | Stmt (SAssign, _) -> AssignOp
     | Stmt (SReturn, _) -> ReturnOp
@@ -223,7 +223,7 @@ module L = struct
     | ProgOp, children ->
         failwith
           (Printf.sprintf "Invalid program: %d children" (List.length children))
-    | BlockOp, block ->
+    | BlockOp _, block ->
         let h = Hashtbl.hash block in
         Block (h, block)
     | ForOp, stmt -> Stmt (SFor, stmt)
@@ -242,7 +242,6 @@ module L = struct
    fun s ->
     match s with
     | "Prog" -> ProgOp
-    | "Block" -> BlockOp
     | "For" -> ForOp
     | "Assign" -> AssignOp
     | "Return" -> ReturnOp
@@ -250,6 +249,8 @@ module L = struct
     | "If" -> IfOp
     | "Num" -> NumOp
     | "Name" -> NameOp
+    | s when String.is_prefix ~prefix:"Block" s ->
+        BlockOp (String.chop_prefix_exn s ~prefix:"Block" |> int_of_string)
     | s when String.is_prefix ~prefix:"Call" s ->
         CallOp (String.chop_prefix_exn s ~prefix:"Call" |> int_of_string)
     | s when String.is_prefix ~prefix:"Hole_" s ->
@@ -274,8 +275,8 @@ module L = struct
   let string_of_op : op -> string =
    fun op ->
     match op with
-    | ProgOp -> ""
-    | BlockOp -> ""
+    | ProgOp -> "Prog"
+    | BlockOp n -> "Block" ^ string_of_int n
     | ForOp -> "For"
     | AssignOp -> "Assign"
     | ReturnOp -> "Return"

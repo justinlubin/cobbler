@@ -251,7 +251,9 @@ let query_of_prog : program -> hole_map * 'a Query.t =
   and replace_holes_block : hole_map -> block -> hole_map * Sexp.t =
    fun map b ->
     let map, l = List.fold_map b ~init:map ~f:replace_holes_stmt in
-    (map, Sexp.List ([ Sexp.Atom "Block" ] @ l))
+    ( map
+    , Sexp.List ([ Sexp.Atom ("Block" ^ (List.length b |> string_of_int)) ] @ l)
+    )
   in
   let replace_holes_prog : program -> hole_map * Sexp.t =
    fun (e, b) ->
@@ -295,7 +297,7 @@ let construct_egraph : ?debug:bool -> target:program -> unit -> rw EGraph.t =
   let _ = EGraph.add_node graph t in
   if debug
   then (
-    print_endline ("\nTarget: \n" ^ (sexp_of_t t |> Sexp.to_string));
+    Printf.eprintf "%s\n" ("\nTarget: \n" ^ (sexp_of_t t |> Sexp.to_string));
     EGraph.to_dot graph |> Odot.print_file "before_eqsat.txt")
   else ();
   let _ = EGraph.run_until_saturation graph rewrite_rules in
@@ -310,7 +312,8 @@ let unify_egraph
   let map, q = query_of_prog pattern in
   if debug
   then
-    print_endline
+    Printf.eprintf
+      "%s\n"
       ("Pattern:\n" ^ (Query.to_sexp string_of_op q |> Sexp.to_string))
   else ();
   let matches = EGraph.find_matches (EGraph.freeze graph) q in
