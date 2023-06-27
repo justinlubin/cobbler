@@ -29,7 +29,7 @@ let rec partial_eval_expr : expr -> expr =
           | [ Call (Name "len", [ a ]); offset ] ->
               partial_eval_expr
                 (Call (Name "len", [ Call (Name "sliceToEnd", [ a; offset ]) ]))
-          | _ -> Call (Name "-", List.map ~f:partial_eval_expr args))
+          | _ -> Call (fn, args))
       | Name "len" ->
           (match partial_eval_expr (List.hd_exn args) with
           | Call (Name "np.copy", args)
@@ -42,7 +42,9 @@ let rec partial_eval_expr : expr -> expr =
           | Call (Name "np.equal", args)
           | Call (Name "np.greater", args)
           | Call (Name "np.array_object", args)
-          | Call (Call (Name "np.vectorize", [ _; _ ]), args)
+          | Call (Call (Name "np.vectorize", [ _; Str "{}" ]), args)
+          | Call (Call (Name "np.vectorize", [ _; Str "{1}" ]), _ :: args)
+          | Call (Call (Name "np.vectorize", [ _; Str "{2}" ]), args)
           | Call (Name "np.where", args) ->
               partial_eval_expr (Call (Name "len", [ List.hd_exn args ]))
           | Call (Name "np.ones", args)
@@ -53,6 +55,8 @@ let rec partial_eval_expr : expr -> expr =
               partial_eval_expr s
           | Call (Name "range", [ hd ]) -> partial_eval_expr hd
           | _ -> Call (Name "len", args))
+      | Name ("+" | "*" | "/" | "**" | "==" | ">" | "np.random.randint") ->
+          Call (fn, args)
       | _ ->
           let np_array_object x = Call (Name "np.array_object", [ x ]) in
           (match args with

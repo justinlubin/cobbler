@@ -1,5 +1,6 @@
-random_list = [1, 2, "three", 4.0, ["five"]]
-foo = []
-for item in random_list:
-    foo.append(isinstance(item, str))
-foo
+X_f = X.flatten()
+Frob_norm = 0
+for i in X_f:
+    Frob_norm += i**2
+Frob_norm = np.sqrt(Frob_norm)
+Frob_norm

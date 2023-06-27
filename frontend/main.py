@@ -247,6 +247,36 @@ def summarize_helper(path=None):
     print(f"Total: {total}")
 
 
+def check_no_worse_helper(before_path=None, after_path=None):
+    before_statuses = []
+    after_statuses = []
+
+    with open(before_path, "r", newline="") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            before_statuses.append(row["status"])
+    with open(after_path, "r", newline="") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            after_statuses.append(row["status"])
+
+    if len(before_statuses) != len(after_statuses):
+        print('"before" and "after" TSVs have unequal lengths')
+        sys.exit(1)
+
+    row_failures = []
+
+    for i, (before_status, after_status) in enumerate(
+        zip(before_statuses, after_statuses)
+    ):
+        if before_status == "Success" and after_status != "Success":
+            row_failures.append(str(i + 1))
+
+    if row_failures != []:
+        print("[ERROR] The following rows got worse:", ", ".join(row_failures))
+        sys.exit(1)
+    else:
+        print("All good!")
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print(
@@ -425,6 +455,23 @@ if __name__ == "__main__":
         help="the path of the benchmarking tsv to summarize",
     )
 
+    # Benchmark suite regression test subcommand
+
+    check_no_worse_parser = subparsers.add_parser(
+        "check-no-worse",
+        help="ensure that a benchmark run is no worse than a previous one",
+    )
+    check_no_worse_parser.add_argument(
+        "path_to_before_tsv",
+        type=pathlib.Path,
+        help='the path of the "before" benchmarking tsv',
+    )
+    check_no_worse_parser.add_argument(
+        "path_to_after_tsv",
+        type=pathlib.Path,
+        help='the path of the "after" benchmarking tsv',
+    )
+
     # Setup
 
     csv.field_size_limit(sys.maxsize)
@@ -484,4 +531,9 @@ if __name__ == "__main__":
     elif args.subcommand == "summarize":
         summarize_helper(
             path=args.path_to_tsv,
+        )
+    elif args.subcommand == "check-no-worse":
+        check_no_worse_helper(
+            before_path=args.path_to_before_tsv,
+            after_path=args.path_to_after_tsv,
         )
