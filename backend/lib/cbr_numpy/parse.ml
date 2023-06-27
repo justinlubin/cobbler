@@ -230,6 +230,8 @@ let rec py_str_of_sexp : Sexp.t -> string =
   | Sexp.List [ Sexp.Atom "Array_Hole"; _ ]
   | Sexp.List [ Sexp.Atom "Constant_Hole"; _ ]
   | Sexp.List [ Sexp.Atom "List_Hole"; _ ] -> "?"
+  | Sexp.List [ Sexp.Atom "Index"; p1; p2 ] ->
+      Printf.sprintf "%s[%s]" (py_str_of_sexp p1) (py_str_of_sexp p2)
   | Sexp.Atom "__emptyList" -> "[]"
   | Sexp.Atom a -> a
   | _ ->

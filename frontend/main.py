@@ -227,6 +227,26 @@ def rerun_benchmarks_helper(
     )
 
 
+def summarize_helper(path=None):
+    summary = {}
+    total = 0
+
+    with open(path, "r", newline="") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            status = row["status"]
+            if status in summary:
+                summary[status] += 1
+            else:
+                summary[status] = 1
+            total += 1
+
+    for status in sorted(summary, key=summary.get, reverse=True):
+        print(
+            f"{status}: {summary[status]} ({round(100 * summary[status] / total, 2)}%)"
+        )
+    print(f"Total: {total}")
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print(
@@ -393,6 +413,18 @@ if __name__ == "__main__":
         help="the path to output the new benchmarking tsv",
     )
 
+    # Summarize benchmark suite subcommand
+
+    summarize_parser = subparsers.add_parser(
+        "summarize",
+        help="summarize a benchmarking suite",
+    )
+    summarize_parser.add_argument(
+        "path_to_tsv",
+        type=pathlib.Path,
+        help="the path of the benchmarking tsv to summarize",
+    )
+
     # Setup
 
     csv.field_size_limit(sys.maxsize)
@@ -448,4 +480,8 @@ if __name__ == "__main__":
             input_path=args.input,
             output_path=args.output,
             language=args.language,
+        )
+    elif args.subcommand == "summarize":
+        summarize_helper(
+            path=args.path_to_tsv,
         )

@@ -109,6 +109,8 @@ let rec partial_eval_expr : expr -> expr =
       | Call (Name "np.zeros", _), _ -> Num 0
       | Call (Name "np.full", [ _; v ]), _ -> partial_eval_expr v
       | Call (Name "range", [ _ ]), i -> partial_eval_expr i
+      | Call (Name "np.random.randint_size", [ low; high; _ ]), i ->
+          partial_eval_expr (Call (Name "np.random.randint", [ low; high ]))
       | _ ->
           (* print_endline ("e1: " ^ (Parse.sexp_of_expr e1 |> Core.Sexp.to_string)); *)
           Index (e1, e2))

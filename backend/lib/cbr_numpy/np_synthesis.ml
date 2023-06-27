@@ -186,6 +186,9 @@ let rec simplify : expr -> expr =
                , List.map inner_args ~f:(fun a ->
                      Call (Name "sliceToEnd", [ a; n ])) ))
       (* sliceUntil *)
+      | ( Name "sliceUntil"
+        , [ Call (Name "np.random.randint_size", [ low; high; _ ]); x ] ) ->
+          simplify (Call (Name "np.random.randint_size", [ low; high; x ]))
       | Name "sliceUntil", [ Call (Name "np.full", [ _; v ]); x ] ->
           simplify (Call (Name "np.full", [ x; v ]))
       | Name "sliceUntil", [ Call (Name "range", [ _ ]); x ] ->
@@ -267,7 +270,7 @@ let rec cap_second_arguments : expr -> expr =
       | _ -> Call (fn, args))
   | Num _ | Str _ | Name _ | Hole (_, _) -> e
 
-let clean : expr -> expr = fun e -> simplify (cap_second_arguments e)
+let clean : expr -> expr = fun e -> simplify (cap_second_arguments (simplify e))
 
 let rec base_pat_name : pat -> id option =
  fun p ->
