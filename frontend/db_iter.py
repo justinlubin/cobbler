@@ -4,7 +4,7 @@ import datasets
 import ast
 
 
-def elm_json(sample_limit=None):
+def elm_json(sample_limit=None, start=0):
     """Iterates through The Stack database, yielding elm-format JSON
     representations of Elm function/variable definitions from Elm files.
 

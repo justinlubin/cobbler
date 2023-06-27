@@ -93,7 +93,13 @@ def refactor_helper(language=None):
         sys.exit(1)
 
 
-def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=100):
+def benchmark_helper(
+    path=None,
+    generator=None,
+    benchmarker=None,
+    sample_limit=100,
+    dry_run=None,
+):
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(
             f,
@@ -109,7 +115,7 @@ def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=1
                     sample_num += 1
                     print(f"Completed '{previous_path}' ({sample_num}/{sample_limit})")
                 previous_path = sample_path
-            stats = benchmarker(block)
+            stats = benchmarker(block, dry_run=dry_run)
             writer.writerow(stats)
         print(f"Completed '{previous_path}' ({sample_num+1}/{sample_limit})")
 
@@ -204,9 +210,9 @@ def rerun_benchmarks_helper(
     language=None,
 ):
     if language == "elm":
-        benchmarker = lambda s: benchmark.elm_json(json.loads(s))
+        benchmarker = lambda s, **kwargs: benchmark.elm_json(json.loads(s))
     elif language == "python":
-        benchmarker = lambda s: benchmark.python(ast.parse(s))
+        benchmarker = lambda s, **kwargs: benchmark.python(ast.parse(s))
 
     def generator(sample_limit=None):
         with open(input_path, "r", newline="") as input_f:
@@ -277,6 +283,11 @@ if __name__ == "__main__":
         "path_to_tsv",
         type=pathlib.Path,
         help="the path to write the benchmarking tsv to",
+    )
+    benchmark_parser.add_argument(
+        "--dry-run",
+        action=argparse.BooleanOptionalAction,
+        help="do not run the synthesizer on the benchmarks, only emit TSV",
     )
 
     # View benchmark result subcommand
@@ -403,6 +414,7 @@ if __name__ == "__main__":
                 generator=db_iter.elm_json,
                 benchmarker=benchmark.elm_json,
                 sample_limit=args.sample_limit,
+                dry_run=args.dry_run,
             )
         if args.language == "python":
             benchmark_helper(
@@ -410,6 +422,7 @@ if __name__ == "__main__":
                 generator=db_iter.python,
                 benchmarker=benchmark.python,
                 sample_limit=args.sample_limit,
+                dry_run=args.dry_run,
             )
     elif args.subcommand == "view-benchmark":
         view_benchmark_helper(

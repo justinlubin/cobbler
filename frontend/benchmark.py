@@ -25,7 +25,7 @@ CSV_FIELDS = [
 ]
 
 
-def elm_json(js):
+def elm_json(js, dry_run=False):
     """Benchmarks a single Elm function/variable definition, assuming that it is
     represented as an elm-format JSON object"""
     stats = {}
@@ -38,19 +38,22 @@ def elm_json(js):
         stats["status"] = "ExtractFail"
         return stats
 
-    start = timer()
+    if dry_run:
+        synthesis_result = {"status": "DryRun"}
+    else:
+        start = timer()
 
-    synthesis_result = subprocess.check_output(
-        [util.path_from_root("backend/_build/default/bin/main.exe"), "elm"],
-        input=json.dumps(block),
-        text=True,
-    )
+        synthesis_result = subprocess.check_output(
+            [util.path_from_root("backend/_build/default/bin/main.exe"), "elm"],
+            input=json.dumps(block),
+            text=True,
+        )
 
-    end = timer()
+        end = timer()
 
-    stats["synth time"] = end - start
+        stats["synth time"] = end - start
 
-    synthesis_result = json.loads(synthesis_result)
+        synthesis_result = json.loads(synthesis_result)
 
     stats["status"] = synthesis_result["status"]
     if "reason" in synthesis_result:
@@ -62,7 +65,7 @@ def elm_json(js):
     return stats
 
 
-def python(tree):
+def python(tree, dry_run=False):
     """Benchmarks a Python script, assuming that it is represented as a Python
     AST object"""
     stats = {}
@@ -82,17 +85,22 @@ def python(tree):
         stats["reason"] = repr(e)
         return stats
 
-    start = timer()
-    synthesis_result = subprocess.check_output(
-        [util.path_from_root("backend/_build/default/bin/main.exe"), "python"],
-        input=str(sexp),
-        text=True,
-    )
-    end = timer()
+    if dry_run:
+        synthesis_result = {"status": "DryRun"}
+    else:
+        start = timer()
 
-    stats["synth time"] = end - start
+        synthesis_result = subprocess.check_output(
+            [util.path_from_root("backend/_build/default/bin/main.exe"), "python"],
+            input=str(sexp),
+            text=True,
+        )
 
-    synthesis_result = json.loads(synthesis_result)
+        end = timer()
+
+        stats["synth time"] = end - start
+
+        synthesis_result = json.loads(synthesis_result)
 
     stats["status"] = synthesis_result["status"]
     if "reason" in synthesis_result:
