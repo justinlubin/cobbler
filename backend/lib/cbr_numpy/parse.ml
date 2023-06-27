@@ -199,6 +199,15 @@ let rec py_str_of_sexp : Sexp.t -> string =
       ^ ", size="
       ^ py_str_of_sexp p3
       ^ ")"
+  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.array_object"; p1 ] ->
+      "np.array(" ^ py_str_of_sexp p1 ^ ", dtype=object)"
+  | Sexp.List
+      [ Sexp.Atom "Call"
+      ; Sexp.Atom "np.vectorize"
+      ; p1
+      ; Sexp.List [ Sexp.Atom "Str"; Sexp.Atom set_string ]
+      ] ->
+      "np.vectorize(" ^ py_str_of_sexp p1 ^ ", excluded=" ^ set_string ^ ")"
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.tolist"; p1 ] ->
       "list(" ^ py_str_of_sexp p1 ^ ")"
   | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.full"; size; value ] ->

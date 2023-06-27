@@ -41,7 +41,8 @@ let rec partial_eval_expr : expr -> expr =
           | Call (Name "np.power", args)
           | Call (Name "np.equal", args)
           | Call (Name "np.greater", args)
-          | Call (Call (Name "np.vectorize", [ _ ]), args)
+          | Call (Name "np.array_object", args)
+          | Call (Call (Name "np.vectorize", [ _; _ ]), args)
           | Call (Name "np.where", args) ->
               partial_eval_expr (Call (Name "len", [ List.hd_exn args ]))
           | Call (Name "np.ones", args)
@@ -53,10 +54,29 @@ let rec partial_eval_expr : expr -> expr =
           | Call (Name "range", [ hd ]) -> partial_eval_expr hd
           | _ -> Call (Name "len", args))
       | _ ->
+          let np_array_object x = Call (Name "np.array_object", [ x ]) in
           (match args with
           | [ Index (arg, i) ] ->
               partial_eval_expr
-                (Index (Call (Call (Name "np.vectorize", [ fn ]), [ arg ]), i))
+                (Index
+                   ( Call
+                       ( Call (Name "np.vectorize", [ fn; Str "{}" ])
+                       , [ np_array_object arg ] )
+                   , i ))
+          | [ Index (arg1, i); arg2 ] ->
+              partial_eval_expr
+                (Index
+                   ( Call
+                       ( Call (Name "np.vectorize", [ fn; Str "{2}" ])
+                       , [ np_array_object arg1; arg2 ] )
+                   , i ))
+          | [ arg1; Index (arg2, i) ] ->
+              partial_eval_expr
+                (Index
+                   ( Call
+                       ( Call (Name "np.vectorize", [ fn; Str "{1}" ])
+                       , [ arg1; np_array_object arg2 ] )
+                   , i ))
           | _ -> Call (fn, args)))
   | Index (e1, e2) ->
       (match (e1, e2) with

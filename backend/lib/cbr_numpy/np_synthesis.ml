@@ -149,9 +149,8 @@ let rec simplify : expr -> expr =
       | Name "np.copy", [ arg; amount ] ->
           simplify
             (Call (Name "sliceUntil", [ Call (Name "np.copy", [ arg ]); amount ]))
-      | ( Name "np.copy"
-        , [ (Call (Call (Name "np.vectorize", args'), [ x ]) as inner) ] ) ->
-          simplify inner
+      | Name "np.copy", [ (Call (Call (Name "np.vectorize", _), _) as inner) ]
+        -> simplify inner
       (* sliceToEnd *)
       | Name "len", [ Call (Name "sliceToEnd", [ a; x ]) ]
       | Name "len", [ Call (Name "sliceUntil", [ a; x ]) ] ->
