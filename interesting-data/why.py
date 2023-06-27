@@ -1,4 +1,5 @@
-b = []
-for digit in d1000.strip():
-    b.append(int(digit))
-b
+addr_spans = soup.find_all('span', class_='addr')
+addresses = []
+for span in addr_spans:
+    addresses.append(span.a.text)
+addresses

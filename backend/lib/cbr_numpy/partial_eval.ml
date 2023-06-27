@@ -63,8 +63,7 @@ let rec partial_eval_expr : expr -> expr =
           | "=="
           | ">"
           | "np.random.randint"
-          | "np.append"
-          | "__memberAccess" ) -> Call (fn, args)
+          | "np.append" ) -> Call (fn, args)
       | _ ->
           let np_array_object x = Call (Name "np.array_object", [ x ]) in
           (match args with
