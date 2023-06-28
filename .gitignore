@@ -9,3 +9,4 @@ before_eqsat.txt
 after_eqsat.txt
 __pycache__
 data/*
+.npm

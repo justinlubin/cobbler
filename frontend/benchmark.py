@@ -65,11 +65,19 @@ def elm_json(js):
 def python(cell_code, code_so_far, toggle_eval=False):
     """Benchmarks a Python script, assuming that it is represented as a Python
     AST object"""
+    print("new cell")
     stats = {}
     stats["orig code"] = util.csv_str_encode(cell_code)
+    
+    try:
+        parsed_cell = ast.parse(cell_code)
+    except Exception as e:
+        stats["status"] = "ParseFail"
+        stats["reason"] = repr(e)
+        return stats
 
     try:
-        env, body, output_variable = extract.python(ast.parse(cell_code))
+        env, body, output_variable = extract.python(parsed_cell)
         # stats["status"] = "TODO Extracted!"
         # stats["synthed code"] = util.csv_str_encode(
         #     "# CBR env\n" + ast.unparse(env) + "\n# CBR body\n" + ast.unparse(body)
