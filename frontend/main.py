@@ -280,17 +280,23 @@ def check_no_worse_helper(before_path=None, after_path=None):
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print(
-            """   _________    ____  _   ______________
-  / ____/   |  / __ \/ | / / ____/_  __/
- / / __/ /| | / /_/ /  |/ / __/   / /
-/ /_/ / ___ |/ _, _/ /|  / /___  / /
-\____/_/  |_/_/ |_/_/ |_/_____/ /_/"""
+            """                    ___       ___       ___
+                   (   )     (   )     (   )
+  .--.      .--.    | |.-.    | |.-.    | |    .--.    ___ .-.
+ /    \    /    \   | /   \   | /   \   | |   /    \  (   )   \\
+|  .-. ;  |  .-. ;  |  .-. |  |  .-. |  | |  |  .-. ;  | ' .-. ;
+|  |(___) | |  | |  | |  | |  | |  | |  | |  |  | | |  |  / (___)
+|  |      | |  | |  | |  | |  | |  | |  | |  |  |/  |  | |
+|  | ___  | |  | |  | |  | |  | |  | |  | |  |  ' _.'  | |
+|  '(   ) | '  | |  | '  | |  | '  | |  | |  |  .'.-.  | |
+'  `-' |  '  `-' /  ' `-' ;   ' `-' ;   | |  '  `-' /  | |
+ `.__,'    `.__.'    `.__.     `.__.   (___)  `.__.'  (___)"""
         )
-        print("\nThe GARNET program synthesizer.\n")
+        print("\ncobbler: the component-based refactoring synthesizer.\n")
         print(f"For help: {sys.argv[0]} --help")
         sys.exit(0)
 
-    parser = argparse.ArgumentParser(description="The GARNET program synthesizer.")
+    parser = argparse.ArgumentParser(description="The cobbler program synthesizer.")
 
     subparsers = parser.add_subparsers(
         title="subcommands",
