@@ -236,7 +236,9 @@ let egraph_bools = [ true; false ]
 
 let solve : int -> ?debug:bool -> program -> bool -> program option =
  fun depth ?(debug = false) target use_egraphs ->
-  try Np_synthesis.solve depth ~debug target use_egraphs with
+  try
+    Np_synthesis.solve depth ~debug target use_egraphs |> Option.map ~f:snd
+  with
   | Np_synthesis.EarlyCutoff _ -> None
 
 let%test_unit "np_solve 1" =

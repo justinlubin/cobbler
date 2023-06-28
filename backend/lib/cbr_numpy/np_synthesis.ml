@@ -96,6 +96,8 @@ let rec is_constant : expr -> bool = function
   | Num _ | Str _ | Name _ | Hole (_, _) -> true
   | Index (e1, e2) -> is_constant e1 && is_constant e2
   | Call (Name "len", [ arg ]) -> is_constant arg
+  | Call (Call (Name "__memberAccess", [ arg1; arg2 ]), []) ->
+      is_constant arg1 && is_constant arg2
   | Call (_, _) -> false
 
 let binding_ok : hole_type -> expr -> bool =
@@ -149,9 +151,8 @@ let rec simplify : expr -> expr =
       | Name "np.copy", [ arg; amount ] ->
           simplify
             (Call (Name "sliceUntil", [ Call (Name "np.copy", [ arg ]); amount ]))
-      | ( Name "np.copy"
-        , [ (Call (Call (Name "np.vectorize", args'), [ x ]) as inner) ] ) ->
-          simplify inner
+      | Name "np.copy", [ (Call (Call (Name "np.vectorize", _), _) as inner) ]
+        -> simplify inner
       (* sliceToEnd *)
       | Name "len", [ Call (Name "sliceToEnd", [ a; x ]) ]
       | Name "len", [ Call (Name "sliceUntil", [ a; x ]) ] ->
@@ -186,6 +187,9 @@ let rec simplify : expr -> expr =
                , List.map inner_args ~f:(fun a ->
                      Call (Name "sliceToEnd", [ a; n ])) ))
       (* sliceUntil *)
+      | ( Name "sliceUntil"
+        , [ Call (Name "np.random.randint_size", [ low; high; _ ]); x ] ) ->
+          simplify (Call (Name "np.random.randint_size", [ low; high; x ]))
       | Name "sliceUntil", [ Call (Name "np.full", [ _; v ]); x ] ->
           simplify (Call (Name "np.full", [ x; v ]))
       | Name "sliceUntil", [ Call (Name "range", [ _ ]); x ] ->
@@ -267,7 +271,7 @@ let rec cap_second_arguments : expr -> expr =
       | _ -> Call (fn, args))
   | Num _ | Str _ | Name _ | Hole (_, _) -> e
 
-let clean : expr -> expr = fun e -> simplify (cap_second_arguments e)
+let clean : expr -> expr = fun e -> simplify (cap_second_arguments (simplify e))
 
 let rec base_pat_name : pat -> id option =
  fun p ->
@@ -361,7 +365,7 @@ let possible_types : program -> hole_type list =
       | Hole (_, _) -> failwith "user input has a hole")
   | _ -> raise (EarlyCutoff "last statement not a variable return")
 
-let solve : int -> ?debug:bool -> program -> bool -> program option =
+let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
  fun depth ?(debug = false) target use_egraphs ->
   let target = canonicalize target in
   let target_loop_vars = loop_vars target in
@@ -405,5 +409,5 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
       ~expand:(expand (referenced_vars target))
       ~correct
   with
-  | Some ans -> Some (np_env, [ Return (clean ans) ])
+  | Some (expansions, ans) -> Some (expansions, (np_env, [ Return (clean ans) ]))
   | None -> None

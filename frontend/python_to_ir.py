@@ -89,10 +89,12 @@ class IRParser(ast.NodeVisitor):
                 )
         if base == "np":
             return SAtom("np" + "." + ".".join(reversed(chain)))
+        if base == "random" and chain == ["randint"]:
+            return SAtom("np.random.randint")
 
         ret = SAtom(base)
         for c in chain:
-            ret = SList([SAtom("Call"), SAtom("__memberAccess"), SAtom(c), ret])
+            ret = SList([SAtom("Call"), SAtom("__memberAccess"), ret, SAtom(c)])
 
         return ret
 

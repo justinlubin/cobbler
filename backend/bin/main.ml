@@ -59,7 +59,7 @@ let main_elm : string -> Yojson.Basic.t =
     in
     match Synthesis.solve ~use_unification:true ~depth:3 problem with
     | None -> `Assoc [ ("status", `String "SynthFail") ]
-    | Some wrapped_solution ->
+    | Some (expansions, wrapped_solution) ->
         (try
            Type_system.check
              stdlib_sigma
@@ -85,6 +85,7 @@ let main_elm : string -> Yojson.Basic.t =
                       name
                       (orig_typ_binders, orig_typ)
                       solution) )
+             ; ("size", `Int expansions)
              ]
          with
         | Type_system.IllTyped e ->
@@ -131,10 +132,11 @@ let main_python : string -> Yojson.Basic.t =
     in *)
     match Np_synthesis.solve 4 ~debug:false target true with
     | None -> `Assoc [ ("status", `String "SynthFail") ]
-    | Some e ->
+    | Some (expansions, p) ->
         `Assoc
           [ ("status", `String "Success")
-          ; ("solution", `String (Parse.py_str_of_program e))
+          ; ("solution", `String (Parse.py_str_of_program p))
+          ; ("size", `Int expansions)
           ]
   with
   | Parse.ParseFail s ->

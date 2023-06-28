@@ -2,15 +2,15 @@
 
 [![Tests](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml/badge.svg)](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml)
 
-This project contains the source code for the Garnet program synthesizer, which implements the component-based refactoring algorithm.
+This project contains the source code for the `cobbler` program synthesizer, which implements the component-based refactoring algorithm.
 
 This repository is split into two main sections: the backend (implemented in OCaml and located in the `backend` directory) and the frontend (implemented in Python and located in the `frontend` directory).
 
-The `garnet` script at the project's root directory glues everything together and provides the user-facing CLI for the synthesizer.
+The `cobbler` script at the project's root directory glues everything together and provides the user-facing CLI for the synthesizer.
 
-To use the `garnet` script, you first need to install its dependencies (see below).
+To use the `cobbler` script, you first need to install its dependencies (see below).
 
-Once that is done, see `./garnet --help`.
+Once that is done, see `./cobbler --help`.
 
 ## Installing dependencies
 

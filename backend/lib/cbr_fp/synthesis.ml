@@ -93,7 +93,7 @@ let problem_of_definitions : datatype_env * typ_env * env -> string -> problem =
 
 (* Synthesis *)
 
-let solve : use_unification:bool -> depth:int -> problem -> exp option =
+let solve : use_unification:bool -> depth:int -> problem -> (int * exp) option =
  fun ~use_unification ~depth { sigma; gamma; env; name } ->
   let reference = Map.find_exn env name in
   let reference_domain, reference_codomain =
@@ -182,11 +182,12 @@ let solve : use_unification:bool -> depth:int -> problem -> exp option =
                 normalized_reference
            then Some candidate
            else None))
-    ~f:(fun messy_solution ->
-      Exp.normalize
-        sigma
-        (Exp.build_abs
-           reference_params
-           (Exp.build_app
-              messy_solution
-              (List.map ~f:(fun x -> EVar x) reference_params))))
+    ~f:(fun (expansions, messy_solution) ->
+      ( expansions
+      , Exp.normalize
+          sigma
+          (Exp.build_abs
+             reference_params
+             (Exp.build_app
+                messy_solution
+                (List.map ~f:(fun x -> EVar x) reference_params))) ))
