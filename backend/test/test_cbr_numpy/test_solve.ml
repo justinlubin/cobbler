@@ -1,6 +1,5 @@
 open Cbr_numpy
 open Core
-open Np_synthesis
 open Lang
 open Parse
 open Util
@@ -229,10 +228,16 @@ let solution8 : program =
   , [ Return
         (Call
            ( Name "np.convolve_valid"
-           , [ Name "x"; Call (Name "np.ones", [ Name "window_size" ]) ] ))
+           , [ Name "x"; Call (Name "np.full", [ Name "window_size"; Num 1 ]) ]
+           ))
     ] )
 
 let egraph_bools = [ true; false ]
+
+let solve : int -> ?debug:bool -> program -> bool -> program option =
+ fun depth ?(debug = false) target use_egraphs ->
+  try Np_synthesis.solve depth ~debug target use_egraphs with
+  | Np_synthesis.EarlyCutoff _ -> None
 
 let%test_unit "np_solve 1" =
   [%test_result: program list]

@@ -77,12 +77,7 @@ def python(cell_code, code_so_far, toggle_eval=False):
         return stats
 
     try:
-        env, body, output_variable = extract.python(parsed_cell)
-        # stats["status"] = "TODO Extracted!"
-        # stats["synthed code"] = util.csv_str_encode(
-        #     "# CBR env\n" + ast.unparse(env) + "\n# CBR body\n" + ast.unparse(body)
-        # )
-        # return stats
+        pre, body, post, output_variable = extract.python(tree)
     except extract.NoExtractionException as e:
         stats["status"] = "ExtractFail"
         stats["reason"] = repr(e)
@@ -112,12 +107,15 @@ def python(cell_code, code_so_far, toggle_eval=False):
         stats["reason"] = synthesis_result["reason"]
 
     if synthesis_result["status"] == "Success":
-        synthed_code = (
-            ast.unparse(env)
-            + f"\n{output_variable} = "
-            + synthesis_result["solution"]
-        ).strip()
-        stats["synthed code"] = util.csv_str_encode(synthed_code)
+        stats["synthed code"] = util.csv_str_encode(
+            (
+                ast.unparse(pre)
+                + f"\n{output_variable} = "
+                + synthesis_result["solution"]
+                + "\n"
+                + ast.unparse(post)
+            ).strip()
+        )
 
         if toggle_eval:
             try:

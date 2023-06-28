@@ -21,6 +21,26 @@ let sum_defn =
     ; Return (Hole (Number, "sum_count"))
     ] )
 
+let prod_body =
+  [ Assign
+      ( PHole (Number, "prod_count")
+      , Call
+          ( Name "*"
+          , [ Hole (Number, "prod_count")
+            ; Index (Name "prod_1", Hole (Number, "prod_i"))
+            ] ) )
+  ]
+
+let prod_defn =
+  ( [ "prod_1" ]
+  , [ Assign (PHole (Number, "prod_count"), Num 1)
+    ; For
+        ( PHole (Number, "prod_i")
+        , Call (Name "range", [ Call (Name "len", [ Name "prod_1" ]) ])
+        , prod_body )
+    ; Return (Hole (Number, "prod_count"))
+    ] )
+
 let sub_body =
   [ Assign
       ( PHole (Number, "sub_count")
@@ -120,17 +140,40 @@ let div_defn =
     ; Return (Hole (Array, "div_result"))
     ] )
 
-let ones_defn =
-  ( [ "n" ]
-  , [ Assign (PHole (Array, "ones_result"), Call (Name "np.zeros", [ Name "n" ]))
+let power_body =
+  [ Assign
+      ( PIndex (PHole (Array, "pow_result"), Hole (Number, "pow_i"))
+      , Call
+          ( Name "**"
+          , [ Index (Name "pow_1", Hole (Number, "pow_i"))
+            ; Index (Name "pow_2", Hole (Number, "pow_i"))
+            ] ) )
+  ]
+
+let power_defn =
+  ( [ "pow_1"; "pow_2" ]
+  , [ Assign
+        ( PHole (Array, "pow_result")
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "pow_1" ]) ]) )
     ; For
-        ( PHole (Number, "ones_i")
-        , Call (Name "range", [ Name "n" ])
+        ( PHole (Number, "pow_i")
+        , Call (Name "range", [ Call (Name "len", [ Name "pow_1" ]) ])
+        , subtract_body )
+    ; Return (Hole (Array, "pow_result"))
+    ] )
+
+let full_defn =
+  ( [ "size"; "value" ]
+  , [ Assign
+        (PHole (Array, "full_result"), Call (Name "np.zeros", [ Name "size" ]))
+    ; For
+        ( PHole (Number, "full_i")
+        , Call (Name "range", [ Name "size" ])
         , [ Assign
-              ( PIndex (PHole (Array, "ones_result"), Hole (Number, "ones_i"))
-              , Num 1 )
+              ( PIndex (PHole (Array, "full_result"), Hole (Number, "full_i"))
+              , Name "value" )
           ] )
-    ; Return (Hole (Array, "ones_result"))
+    ; Return (Hole (Array, "full_result"))
     ] )
 
 let eq_body =
@@ -332,20 +375,33 @@ let randint_size_defn =
     ] )
 
 let tolist_defn =
-  ( [ "arg" ]
+  ( [ "arg"; "amount" ]
   , [ Assign (PHole (List, "xs"), Name "__emptyList")
     ; For
         ( PHole (Number, "i")
-        , Call (Name "range", [ Call (Name "len", [ Name "arg" ]) ])
+        , Call (Name "range", [ Name "amount" ])
         , [ Assign
               ( PHole (List, "xs")
               , Call
-                  ( Name "__immutableAppend"
+                  ( Name "np.append"
                   , [ Hole (List, "xs")
                     ; Index (Name "arg", Hole (Number, "i"))
                     ] ) )
           ] )
     ; Return (Hole (Array, "xs"))
+    ] )
+
+let copy_defn =
+  ( [ "arg"; "amount" ]
+  , [ Assign (PHole (Array, "y"), Call (Name "np.zeros", [ Name "amount" ]))
+    ; For
+        ( PHole (Number, "i")
+        , Call (Name "range", [ Name "amount" ])
+        , [ Assign
+              ( PIndex (PHole (Array, "y"), Hole (Number, "i"))
+              , Index (Name "arg", Hole (Number, "i")) )
+          ] )
+    ; Return (Hole (Array, "y"))
     ] )
 
 (* let arange_defn =
@@ -364,11 +420,13 @@ let tolist_defn =
 let np_env : env =
   String.Map.of_alist_exn
     [ ("np.sum", sum_defn)
+    ; ("np.prod", prod_defn)
     ; ("np.multiply", mul_defn)
     ; ("np.divide", div_defn)
     ; ("np.add", add_defn)
     ; ("np.subtract", subtract_defn)
-    ; ("np.ones", ones_defn)
+    ; ("np.power", power_defn)
+    ; ("np.full", full_defn)
     ; ("np.equal", eq_defn)
     ; ("np.greater", gt_defn)
     ; ("np.where", where_arr_defn)
@@ -376,4 +434,5 @@ let np_env : env =
     ; ("np.convolve_valid", convolve_valid_defn)
     ; ("np.random.randint_size", randint_size_defn)
     ; ("np.tolist", tolist_defn) (* ; ("np.arange", arange_defn) *)
+    ; ("np.copy", copy_defn)
     ]
