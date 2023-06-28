@@ -61,6 +61,7 @@ def elm_json(js, dry_run=False):
 
     if synthesis_result["status"] == "Success":
         stats["synthed code"] = util.csv_str_encode(synthesis_result["solution"])
+        stats["synthed ast size"] = synthesis_result["size"]
 
     return stats
 
@@ -116,6 +117,7 @@ def python(tree, dry_run=False):
                 + ast.unparse(post)
             ).strip()
         )
+        stats["synthed ast size"] = synthesis_result["size"]
 
     return stats
 

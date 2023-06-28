@@ -365,7 +365,7 @@ let possible_types : program -> hole_type list =
       | Hole (_, _) -> failwith "user input has a hole")
   | _ -> raise (EarlyCutoff "last statement not a variable return")
 
-let solve : int -> ?debug:bool -> program -> bool -> program option =
+let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
  fun depth ?(debug = false) target use_egraphs ->
   let target = canonicalize target in
   let target_loop_vars = loop_vars target in
@@ -409,5 +409,5 @@ let solve : int -> ?debug:bool -> program -> bool -> program option =
       ~expand:(expand (referenced_vars target))
       ~correct
   with
-  | Some ans -> Some (np_env, [ Return (clean ans) ])
+  | Some (expansions, ans) -> Some (expansions, (np_env, [ Return (clean ans) ]))
   | None -> None
