@@ -61,7 +61,12 @@ let rec partial_eval_expr : expr -> expr =
           | "/"
           | "**"
           | "=="
+          | "!="
           | ">"
+          | ">="
+          | "<"
+          | "<="
+          | "%"
           | "np.random.randint"
           | "np.append" ) -> Call (fn, args)
       | _ ->
@@ -137,6 +142,24 @@ let rec partial_eval_expr : expr -> expr =
             , [ partial_eval_expr (Index (x, e2))
               ; partial_eval_expr (Index (y, e2))
               ] )
+      | Call (Name "np.greater_equal", [ x; y ]), e2 ->
+          Call
+            ( Name ">="
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "np.less", [ x; y ]), e2 ->
+          Call
+            ( Name "<"
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "np.less_equal", [ x; y ]), e2 ->
+          Call
+            ( Name "<="
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
       | Call (Name "np.zeros", _), _ -> Num 0
       | Call (Name "np.full", [ _; v ]), _ -> partial_eval_expr v
       | Call (Name "range", [ _ ]), i -> partial_eval_expr i
@@ -208,8 +231,7 @@ let rec partial_eval_stmt : stmt -> stmt =
   | Assign (pat, e) -> Assign (partial_eval_pat pat, partial_eval_expr e)
   | For (id, e, body) ->
       (match partial_eval_expr e with
-      | Call (Name "range", [ arg ]) ->
-          For (id, partial_eval_expr e, partial_eval_block body)
+      | Call (Name "range", [ _ ]) as e' -> For (id, e', partial_eval_block body)
       | e' ->
           (match id with
           | PName x ->

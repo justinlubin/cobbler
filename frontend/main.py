@@ -277,6 +277,27 @@ def check_no_worse_helper(before_path=None, after_path=None):
         print("All good!")
 
 
+def remove_duplicates_helper(
+    input_path=None,
+    output_path=None,
+):
+    seen = set()
+    with open(input_path, "r", newline="") as input_f:
+        with open(output_path, "w", newline="") as output_f:
+            writer = csv.DictWriter(
+                output_f,
+                fieldnames=benchmark.CSV_FIELDS,
+                delimiter="\t",
+            )
+            writer.writeheader()
+            for row in csv.DictReader(input_f, delimiter="\t"):
+                orig_code = row["orig code"]
+                if orig_code in seen:
+                    continue
+                writer.writerow(row)
+                seen.add(orig_code)
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print(
@@ -478,6 +499,25 @@ if __name__ == "__main__":
         help='the path of the "after" benchmarking tsv',
     )
 
+    # Remove duplicates subcommand
+
+    remove_duplicates_parser = subparsers.add_parser(
+        "remove-duplicates",
+        help="ensure that a benchmark run is no worse than a previous one",
+    )
+    remove_duplicates_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path of the benchmarking tsv to remove duplicates from",
+    )
+    remove_duplicates_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the new benchmarking tsv",
+    )
+
     # Setup
 
     csv.field_size_limit(sys.maxsize)
@@ -518,7 +558,9 @@ if __name__ == "__main__":
         )
     elif args.subcommand == "make-report":
         make_report_helper(
-            input_path=args.input, output_path=args.output, language=args.language
+            input_path=args.input,
+            output_path=args.output,
+            language=args.language,
         )
     elif args.subcommand == "filter-benchmarks":
         filter_benchmarks_helper(
@@ -542,4 +584,9 @@ if __name__ == "__main__":
         check_no_worse_helper(
             before_path=args.path_to_before_tsv,
             after_path=args.path_to_after_tsv,
+        )
+    elif args.subcommand == "remove-duplicates":
+        remove_duplicates_helper(
+            input_path=args.input,
+            output_path=args.output,
         )

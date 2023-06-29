@@ -1,4 +1,5 @@
 import ast
+import json
 import re
 
 # S-expression datatype
@@ -8,7 +9,7 @@ class SList:
     """S-expression for lists"""
 
     def __init__(self, l):
-        self.l = l
+        self.l = [x for x in l if x is not None]
 
     def __str__(self):
         return "(" + " ".join([str(c) for c in self.l]) + ")"
@@ -116,6 +117,9 @@ class IRParser(ast.NodeVisitor):
     def visit_Pow(self, node):
         return SAtom("**")
 
+    def visit_Mod(self, node):
+        return SAtom("%")
+
     def visit_Compare(self, node: ast.Compare):
         if type(node.ops[0]) == ast.Gt:
             op = SAtom(">")
@@ -185,6 +189,8 @@ class IRParser(ast.NodeVisitor):
 
     def visit_If(self, node):
         cond = self.visit(node.test)
+        if not isinstance(node.test, ast.Compare):
+            cond = SList([SAtom("Call"), SAtom("!="), cond, SAtom("0")])
         then = SList([self.visit(stmt) for stmt in node.body])
         orelse = SList([self.visit(stmt) for stmt in node.orelse])
         return SList([SAtom("If"), cond, then, orelse])
@@ -202,10 +208,12 @@ class IRParser(ast.NodeVisitor):
         return SList([SList(env), SList(block)])
 
     def visit_Constant(self, node):
-        return SList([SAtom("Num"), SAtom(str(node.n))])
-
-    def visit_Num(self, node):
-        return SList([SAtom("Num"), SAtom(str(node.n))])
+        if isinstance(node.value, int):
+            return SList([SAtom("Num"), SAtom(str(node.value))])
+        elif isinstance(node.value, str):
+            return SList([SAtom("Str"), SAtom(json.dumps(node.value))])
+        else:
+            raise UnsupportedFeatureException(f"Constant of type {type(node.value)}")
 
     def visit_Call(self, node):
         fn = self.visit(node.func)
@@ -258,7 +266,10 @@ class IRParser(ast.NodeVisitor):
         else:
             raise UnsupportedFeatureException("Non-append side effect")
 
+    def visit_Pass(self, node):
+        return None
+
     def generic_visit(self, node):
         name = self.getClassName(node)
         # print(ast.dump(node))
-        raise UnsupportedFeatureException(name)
+        raise UnsupportedFeatureException(f"Generic: {name}")

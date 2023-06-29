@@ -25,7 +25,13 @@ let make_grammar : String.Set.t -> hole_type -> expr list =
  fun fvs tau ->
   match tau with
   | Constant -> []
-  | List -> make_grammar_entries fvs [ ("np.tolist", [], [ Array; Constant ]) ]
+  | List ->
+      make_grammar_entries
+        fvs
+        [ ("np.tolist", [], [ Array; Constant ])
+        ; ("np.filter", [], [ Array; Constant ])
+        ]
+  | String -> []
   | Number ->
       make_grammar_entries
         fvs
@@ -39,8 +45,12 @@ let make_grammar : String.Set.t -> hole_type -> expr list =
         ; ("np.subtract", [ "-" ], [ Array; Array ])
         ; ("np.power", [ "**" ], [ Array; Array ])
         ; ("np.equal", [ "==" ], [ Array; Array ])
+        ; ("np.not_equal", [ "!=" ], [ Array; Array ])
         ; ("np.full", [], [ Number; Constant ])
         ; ("np.greater", [ ">" ], [ Array; Array ])
+        ; ("np.greater_equal", [ ">=" ], [ Array; Array ])
+        ; ("np.less", [ "<" ], [ Array; Array ])
+        ; ("np.less_equal", [ "<=" ], [ Array; Array ])
         ; ("np.where", [], [ Array; Array; Array ])
         ; ("np.roll", [], [ Array; Number ])
         ; ("np.convolve_valid", [], [ Array; Array ])
@@ -90,14 +100,30 @@ let expand : String.Set.t -> int -> expr -> expr list =
 
 (* Fails if substitution does not respect hole type *)
 
-exception IncorrectSubstitutionType
+exception IncorrectSubstitutionType of hole_type * expr
 
 let rec is_constant : expr -> bool = function
   | Num _ | Str _ | Name _ | Hole (_, _) -> true
   | Index (e1, e2) -> is_constant e1 && is_constant e2
-  | Call (Name "len", [ arg ]) -> is_constant arg
-  | Call (Call (Name "__memberAccess", [ arg1; arg2 ]), []) ->
-      is_constant arg1 && is_constant arg2
+  | Call (Name "len", [ arg ])
+  | Call (Name "__memberAccess", [ _; arg ])
+  | Call (Call (Name "np.vectorize", [ Name "__memberAccess"; _ ]), [ _; arg ])
+  | Call (Name "np.vectorize", [ arg; _ ]) -> is_constant arg
+  | Call
+      ( Name
+          ( "+"
+          | "*"
+          | "-"
+          | "/"
+          | "**"
+          | "=="
+          | "!="
+          | ">"
+          | ">="
+          | "<"
+          | "<="
+          | "%" )
+      , args ) -> List.for_all ~f:is_constant args
   | Call (_, _) -> false
 
 let binding_ok : hole_type -> expr -> bool =
@@ -119,14 +145,46 @@ let substitute_expr : expr -> substitutions -> expr option =
         | Some binding ->
             if binding_ok tau binding
             then binding
-            else raise IncorrectSubstitutionType
+            else raise (IncorrectSubstitutionType (tau, binding))
         | None -> e')
   in
   try Some (substitute e) with
-  | IncorrectSubstitutionType -> None
+  | IncorrectSubstitutionType (tau, binding) -> None
 
 let canonicalize : program -> program =
  fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
+
+let rec fix_filter : expr -> expr =
+  let fix_filter_pred array pred =
+    let rec fix_filter_pred' e =
+      match e with
+      | Index (e1, Name i) when [%eq: expr] e1 array -> (array, [ i ])
+      | Index (e1, e2) ->
+          let e1', ce1 = fix_filter_pred' e1 in
+          let e2', ce2 = fix_filter_pred' e2 in
+          (Index (e1', e2'), ce1 @ ce2)
+      | Call (head, args) ->
+          let h, ch = fix_filter_pred' head in
+          let a, ca = List.map ~f:fix_filter_pred' args |> List.unzip in
+          (Call (h, a), ch @ List.concat ca)
+      | Num _ | Str _ | Name _ | Hole (_, _) -> (e, [])
+    in
+    let pred', cs = fix_filter_pred' pred in
+    if List.is_empty cs
+    then pred'
+    else (
+      match List.all_equal ~equal:String.equal cs with
+      | Some _ -> pred'
+      | None -> pred)
+  in
+  fun e ->
+    match e with
+    | Call (Name "np.filter", [ array; pred ]) ->
+        let fixed_array = fix_filter array in
+        Call (Name "np.filter", [ fixed_array; fix_filter_pred array pred ])
+    | Call (head, args) -> Call (fix_filter head, List.map ~f:fix_filter args)
+    | Index (e1, e2) -> Index (fix_filter e1, fix_filter e2)
+    | Num _ | Str _ | Name _ | Hole (_, _) -> e
 
 let eq_len : expr -> expr -> bool =
  fun e1 e2 ->
@@ -175,6 +233,9 @@ let rec simplify : expr -> expr =
                    | "np.power"
                    | "np.equal"
                    | "np.greater"
+                   | "np.greater_equal"
+                   | "np.less"
+                   | "np.less_equal"
                    | "np.where"
                    | "np.tolist"
                    | "np.copy" ) as inner_f)
@@ -213,6 +274,9 @@ let rec simplify : expr -> expr =
                    | "np.power"
                    | "np.equal"
                    | "np.greater"
+                   | "np.greater_equal"
+                   | "np.less"
+                   | "np.less_equal"
                    | "np.where"
                    | "np.tolist"
                    | "np.copy" ) as inner_f)
@@ -235,6 +299,9 @@ let rec simplify : expr -> expr =
                   | "np.power"
                   | "np.equal"
                   | "np.greater"
+                  | "np.greater_equal"
+                  | "np.less"
+                  | "np.less_equal"
                   | "np.where" )
               , hd :: _ )
           ] ) -> simplify (Call (Name "len", [ hd ]))
@@ -261,7 +328,10 @@ let rec cap_second_arguments : expr -> expr =
           | Name "np.subtract"
           | Name "np.power"
           | Name "np.equal"
-          | Name "np.greater" )
+          | Name "np.greater"
+          | Name "np.greater_equal"
+          | Name "np.less"
+          | Name "np.less_equal" )
         , [ arg1; arg2 ] ) ->
           Call
             ( fn
@@ -379,7 +449,7 @@ let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
-    (* if String.is_substring ~substring:"list" ([%show: expr] e)
+    (* if String.is_substring ~substring:"randint_size" ([%show: expr] e)
     then (
       Printf.eprintf "%s\n" ([%show: expr] e);
       Printf.eprintf "%s\n" (canonical |> snd |> [%show: block]);
@@ -390,6 +460,7 @@ let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
     | Some sub ->
         (match substitute_expr e sub with
         | Some possible_solution ->
+            let possible_solution = fix_filter possible_solution in
             if Set.is_empty
                  (Set.inter
                     (referenced_vars_expr possible_solution)
