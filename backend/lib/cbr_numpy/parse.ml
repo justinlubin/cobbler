@@ -21,6 +21,8 @@ let rec pat_of_sexp : Sexp.t -> pat =
 and expr_of_sexp : Sexp.t -> expr =
  fun sexp ->
   match sexp with
+  | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "False" ] -> Num 0
+  | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "True" ] -> Num 1
   | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] ->
       (try Num (int_of_string n) with
       | Failure _ -> raise (ParseFail (sprintf "could not parse number %s" n)))
