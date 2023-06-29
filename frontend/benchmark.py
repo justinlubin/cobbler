@@ -128,7 +128,8 @@ def python(tree, dry_run=False):
     stats = python_helper(tree, dry_run=dry_run, rewrite_for=False)
     if stats["status"] != "Success":
         stats2 = python_helper(tree, dry_run=dry_run, rewrite_for=True)
-        stats2["synth time"] += stats["synth time"]
+        if "synth time" in stats2 and "synth time" in stats:
+            stats2["synth time"] += stats["synth time"]
         stats = stats2
     return stats
 
