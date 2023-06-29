@@ -1,4 +1,5 @@
 import ast
+import json
 import re
 
 # S-expression datatype
@@ -94,7 +95,7 @@ class IRParser(ast.NodeVisitor):
 
         ret = SAtom(base)
         for c in chain:
-            ret = SList([SAtom("Call"), SAtom("__memberAccess"), ret, SAtom(c)])
+            ret = SList([SAtom("Call"), SAtom("__memberAccess"), SAtom(c), ret])
 
         return ret
 
@@ -115,6 +116,9 @@ class IRParser(ast.NodeVisitor):
 
     def visit_Pow(self, node):
         return SAtom("**")
+
+    def visit_Mod(self, node):
+        return SAtom("%")
 
     def visit_Compare(self, node: ast.Compare):
         if type(node.ops[0]) == ast.Gt:
@@ -185,6 +189,8 @@ class IRParser(ast.NodeVisitor):
 
     def visit_If(self, node):
         cond = self.visit(node.test)
+        if not isinstance(node.test, ast.Compare):
+            cond = SList([SAtom("Call"), SAtom("!="), cond, SAtom("0")])
         then = SList([self.visit(stmt) for stmt in node.body])
         orelse = SList([self.visit(stmt) for stmt in node.orelse])
         return SList([SAtom("If"), cond, then, orelse])
@@ -202,10 +208,12 @@ class IRParser(ast.NodeVisitor):
         return SList([SList(env), SList(block)])
 
     def visit_Constant(self, node):
-        return SList([SAtom("Num"), SAtom(str(node.n))])
-
-    def visit_Num(self, node):
-        return SList([SAtom("Num"), SAtom(str(node.n))])
+        if isinstance(node.value, int):
+            return SList([SAtom("Num"), SAtom(str(node.value))])
+        elif isinstance(node.value, str):
+            return SList([SAtom("Str"), SAtom(json.dumps(node.value))])
+        else:
+            raise UnsupportedFeatureException(f"Constant of type {type(node.value)}")
 
     def visit_Call(self, node):
         fn = self.visit(node.func)
@@ -261,4 +269,4 @@ class IRParser(ast.NodeVisitor):
     def generic_visit(self, node):
         name = self.getClassName(node)
         # print(ast.dump(node))
-        raise UnsupportedFeatureException(name)
+        raise UnsupportedFeatureException(f"Generic: {name}")

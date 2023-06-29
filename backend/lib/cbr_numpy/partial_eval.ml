@@ -61,7 +61,9 @@ let rec partial_eval_expr : expr -> expr =
           | "/"
           | "**"
           | "=="
+          | "!="
           | ">"
+          | "%"
           | "np.random.randint"
           | "np.append" ) -> Call (fn, args)
       | _ ->
@@ -208,8 +210,7 @@ let rec partial_eval_stmt : stmt -> stmt =
   | Assign (pat, e) -> Assign (partial_eval_pat pat, partial_eval_expr e)
   | For (id, e, body) ->
       (match partial_eval_expr e with
-      | Call (Name "range", [ arg ]) ->
-          For (id, partial_eval_expr e, partial_eval_block body)
+      | Call (Name "range", [ _ ]) as e' -> For (id, e', partial_eval_block body)
       | e' ->
           (match id with
           | PName x ->

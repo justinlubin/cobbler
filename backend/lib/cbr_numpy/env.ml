@@ -198,6 +198,28 @@ let eq_defn =
     ; Return (Hole (Array, "eq_result"))
     ] )
 
+let neq_body =
+  [ Assign
+      ( PIndex (PHole (Array, "neq_result"), Hole (Number, "neq_i"))
+      , Call
+          ( Name "!="
+          , [ Index (Name "neq_1", Hole (Number, "neq_i"))
+            ; Index (Name "neq_2", Hole (Number, "neq_i"))
+            ] ) )
+  ]
+
+let neq_defn =
+  ( [ "neq_1"; "neq_2" ]
+  , [ Assign
+        ( PHole (Array, "neq_result")
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "neq_1" ]) ]) )
+    ; For
+        ( PHole (Number, "neq_i")
+        , Call (Name "range", [ Call (Name "len", [ Name "neq_1" ]) ])
+        , neq_body )
+    ; Return (Hole (Array, "neq_result"))
+    ] )
+
 let gt_body =
   [ Assign
       ( PIndex (PHole (Array, "gt_result"), Hole (Number, "gt_i"))
@@ -417,6 +439,47 @@ let copy_defn =
     ; Return (Hole (Array, "x"))
     ] ) *)
 
+let sum_string_body =
+  [ Assign
+      ( PHole (String, "sum_string_count")
+      , Call
+          ( Name "+"
+          , [ Hole (String, "sum_string_count")
+            ; Index (Name "sum_string_1", Hole (String, "sum_string_i"))
+            ] ) )
+  ]
+
+let sum_string_defn =
+  ( [ "sum_string_1" ]
+  , [ Assign (PHole (String, "sum_string_count"), Str "")
+    ; For
+        ( PHole (String, "sum_string_i")
+        , Call (Name "range", [ Call (Name "len", [ Name "sum_string_1" ]) ])
+        , sum_string_body )
+    ; Return (Hole (String, "sum_string_count"))
+    ] )
+
+let filter_defn =
+  ( [ "array"; "pred" ]
+  , [ Assign (PHole (List, "xs"), Name "__emptyList")
+    ; For
+        ( PHole (Number, "i")
+        , Call (Name "range", [ Call (Name "len", [ Name "array" ]) ])
+        , [ If
+              ( Name "pred"
+              , [ Assign
+                    ( PHole (List, "xs")
+                    , Call
+                        ( Name "np.append"
+                        , [ Hole (List, "xs")
+                          ; Index (Name "array", Hole (Number, "i"))
+                          ] ) )
+                ]
+              , [] )
+          ] )
+    ; Return (Hole (Array, "xs"))
+    ] )
+
 let np_env : env =
   String.Map.of_alist_exn
     [ ("np.sum", sum_defn)
@@ -428,6 +491,7 @@ let np_env : env =
     ; ("np.power", power_defn)
     ; ("np.full", full_defn)
     ; ("np.equal", eq_defn)
+    ; ("np.not_equal", neq_defn)
     ; ("np.greater", gt_defn)
     ; ("np.where", where_arr_defn)
     ; ("np.roll", roll_defn)
@@ -435,4 +499,5 @@ let np_env : env =
     ; ("np.random.randint_size", randint_size_defn)
     ; ("np.tolist", tolist_defn) (* ; ("np.arange", arange_defn) *)
     ; ("np.copy", copy_defn)
+    ; ("np.filter", filter_defn)
     ]

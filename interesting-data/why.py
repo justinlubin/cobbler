@@ -1,5 +1,4 @@
-addr_spans = soup.find_all('span', class_='addr')
-addresses = []
-for span in addr_spans:
-    addresses.append(span.a.text)
-addresses
+tosses = np.zeros(5)
+for v in np.arange(5):
+    tosses[v] = np.random.randint(0, 2)
+tosses
