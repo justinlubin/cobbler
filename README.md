@@ -38,3 +38,11 @@ Once that is done, see `./cobbler --help`.
 To run the backend tests, run `make test` from the `backend` subdirectory.
 
 To run the frontend tests, run `make test` from the `frontend` subdirectory.
+
+## Acknowledgments
+
+- Thanks to
+  [Patrick Gillespie](http://patorjk.com/)
+  for the
+  [Text to ASCII Art Generator](http://patorjk.com/software/taag)
+  and `myflix` for the "Sweet" ASCII art font.
