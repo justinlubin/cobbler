@@ -9,7 +9,7 @@ class SList:
     """S-expression for lists"""
 
     def __init__(self, l):
-        self.l = l
+        self.l = [x for x in l if x is not None]
 
     def __str__(self):
         return "(" + " ".join([str(c) for c in self.l]) + ")"
@@ -265,6 +265,9 @@ class IRParser(ast.NodeVisitor):
             )
         else:
             raise UnsupportedFeatureException("Non-append side effect")
+
+    def visit_Pass(self, node):
+        return None
 
     def generic_visit(self, node):
         name = self.getClassName(node)
