@@ -421,13 +421,13 @@ let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
   let correct : expr -> expr option =
    fun e ->
     let canonical = canonicalize (np_env, [ Return e ]) in
-    if String.is_substring ~substring:"randint_size" ([%show: expr] e)
+    (* if String.is_substring ~substring:"randint_size" ([%show: expr] e)
     then (
       Printf.eprintf "%s\n" ([%show: expr] e);
       Printf.eprintf "%s\n" (canonical |> snd |> [%show: block]);
       Printf.eprintf "%s\n" (target |> snd |> [%show: block]);
       Printf.eprintf "-------------------------\n")
-    else ();
+    else (); *)
     match unify ~pattern:canonical with
     | Some sub ->
         (match substitute_expr e sub with
