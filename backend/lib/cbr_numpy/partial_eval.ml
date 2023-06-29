@@ -63,6 +63,9 @@ let rec partial_eval_expr : expr -> expr =
           | "=="
           | "!="
           | ">"
+          | ">="
+          | "<"
+          | "<="
           | "%"
           | "np.random.randint"
           | "np.append" ) -> Call (fn, args)
@@ -136,6 +139,24 @@ let rec partial_eval_expr : expr -> expr =
       | Call (Name "np.greater", [ x; y ]), e2 ->
           Call
             ( Name ">"
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "np.greater_equal", [ x; y ]), e2 ->
+          Call
+            ( Name ">="
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "np.less", [ x; y ]), e2 ->
+          Call
+            ( Name "<"
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "np.less_equal", [ x; y ]), e2 ->
+          Call
+            ( Name "<="
             , [ partial_eval_expr (Index (x, e2))
               ; partial_eval_expr (Index (y, e2))
               ] )

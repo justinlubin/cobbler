@@ -242,6 +242,72 @@ let gt_defn =
     ; Return (Hole (Array, "gt_result"))
     ] )
 
+let gte_body =
+  [ Assign
+      ( PIndex (PHole (Array, "gte_result"), Hole (Number, "gte_i"))
+      , Call
+          ( Name ">="
+          , [ Index (Name "gte_1", Hole (Number, "gte_i"))
+            ; Index (Name "gte_2", Hole (Number, "gte_i"))
+            ] ) )
+  ]
+
+let gte_defn =
+  ( [ "gte_1"; "gte_2" ]
+  , [ Assign
+        ( PHole (Array, "gte_result")
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "gte_1" ]) ]) )
+    ; For
+        ( PHole (Number, "gte_i")
+        , Call (Name "range", [ Call (Name "len", [ Name "gte_1" ]) ])
+        , gte_body )
+    ; Return (Hole (Array, "gte_result"))
+    ] )
+
+let lt_body =
+  [ Assign
+      ( PIndex (PHole (Array, "lt_result"), Hole (Number, "lt_i"))
+      , Call
+          ( Name "<"
+          , [ Index (Name "lt_1", Hole (Number, "lt_i"))
+            ; Index (Name "lt_2", Hole (Number, "lt_i"))
+            ] ) )
+  ]
+
+let lt_defn =
+  ( [ "lt_1"; "lt_2" ]
+  , [ Assign
+        ( PHole (Array, "lt_result")
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "lt_1" ]) ]) )
+    ; For
+        ( PHole (Number, "lt_i")
+        , Call (Name "range", [ Call (Name "len", [ Name "lt_1" ]) ])
+        , lt_body )
+    ; Return (Hole (Array, "lt_result"))
+    ] )
+
+let lte_body =
+  [ Assign
+      ( PIndex (PHole (Array, "lte_result"), Hole (Number, "lte_i"))
+      , Call
+          ( Name "<="
+          , [ Index (Name "lte_1", Hole (Number, "lte_i"))
+            ; Index (Name "lte_2", Hole (Number, "lte_i"))
+            ] ) )
+  ]
+
+let lte_defn =
+  ( [ "lte_1"; "lte_2" ]
+  , [ Assign
+        ( PHole (Array, "lte_result")
+        , Call (Name "np.zeros", [ Call (Name "len", [ Name "lte_1" ]) ]) )
+    ; For
+        ( PHole (Number, "lte_i")
+        , Call (Name "range", [ Call (Name "len", [ Name "lte_1" ]) ])
+        , lte_body )
+    ; Return (Hole (Array, "lte_result"))
+    ] )
+
 let where_num_body =
   [ If
       ( Index (Name "cond", Hole (Number, "where_i"))
@@ -493,6 +559,9 @@ let np_env : env =
     ; ("np.equal", eq_defn)
     ; ("np.not_equal", neq_defn)
     ; ("np.greater", gt_defn)
+    ; ("np.greater_equal", gt_defn)
+    ; ("np.less", gt_defn)
+    ; ("np.less_equal", gt_defn)
     ; ("np.where", where_arr_defn)
     ; ("np.roll", roll_defn)
     ; ("np.convolve_valid", convolve_valid_defn)

@@ -48,6 +48,9 @@ let make_grammar : String.Set.t -> hole_type -> expr list =
         ; ("np.not_equal", [ "!=" ], [ Array; Array ])
         ; ("np.full", [], [ Number; Constant ])
         ; ("np.greater", [ ">" ], [ Array; Array ])
+        ; ("np.greater_equal", [ ">=" ], [ Array; Array ])
+        ; ("np.less", [ "<" ], [ Array; Array ])
+        ; ("np.less_equal", [ "<=" ], [ Array; Array ])
         ; ("np.where", [], [ Array; Array; Array ])
         ; ("np.roll", [], [ Array; Number ])
         ; ("np.convolve_valid", [], [ Array; Array ])
@@ -106,8 +109,21 @@ let rec is_constant : expr -> bool = function
   | Call (Name "__memberAccess", [ _; arg ])
   | Call (Call (Name "np.vectorize", [ Name "__memberAccess"; _ ]), [ _; arg ])
   | Call (Name "np.vectorize", [ arg; _ ]) -> is_constant arg
-  | Call (Name ("+" | "*" | "-" | "/" | "**" | "==" | "!=" | ">" | "%"), args)
-    -> List.for_all ~f:is_constant args
+  | Call
+      ( Name
+          ( "+"
+          | "*"
+          | "-"
+          | "/"
+          | "**"
+          | "=="
+          | "!="
+          | ">"
+          | ">="
+          | "<"
+          | "<="
+          | "%" )
+      , args ) -> List.for_all ~f:is_constant args
   | Call (_, _) -> false
 
 let binding_ok : hole_type -> expr -> bool =
@@ -217,6 +233,9 @@ let rec simplify : expr -> expr =
                    | "np.power"
                    | "np.equal"
                    | "np.greater"
+                   | "np.greater_equal"
+                   | "np.less"
+                   | "np.less_equal"
                    | "np.where"
                    | "np.tolist"
                    | "np.copy" ) as inner_f)
@@ -255,6 +274,9 @@ let rec simplify : expr -> expr =
                    | "np.power"
                    | "np.equal"
                    | "np.greater"
+                   | "np.greater_equal"
+                   | "np.less"
+                   | "np.less_equal"
                    | "np.where"
                    | "np.tolist"
                    | "np.copy" ) as inner_f)
@@ -277,6 +299,9 @@ let rec simplify : expr -> expr =
                   | "np.power"
                   | "np.equal"
                   | "np.greater"
+                  | "np.greater_equal"
+                  | "np.less"
+                  | "np.less_equal"
                   | "np.where" )
               , hd :: _ )
           ] ) -> simplify (Call (Name "len", [ hd ]))
@@ -303,7 +328,10 @@ let rec cap_second_arguments : expr -> expr =
           | Name "np.subtract"
           | Name "np.power"
           | Name "np.equal"
-          | Name "np.greater" )
+          | Name "np.greater"
+          | Name "np.greater_equal"
+          | Name "np.less"
+          | Name "np.less_equal" )
         , [ arg1; arg2 ] ) ->
           Call
             ( fn

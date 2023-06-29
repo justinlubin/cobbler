@@ -215,7 +215,18 @@ let rec py_str_of_sexp : Sexp.t -> string =
       | Sexp.List
           [ Sexp.Atom "Call"
           ; Sexp.Atom
-              (("+" | "*" | "-" | "/" | "**" | "==" | "!=" | ">" | "%") as op)
+              (( "+"
+               | "*"
+               | "-"
+               | "/"
+               | "**"
+               | "=="
+               | "!="
+               | ">"
+               | ">="
+               | "<"
+               | "<="
+               | "%" ) as op)
           ; p1
           ; p2
           ] ->
