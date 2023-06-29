@@ -69,6 +69,10 @@ def elm_json(js, dry_run=False):
 def python_helper(tree, dry_run=False, rewrite_for=None):
     assert rewrite_for is not None
 
+
+def python(tree, dry_run=False):
+    """Benchmarks a Python script, assuming that it is represented as a Python
+    AST object"""
     stats = {}
     stats["orig code"] = util.csv_str_encode(ast.unparse(tree))
 
