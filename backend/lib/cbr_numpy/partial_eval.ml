@@ -29,7 +29,7 @@ let rec partial_eval_expr : expr -> expr =
           | [ Call (Name "len", [ a ]); offset ] ->
               partial_eval_expr
                 (Call (Name "len", [ Call (Name "sliceToEnd", [ a; offset ]) ]))
-          | _ -> Call (Name "-", List.map ~f:partial_eval_expr args))
+          | _ -> Call (fn, args))
       | Name "len" ->
           (match partial_eval_expr (List.hd_exn args) with
           | Call (Name "np.copy", args)
@@ -41,7 +41,10 @@ let rec partial_eval_expr : expr -> expr =
           | Call (Name "np.power", args)
           | Call (Name "np.equal", args)
           | Call (Name "np.greater", args)
-          | Call (Call (Name "np.vectorize", [ _ ]), args)
+          | Call (Name "np.array_object", args)
+          | Call (Call (Name "np.vectorize", [ _; Str "{}" ]), args)
+          | Call (Call (Name "np.vectorize", [ _; Str "{1}" ]), _ :: args)
+          | Call (Call (Name "np.vectorize", [ _; Str "{2}" ]), args)
           | Call (Name "np.where", args) ->
               partial_eval_expr (Call (Name "len", [ List.hd_exn args ]))
           | Call (Name "np.ones", args)
@@ -52,11 +55,44 @@ let rec partial_eval_expr : expr -> expr =
               partial_eval_expr s
           | Call (Name "range", [ hd ]) -> partial_eval_expr hd
           | _ -> Call (Name "len", args))
+      | Name
+          ( "+"
+          | "*"
+          | "/"
+          | "**"
+          | "=="
+          | "!="
+          | ">"
+          | ">="
+          | "<"
+          | "<="
+          | "%"
+          | "np.random.randint"
+          | "np.append" ) -> Call (fn, args)
       | _ ->
+          let np_array_object x = Call (Name "np.array_object", [ x ]) in
           (match args with
           | [ Index (arg, i) ] ->
               partial_eval_expr
-                (Index (Call (Call (Name "np.vectorize", [ fn ]), [ arg ]), i))
+                (Index
+                   ( Call
+                       ( Call (Name "np.vectorize", [ fn; Str "{}" ])
+                       , [ np_array_object arg ] )
+                   , i ))
+          | [ Index (arg1, i); arg2 ] ->
+              partial_eval_expr
+                (Index
+                   ( Call
+                       ( Call (Name "np.vectorize", [ fn; Str "{2}" ])
+                       , [ np_array_object arg1; arg2 ] )
+                   , i ))
+          | [ arg1; Index (arg2, i) ] ->
+              partial_eval_expr
+                (Index
+                   ( Call
+                       ( Call (Name "np.vectorize", [ fn; Str "{1}" ])
+                       , [ arg1; np_array_object arg2 ] )
+                   , i ))
           | _ -> Call (fn, args)))
   | Index (e1, e2) ->
       (match (e1, e2) with
@@ -106,9 +142,29 @@ let rec partial_eval_expr : expr -> expr =
             , [ partial_eval_expr (Index (x, e2))
               ; partial_eval_expr (Index (y, e2))
               ] )
+      | Call (Name "np.greater_equal", [ x; y ]), e2 ->
+          Call
+            ( Name ">="
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "np.less", [ x; y ]), e2 ->
+          Call
+            ( Name "<"
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
+      | Call (Name "np.less_equal", [ x; y ]), e2 ->
+          Call
+            ( Name "<="
+            , [ partial_eval_expr (Index (x, e2))
+              ; partial_eval_expr (Index (y, e2))
+              ] )
       | Call (Name "np.zeros", _), _ -> Num 0
       | Call (Name "np.full", [ _; v ]), _ -> partial_eval_expr v
       | Call (Name "range", [ _ ]), i -> partial_eval_expr i
+      | Call (Name "np.random.randint_size", [ low; high; _ ]), i ->
+          partial_eval_expr (Call (Name "np.random.randint", [ low; high ]))
       | _ ->
           (* print_endline ("e1: " ^ (Parse.sexp_of_expr e1 |> Core.Sexp.to_string)); *)
           Index (e1, e2))
@@ -175,8 +231,7 @@ let rec partial_eval_stmt : stmt -> stmt =
   | Assign (pat, e) -> Assign (partial_eval_pat pat, partial_eval_expr e)
   | For (id, e, body) ->
       (match partial_eval_expr e with
-      | Call (Name "range", [ arg ]) ->
-          For (id, partial_eval_expr e, partial_eval_block body)
+      | Call (Name "range", [ _ ]) as e' -> For (id, e', partial_eval_block body)
       | e' ->
           (match id with
           | PName x ->

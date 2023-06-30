@@ -15,3 +15,5 @@ val partial_eval_expr : expr -> expr
     
     *)
 val partial_eval_program : program -> program
+
+val substitute_in_expr : id -> expr -> expr -> expr

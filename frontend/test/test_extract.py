@@ -17,7 +17,7 @@ class TestExtractor(unittest.TestCase):
         for py_fname, json_fname in zip(py_fnames, json_fnames):
             with open(fnames_dir + "/" + py_fname, "r") as f:
                 text = ast.parse(f.read())
-                pre, body, _, _ = extract.python(text)
+                pre, body, _, _ = extract.python(text, rewrite_for=False)
             with open(fnames_dir + "/" + json_fname, "r") as f:
                 expected = json.load(f)
             self.assertEqual(ast.unparse(pre), expected["env"])

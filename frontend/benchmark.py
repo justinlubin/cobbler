@@ -25,7 +25,7 @@ CSV_FIELDS = [
 ]
 
 
-def elm_json(js):
+def elm_json(js, dry_run=False):
     """Benchmarks a single Elm function/variable definition, assuming that it is
     represented as an elm-format JSON object"""
     stats = {}
@@ -38,19 +38,22 @@ def elm_json(js):
         stats["status"] = "ExtractFail"
         return stats
 
-    start = timer()
+    if dry_run:
+        synthesis_result = {"status": "DryRun"}
+    else:
+        start = timer()
 
-    synthesis_result = subprocess.check_output(
-        [util.path_from_root("backend/_build/default/bin/main.exe"), "elm"],
-        input=json.dumps(block),
-        text=True,
-    )
+        synthesis_result = subprocess.check_output(
+            [util.path_from_root("backend/_build/default/bin/main.exe"), "elm"],
+            input=json.dumps(block),
+            text=True,
+        )
 
-    end = timer()
+        end = timer()
 
-    stats["synth time"] = end - start
+        stats["synth time"] = end - start
 
-    synthesis_result = json.loads(synthesis_result)
+        synthesis_result = json.loads(synthesis_result)
 
     stats["status"] = synthesis_result["status"]
     if "reason" in synthesis_result:
@@ -58,18 +61,23 @@ def elm_json(js):
 
     if synthesis_result["status"] == "Success":
         stats["synthed code"] = util.csv_str_encode(synthesis_result["solution"])
+        stats["synthed ast size"] = synthesis_result["size"]
 
     return stats
 
 
-def python(tree):
+def python_helper(tree, dry_run=False, rewrite_for=None):
+    assert rewrite_for is not None
+
+
+def python(tree, dry_run=False):
     """Benchmarks a Python script, assuming that it is represented as a Python
     AST object"""
     stats = {}
     stats["orig code"] = util.csv_str_encode(ast.unparse(tree))
 
     try:
-        pre, body, post, output_variable = extract.python(tree)
+        pre, body, post, output_variable = extract.python(tree, rewrite_for=rewrite_for)
     except extract.NoExtractionException as e:
         stats["status"] = "ExtractFail"
         stats["reason"] = repr(e)
@@ -82,17 +90,22 @@ def python(tree):
         stats["reason"] = repr(e)
         return stats
 
-    start = timer()
-    synthesis_result = subprocess.check_output(
-        [util.path_from_root("backend/_build/default/bin/main.exe"), "python"],
-        input=str(sexp),
-        text=True,
-    )
-    end = timer()
+    if dry_run:
+        synthesis_result = {"status": "DryRun"}
+    else:
+        start = timer()
 
-    stats["synth time"] = end - start
+        synthesis_result = subprocess.check_output(
+            [util.path_from_root("backend/_build/default/bin/main.exe"), "python"],
+            input=str(sexp),
+            text=True,
+        )
 
-    synthesis_result = json.loads(synthesis_result)
+        end = timer()
+
+        stats["synth time"] = end - start
+
+        synthesis_result = json.loads(synthesis_result)
 
     stats["status"] = synthesis_result["status"]
     if "reason" in synthesis_result:
@@ -108,7 +121,20 @@ def python(tree):
                 + ast.unparse(post)
             ).strip()
         )
+        stats["synthed ast size"] = synthesis_result["size"]
 
+    return stats
+
+
+def python(tree, dry_run=False):
+    """Benchmarks a Python script, assuming that it is represented as a Python
+    AST object"""
+    stats = python_helper(tree, dry_run=dry_run, rewrite_for=False)
+    if stats["status"] != "Success":
+        stats2 = python_helper(tree, dry_run=dry_run, rewrite_for=True)
+        if "synth time" in stats2 and "synth time" in stats:
+            stats2["synth time"] += stats["synth time"]
+        stats = stats2
     return stats
 
 

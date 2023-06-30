@@ -93,7 +93,13 @@ def refactor_helper(language=None):
         sys.exit(1)
 
 
-def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=100):
+def benchmark_helper(
+    path=None,
+    generator=None,
+    benchmarker=None,
+    sample_limit=100,
+    dry_run=None,
+):
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(
             f,
@@ -109,7 +115,7 @@ def benchmark_helper(path=None, generator=None, benchmarker=None, sample_limit=1
                     sample_num += 1
                     print(f"Completed '{previous_path}' ({sample_num}/{sample_limit})")
                 previous_path = sample_path
-            stats = benchmarker(block)
+            stats = benchmarker(block, dry_run=dry_run)
             writer.writerow(stats)
         print(f"Completed '{previous_path}' ({sample_num+1}/{sample_limit})")
 
@@ -204,9 +210,9 @@ def rerun_benchmarks_helper(
     language=None,
 ):
     if language == "elm":
-        benchmarker = lambda s: benchmark.elm_json(json.loads(s))
+        benchmarker = lambda s, **kwargs: benchmark.elm_json(json.loads(s))
     elif language == "python":
-        benchmarker = lambda s: benchmark.python(ast.parse(s))
+        benchmarker = lambda s, **kwargs: benchmark.python(ast.parse(s))
 
     def generator(sample_limit=None):
         with open(input_path, "r", newline="") as input_f:
@@ -221,20 +227,97 @@ def rerun_benchmarks_helper(
     )
 
 
+def summarize_helper(path=None):
+    summary = {}
+    total = 0
+
+    with open(path, "r", newline="") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            status = row["status"]
+            if status in summary:
+                summary[status] += 1
+            else:
+                summary[status] = 1
+            total += 1
+
+    for status in sorted(summary, key=summary.get, reverse=True):
+        print(
+            f"{status}: {summary[status]} ({round(100 * summary[status] / total, 2)}%)"
+        )
+    print(f"Total: {total}")
+
+
+def check_no_worse_helper(before_path=None, after_path=None):
+    before_statuses = []
+    after_statuses = []
+
+    with open(before_path, "r", newline="") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            before_statuses.append(row["status"])
+    with open(after_path, "r", newline="") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            after_statuses.append(row["status"])
+
+    if len(before_statuses) != len(after_statuses):
+        print('"before" and "after" TSVs have unequal lengths')
+        sys.exit(1)
+
+    row_failures = []
+
+    for i, (before_status, after_status) in enumerate(
+        zip(before_statuses, after_statuses)
+    ):
+        if before_status == "Success" and after_status != "Success":
+            row_failures.append(str(i + 2))
+
+    if row_failures != []:
+        print("[ERROR] The following rows got worse:", ", ".join(row_failures))
+        sys.exit(1)
+    else:
+        print("All good!")
+
+
+def remove_duplicates_helper(
+    input_path=None,
+    output_path=None,
+):
+    seen = set()
+    with open(input_path, "r", newline="") as input_f:
+        with open(output_path, "w", newline="") as output_f:
+            writer = csv.DictWriter(
+                output_f,
+                fieldnames=benchmark.CSV_FIELDS,
+                delimiter="\t",
+            )
+            writer.writeheader()
+            for row in csv.DictReader(input_f, delimiter="\t"):
+                orig_code = row["orig code"]
+                if orig_code in seen:
+                    continue
+                writer.writerow(row)
+                seen.add(orig_code)
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print(
-            """   _________    ____  _   ______________
-  / ____/   |  / __ \/ | / / ____/_  __/
- / / __/ /| | / /_/ /  |/ / __/   / /
-/ /_/ / ___ |/ _, _/ /|  / /___  / /
-\____/_/  |_/_/ |_/_/ |_/_____/ /_/"""
+            """                    ___       ___       ___
+                   (   )     (   )     (   )
+  .--.      .--.    | |.-.    | |.-.    | |    .--.    ___ .-.
+ /    \    /    \   | /   \   | /   \   | |   /    \  (   )   \\
+|  .-. ;  |  .-. ;  |  .-. |  |  .-. |  | |  |  .-. ;  | ' .-. ;
+|  |(___) | |  | |  | |  | |  | |  | |  | |  |  | | |  |  / (___)
+|  |      | |  | |  | |  | |  | |  | |  | |  |  |/  |  | |
+|  | ___  | |  | |  | |  | |  | |  | |  | |  |  ' _.'  | |
+|  '(   ) | '  | |  | '  | |  | '  | |  | |  |  .'.-.  | |
+'  `-' |  '  `-' /  ' `-' ;   ' `-' ;   | |  '  `-' /  | |
+ `.__,'    `.__.'    `.__.     `.__.   (___)  `.__.'  (___)"""
         )
-        print("\nThe GARNET program synthesizer.\n")
+        print("\ncobbler: the component-based refactoring synthesizer.\n")
         print(f"For help: {sys.argv[0]} --help")
         sys.exit(0)
 
-    parser = argparse.ArgumentParser(description="The GARNET program synthesizer.")
+    parser = argparse.ArgumentParser(description="The cobbler program synthesizer.")
 
     subparsers = parser.add_subparsers(
         title="subcommands",
@@ -277,6 +360,11 @@ if __name__ == "__main__":
         "path_to_tsv",
         type=pathlib.Path,
         help="the path to write the benchmarking tsv to",
+    )
+    benchmark_parser.add_argument(
+        "--dry-run",
+        action=argparse.BooleanOptionalAction,
+        help="do not run the synthesizer on the benchmarks, only emit TSV",
     )
 
     # View benchmark result subcommand
@@ -382,6 +470,54 @@ if __name__ == "__main__":
         help="the path to output the new benchmarking tsv",
     )
 
+    # Summarize benchmark suite subcommand
+
+    summarize_parser = subparsers.add_parser(
+        "summarize",
+        help="summarize a benchmarking suite",
+    )
+    summarize_parser.add_argument(
+        "path_to_tsv",
+        type=pathlib.Path,
+        help="the path of the benchmarking tsv to summarize",
+    )
+
+    # Benchmark suite regression test subcommand
+
+    check_no_worse_parser = subparsers.add_parser(
+        "check-no-worse",
+        help="ensure that a benchmark run is no worse than a previous one",
+    )
+    check_no_worse_parser.add_argument(
+        "path_to_before_tsv",
+        type=pathlib.Path,
+        help='the path of the "before" benchmarking tsv',
+    )
+    check_no_worse_parser.add_argument(
+        "path_to_after_tsv",
+        type=pathlib.Path,
+        help='the path of the "after" benchmarking tsv',
+    )
+
+    # Remove duplicates subcommand
+
+    remove_duplicates_parser = subparsers.add_parser(
+        "remove-duplicates",
+        help="ensure that a benchmark run is no worse than a previous one",
+    )
+    remove_duplicates_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path of the benchmarking tsv to remove duplicates from",
+    )
+    remove_duplicates_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the new benchmarking tsv",
+    )
+
     # Setup
 
     csv.field_size_limit(sys.maxsize)
@@ -403,6 +539,7 @@ if __name__ == "__main__":
                 generator=db_iter.elm_json,
                 benchmarker=benchmark.elm_json,
                 sample_limit=args.sample_limit,
+                dry_run=args.dry_run,
             )
         if args.language == "python":
             benchmark_helper(
@@ -410,6 +547,7 @@ if __name__ == "__main__":
                 generator=db_iter.python,
                 benchmarker=benchmark.python,
                 sample_limit=args.sample_limit,
+                dry_run=args.dry_run,
             )
     elif args.subcommand == "view-benchmark":
         view_benchmark_helper(
@@ -420,7 +558,9 @@ if __name__ == "__main__":
         )
     elif args.subcommand == "make-report":
         make_report_helper(
-            input_path=args.input, output_path=args.output, language=args.language
+            input_path=args.input,
+            output_path=args.output,
+            language=args.language,
         )
     elif args.subcommand == "filter-benchmarks":
         filter_benchmarks_helper(
@@ -435,4 +575,18 @@ if __name__ == "__main__":
             input_path=args.input,
             output_path=args.output,
             language=args.language,
+        )
+    elif args.subcommand == "summarize":
+        summarize_helper(
+            path=args.path_to_tsv,
+        )
+    elif args.subcommand == "check-no-worse":
+        check_no_worse_helper(
+            before_path=args.path_to_before_tsv,
+            after_path=args.path_to_after_tsv,
+        )
+    elif args.subcommand == "remove-duplicates":
+        remove_duplicates_helper(
+            input_path=args.input,
+            output_path=args.output,
         )

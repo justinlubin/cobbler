@@ -29,8 +29,9 @@ type problem =
     remaining definitions. *)
 val problem_of_definitions : datatype_env * typ_env * env -> string -> problem
 
-(** [solve ~use_unification ~depth problem] tries to find a solution to
-    [problem] using search depth [depth]. If [use_unification] is [true], the
-    solver will use higher-order unification to fill out the leaves; otherwise,
-    it will simply use naïve term enumeration. *)
-val solve : use_unification:bool -> depth:int -> problem -> exp option
+(** [solve ~use_unification ~depth problem] tries to find a solution (and number
+    of expansions used to find the solution) to [problem] using search depth
+    [depth]. If [use_unification] is [true], the solver will use higher-order
+    unification to fill out the leaves; otherwise, it will simply use naïve
+    term enumeration. *)
+val solve : use_unification:bool -> depth:int -> problem -> (int * exp) option
