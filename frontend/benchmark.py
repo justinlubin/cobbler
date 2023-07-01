@@ -66,6 +66,10 @@ def elm_json(js, dry_run=False):
     return stats
 
 
+def python_helper(tree, dry_run=False, rewrite_for=None):
+    assert rewrite_for is not None
+
+
 def python(tree, dry_run=False):
     """Benchmarks a Python script, assuming that it is represented as a Python
     AST object"""
@@ -73,7 +77,7 @@ def python(tree, dry_run=False):
     stats["orig code"] = util.csv_str_encode(ast.unparse(tree))
 
     try:
-        pre, body, post, output_variable = extract.python(tree)
+        pre, body, post, output_variable = extract.python(tree, rewrite_for=rewrite_for)
     except extract.NoExtractionException as e:
         stats["status"] = "ExtractFail"
         stats["reason"] = repr(e)
@@ -119,6 +123,18 @@ def python(tree, dry_run=False):
         )
         stats["synthed ast size"] = synthesis_result["size"]
 
+    return stats
+
+
+def python(tree, dry_run=False):
+    """Benchmarks a Python script, assuming that it is represented as a Python
+    AST object"""
+    stats = python_helper(tree, dry_run=dry_run, rewrite_for=False)
+    if stats["status"] != "Success":
+        stats2 = python_helper(tree, dry_run=dry_run, rewrite_for=True)
+        if "synth time" in stats2 and "synth time" in stats:
+            stats2["synth time"] += stats["synth time"]
+        stats = stats2
     return stats
 
 

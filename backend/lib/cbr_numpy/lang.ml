@@ -3,6 +3,7 @@ open Core
 type hole_type =
   | Number
   | Array
+  | String
   | List
   | Constant
 [@@deriving compare, eq, show, hash]
