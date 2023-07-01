@@ -33,6 +33,14 @@ Once that is done, see `./cobbler --help`.
 
 - This project also depends on [elm-format](https://github.com/avh4/elm-format) (tested with version 0.8.7), which is installable via `npm`
 
+## Running the analysis scripts
+
+The scripts in the `analysis/` directory analyze the benchmarking results. They require the following Python dependencies:
+
+- `numpy`
+- `matplotlib`
+- `pandas`
+
 ## Running tests
 
 To run the backend tests, run `make test` from the `backend` subdirectory.
