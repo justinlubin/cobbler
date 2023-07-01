@@ -8,7 +8,9 @@ exception ParseFail of string
 let is_type_var : string -> bool = fun s -> Char.is_lowercase (String.get s 0)
 
 let is_constructor : string -> bool =
- fun s -> Char.is_uppercase (String.get s 0)
+ fun s ->
+  (not (String.is_substring ~substring:"." s))
+  && Char.is_uppercase (String.get s 0)
 
 let is_datatype : string -> bool = fun s -> Char.is_uppercase (String.get s 0)
 let is_variable : string -> bool = fun s -> Char.is_lowercase (String.get s 0)
@@ -57,10 +59,9 @@ let evar_of_json : Json.t -> string =
       | "&&" -> "and____CBR_inline"
       | name -> name)
   | "ExternalReference" ->
-      (* let m = j |> J.member "module" |> J.to_string in *)
+      let m = j |> J.member "module" |> J.to_string in
       let i = j |> J.member "identifier" |> J.to_string in
-      (* sprintf "%s.%s" m i *)
-      i
+      if is_constructor i then i else sprintf "%s.%s" m i
   | s -> raise (ParseFail (sprintf "unknown expression variable tag '%s'" s))
 
 (* Patterns *)
@@ -76,7 +77,9 @@ let pctor_of_json : Json.t -> string * string list =
       (match j |> J.member "prefix" |> J.to_list with
       | [] -> ("Nil", [])
       | [ hd ] ->
-          ("Cons", [ pvar_of_json hd; j |> J.member "rest" |> pvar_of_json ])
+          (match j |> J.member "rest" with
+          | `Null -> raise (ParseFail "TODO")
+          | rest -> ("Cons", [ pvar_of_json hd; rest |> pvar_of_json ]))
       | _ -> raise (ParseFail (sprintf "nested list patterns unsupported")))
   | s -> raise (ParseFail (sprintf "unknown constructor pattern tag '%s'" s))
 
@@ -117,6 +120,10 @@ and exp_of_json : Json.t -> exp =
       (match j |> J.member "function" |> exp_of_json with
       | ECtor (c, []) -> ECtor (c, args)
       | EVar "::" -> ECtor ("Cons", args)
+      | EVar "|>" ->
+          (match args with
+          | [ head; arg ] -> EApp (head, arg)
+          | _ -> Exp.build_app (EVar "|>") args)
       | head -> Exp.build_app head args)
   | "ListLiteral" ->
       j
