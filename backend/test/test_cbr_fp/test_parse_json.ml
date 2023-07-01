@@ -71,11 +71,11 @@ let%expect_test "Syntax.elm parses correctly" =
       ((+ var0) 1)))
     (float = 3.5)
     (g = (lambda var0
-      (map (lambda var1 var0))))
+      (List.map (lambda var1 var0))))
     (g2 = (lambda var0
-      (map (lambda var1 var0))))
+      (List.map (lambda var1 var0))))
     (g3 = (lambda var0
-      (map (lambda var1 var0))))
+      (List.map (lambda var1 var0))))
     (int = 3)
     (match = (match (Custom 255 255 0)
       ((Red) ->
