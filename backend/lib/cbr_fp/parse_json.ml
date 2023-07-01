@@ -117,14 +117,11 @@ and exp_of_json : Json.t -> exp =
       let args =
         j |> J.member "arguments" |> J.to_list |> List.map ~f:exp_of_json
       in
-      (match j |> J.member "function" |> exp_of_json with
-      | ECtor (c, []) -> ECtor (c, args)
-      | EVar "::" -> ECtor ("Cons", args)
-      | EVar "|>" ->
-          (match args with
-          | [ head; arg ] -> EApp (head, arg)
-          | _ -> Exp.build_app (EVar "|>") args)
-      | head -> Exp.build_app head args)
+      (match (j |> J.member "function" |> exp_of_json, args) with
+      | ECtor (c, []), _ -> ECtor (c, args)
+      | EVar "::", _ -> ECtor ("Cons", args)
+      | EVar "|>", [ arg; fn ] -> EApp (fn, arg)
+      | head, _ -> Exp.build_app head args)
   | "ListLiteral" ->
       j
       |> J.member "terms"
