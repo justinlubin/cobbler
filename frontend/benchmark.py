@@ -26,7 +26,9 @@ CSV_FIELDS = [
 ]
 
 
-def elm_json(js, dry_run=False, toggle_eval=False): #TODO: deal with toggle_eval somehow
+def elm_json(
+    js, dry_run=False, toggle_eval=False
+):  # TODO: deal with toggle_eval somehow
     """Benchmarks a single Elm function/variable definition, assuming that it is
     represented as an elm-format JSON object"""
     stats = {}
@@ -134,7 +136,7 @@ def python_helper(tree, dry_run=False, rewrite_for=None, toggle_eval=False):
                 stats["exec status"] = "OrigExecFail"
                 stats["exec reason"] = repr(e)
                 return stats
-            
+
             try:
                 synthed_ast = ast.parse(synthed_code)
                 synthed_output, synthed_exec_time = util.exec_eval(synthed_ast)
@@ -145,19 +147,24 @@ def python_helper(tree, dry_run=False, rewrite_for=None, toggle_eval=False):
                 stats["exec status"] = "SynthedExecFail"
                 stats["exec reason"] = repr(e)
                 return stats
-            
+
             if orig_output == synthed_output:
                 stats["exec status"] = "OutputMatch"
             else:
                 stats["exec status"] = "OutputMismatch"
     return stats
 
+
 def python(tree, dry_run=False, toggle_eval=False):
     """Benchmarks a Python script, assuming that it is represented as a Python
     AST object"""
-    stats = python_helper(tree, dry_run=dry_run, rewrite_for=False, toggle_eval=toggle_eval)
+    stats = python_helper(
+        tree, dry_run=dry_run, rewrite_for=False, toggle_eval=toggle_eval
+    )
     if stats["status"] != "Success":
-        stats2 = python_helper(tree, dry_run=dry_run, rewrite_for=True, toggle_eval=toggle_eval)
+        stats2 = python_helper(
+            tree, dry_run=dry_run, rewrite_for=True, toggle_eval=toggle_eval
+        )
         if "synth time" in stats2 and "synth time" in stats:
             stats2["synth time"] += stats["synth time"]
         stats = stats2

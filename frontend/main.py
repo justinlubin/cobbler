@@ -187,7 +187,9 @@ def make_report_helper(
                         + "\n\n"
                     )
                 if row["exec status"]:
-                    output_f.write(comment + " Execution status: " + row["exec status"] + "\n")
+                    output_f.write(
+                        comment + " Execution status: " + row["exec status"] + "\n"
+                    )
                 if row["exec reason"]:
                     output_f.write(comment + " Reason: " + row["exec reason"] + "\n")
 
@@ -216,11 +218,12 @@ def rerun_benchmarks_helper(
     input_path=None,
     output_path=None,
     language=None,
+    unsafe_eval=None,
 ):
     if language == "elm":
-        benchmarker = lambda s, **kwargs: benchmark.elm_json(json.loads(s))
+        benchmarker = lambda s, **kwargs: benchmark.elm_json(json.loads(s), **kwargs)
     elif language == "python":
-        benchmarker = lambda s, **kwargs: benchmark.python(ast.parse(s))
+        benchmarker = lambda s, **kwargs: benchmark.python(ast.parse(s), **kwargs)
 
     def generator(sample_limit=None):
         with open(input_path, "r", newline="") as input_f:
@@ -232,6 +235,7 @@ def rerun_benchmarks_helper(
         generator=generator,
         benchmarker=benchmarker,
         sample_limit=None,
+        unsafe_eval=unsafe_eval,
     )
 
 
@@ -471,6 +475,11 @@ if __name__ == "__main__":
         help="the language of the synthesizer to benchmark",
     )
     rerun_benchmark_parser.add_argument(
+        "--unsafe-eval",
+        action=argparse.BooleanOptionalAction,
+        help="evaluate benchmarking code from the database (WARNING: this will run arbitrary code, which is highly unsafe)",
+    )
+    rerun_benchmark_parser.add_argument(
         "--input",
         type=pathlib.Path,
         required=True,
@@ -590,6 +599,7 @@ if __name__ == "__main__":
             input_path=args.input,
             output_path=args.output,
             language=args.language,
+            unsafe_eval=args.unsafe_eval,
         )
     elif args.subcommand == "summarize":
         summarize_helper(
