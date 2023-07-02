@@ -1,5 +1,6 @@
 import ast
 import base64
+import builtins
 import contextlib
 import os
 from timeit import default_timer as timer
@@ -38,7 +39,6 @@ def exec_eval(tree):
         output = eval(compile(last, "<string>", mode="eval"), _globals, _locals)
         end = timer()
 
-    # return (output, execution time)
     return output, end - start
 
 

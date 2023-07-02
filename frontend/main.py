@@ -98,6 +98,7 @@ def benchmark_helper(
     generator=None,
     benchmarker=None,
     sample_limit=100,
+    unsafe_eval=None,
     dry_run=None,
 ):
     with open(path, "w", newline="") as f:
@@ -109,13 +110,14 @@ def benchmark_helper(
         writer.writeheader()
         previous_path = None
         sample_num = 0
-        for sample_path, block in generator(sample_limit=sample_limit):
+        for generator_output in generator(sample_limit=sample_limit):
+            sample_path, block = generator_output
             if sample_path != previous_path:
                 if previous_path is not None:
                     sample_num += 1
                     print(f"Completed '{previous_path}' ({sample_num}/{sample_limit})")
                 previous_path = sample_path
-            stats = benchmarker(block, dry_run=dry_run)
+            stats = benchmarker(block, dry_run=dry_run, toggle_eval=unsafe_eval)
             writer.writerow(stats)
         print(f"Completed '{previous_path}' ({sample_num+1}/{sample_limit})")
 
@@ -148,6 +150,8 @@ def view_benchmark_helper(
                     show_synthed_code(util.csv_str_decode(row["synthed code"])),
                     sep="\n",
                 )
+                print("exec status:", row["exec status"])
+                print("exec reason:", row["exec reason"])
                 break
 
 
@@ -166,7 +170,7 @@ def make_report_helper(
                     comment
                     + " =============================================================================\n"
                 )
-                output_f.write(comment + " Status: " + row["status"] + "\n")
+                output_f.write(comment + " Synthesis status: " + row["status"] + "\n")
                 if row["reason"]:
                     output_f.write(comment + " Reason: " + row["reason"] + "\n")
                 output_f.write(
@@ -182,6 +186,12 @@ def make_report_helper(
                         show_synthed_code(util.csv_str_decode(row["synthed code"]))
                         + "\n\n"
                     )
+                if row["exec status"]:
+                    output_f.write(
+                        comment + " Execution status: " + row["exec status"] + "\n"
+                    )
+                if row["exec reason"]:
+                    output_f.write(comment + " Reason: " + row["exec reason"] + "\n")
 
 
 def filter_benchmarks_helper(
@@ -208,11 +218,12 @@ def rerun_benchmarks_helper(
     input_path=None,
     output_path=None,
     language=None,
+    unsafe_eval=None,
 ):
     if language == "elm":
-        benchmarker = lambda s, **kwargs: benchmark.elm_json(json.loads(s))
+        benchmarker = lambda s, **kwargs: benchmark.elm_json(json.loads(s), **kwargs)
     elif language == "python":
-        benchmarker = lambda s, **kwargs: benchmark.python(ast.parse(s))
+        benchmarker = lambda s, **kwargs: benchmark.python(ast.parse(s), **kwargs)
 
     def generator(sample_limit=None):
         with open(input_path, "r", newline="") as input_f:
@@ -224,6 +235,7 @@ def rerun_benchmarks_helper(
         generator=generator,
         benchmarker=benchmarker,
         sample_limit=None,
+        unsafe_eval=unsafe_eval,
     )
 
 
@@ -357,6 +369,11 @@ if __name__ == "__main__":
         help="the maximum number of samples (files) to draw from the database (default: 20)",
     )
     benchmark_parser.add_argument(
+        "--unsafe-eval",
+        action=argparse.BooleanOptionalAction,
+        help="evaluate benchmarking code from the database (WARNING: this will run arbitrary code, which is highly unsafe)",
+    )
+    benchmark_parser.add_argument(
         "path_to_tsv",
         type=pathlib.Path,
         help="the path to write the benchmarking tsv to",
@@ -458,6 +475,11 @@ if __name__ == "__main__":
         help="the language of the synthesizer to benchmark",
     )
     rerun_benchmark_parser.add_argument(
+        "--unsafe-eval",
+        action=argparse.BooleanOptionalAction,
+        help="evaluate benchmarking code from the database (WARNING: this will run arbitrary code, which is highly unsafe)",
+    )
+    rerun_benchmark_parser.add_argument(
         "--input",
         type=pathlib.Path,
         required=True,
@@ -538,6 +560,7 @@ if __name__ == "__main__":
                 path=args.path_to_tsv,
                 generator=db_iter.elm_json,
                 benchmarker=benchmark.elm_json,
+                unsafe_eval=args.unsafe_eval,
                 sample_limit=args.sample_limit,
                 dry_run=args.dry_run,
             )
@@ -546,6 +569,7 @@ if __name__ == "__main__":
                 path=args.path_to_tsv,
                 generator=db_iter.python,
                 benchmarker=benchmark.python,
+                unsafe_eval=args.unsafe_eval,
                 sample_limit=args.sample_limit,
                 dry_run=args.dry_run,
             )
@@ -575,6 +599,7 @@ if __name__ == "__main__":
             input_path=args.input,
             output_path=args.output,
             language=args.language,
+            unsafe_eval=args.unsafe_eval,
         )
     elif args.subcommand == "summarize":
         summarize_helper(

@@ -10,27 +10,30 @@ import util
 
 
 CSV_FIELDS = [
-    "orig code",  #
+    "orig code",
+    "synthed code",
+    "synth time",
+    "status",
+    "reason",
     "orig output",
     "orig ast size",
     "orig exec time",
-    "synthed code",  #
     "synthed output",
     "synthed ast size",
     "synthed exec time",
-    "synth time",  #
-    "outputs match?",
-    "status",  #
-    "reason",  #
+    "exec status",
+    "exec reason",
 ]
 
 
-def elm_json(js, dry_run=False):
+def elm_json(
+    js, dry_run=False, toggle_eval=False
+):  # TODO: deal with toggle_eval somehow
     """Benchmarks a single Elm function/variable definition, assuming that it is
     represented as an elm-format JSON object"""
     stats = {}
     stats["orig code"] = util.csv_str_encode(json.dumps(js))
-    stats["outputs match?"] = len(stats["orig code"])
+    stats["exec status"] = len(stats["orig code"])
 
     try:
         block = extract.elm_json(js)
@@ -66,13 +69,11 @@ def elm_json(js, dry_run=False):
     return stats
 
 
-def python_helper(tree, dry_run=False, rewrite_for=None):
-    assert rewrite_for is not None
-
-
-def python(tree, dry_run=False):
+def python_helper(tree, dry_run=False, rewrite_for=None, toggle_eval=False):
     """Benchmarks a Python script, assuming that it is represented as a Python
     AST object"""
+    assert rewrite_for is not None
+
     stats = {}
     stats["orig code"] = util.csv_str_encode(ast.unparse(tree))
 
@@ -112,71 +113,59 @@ def python(tree, dry_run=False):
         stats["reason"] = synthesis_result["reason"]
 
     if synthesis_result["status"] == "Success":
-        stats["synthed code"] = util.csv_str_encode(
-            (
-                ast.unparse(pre)
-                + f"\n{output_variable} = "
-                + synthesis_result["solution"]
-                + "\n"
-                + ast.unparse(post)
-            ).strip()
-        )
+        synthed_code = (
+            ast.unparse(pre)
+            + f"\n{output_variable} = "
+            + synthesis_result["solution"]
+            + "\n"
+            + ast.unparse(post)
+        ).strip()
+
+        stats["synthed code"] = util.csv_str_encode(synthed_code)
         stats["synthed ast size"] = synthesis_result["size"]
 
+        if toggle_eval:
+            try:
+                orig_ast_size = util.num_nodes(tree)
+                orig_output, orig_exec_time = util.exec_eval(tree)
+
+                stats["orig ast size"] = orig_ast_size
+                stats["orig output"] = orig_output
+                stats["orig exec time"] = orig_exec_time
+            except Exception as e:
+                stats["exec status"] = "OrigExecFail"
+                stats["exec reason"] = repr(e)
+                return stats
+
+            try:
+                synthed_ast = ast.parse(synthed_code)
+                synthed_output, synthed_exec_time = util.exec_eval(synthed_ast)
+
+                stats["synthed output"] = synthed_output
+                stats["synthed exec time"] = synthed_exec_time
+            except Exception as e:
+                stats["exec status"] = "SynthedExecFail"
+                stats["exec reason"] = repr(e)
+                return stats
+
+            if orig_output == synthed_output:
+                stats["exec status"] = "OutputMatch"
+            else:
+                stats["exec status"] = "OutputMismatch"
     return stats
 
 
-def python(tree, dry_run=False):
+def python(tree, dry_run=False, toggle_eval=False):
     """Benchmarks a Python script, assuming that it is represented as a Python
     AST object"""
-    stats = python_helper(tree, dry_run=dry_run, rewrite_for=False)
+    stats = python_helper(
+        tree, dry_run=dry_run, rewrite_for=False, toggle_eval=toggle_eval
+    )
     if stats["status"] != "Success":
-        stats2 = python_helper(tree, dry_run=dry_run, rewrite_for=True)
+        stats2 = python_helper(
+            tree, dry_run=dry_run, rewrite_for=True, toggle_eval=toggle_eval
+        )
         if "synth time" in stats2 and "synth time" in stats:
             stats2["synth time"] += stats["synth time"]
         stats = stats2
     return stats
-
-
-# # execute cell and eval last line
-# try:
-#     if 'input(' in code:
-#         raise Exception('Cell cannot request user input')
-
-#     orig_ast = ast.parse(code, mode='exec')
-#     orig_ast_size = num_nodes(orig_ast)
-#     orig_output, orig_exec_time = exec_eval(orig_ast)
-
-#     stats['orig ast size'] = orig_ast_size
-#     stats['orig output'] = orig_output
-#     stats['orig exec time'] = orig_exec_time
-# except:
-#     stats['status'] = 'OrigExecFail'
-#     return stats
-
-# # output must be an int/float or a numpy array of ints/floats
-# if is_num(orig_output):
-#     output_type = "Number"
-# elif is_num_array(orig_output):
-#     output_type = "Array"
-# else:
-#     stats['status'] = 'OutputTypeFail'
-#     return stats
-
-# # execute synthesized code and eval last line
-# try:
-#     synthed_ast = ast.parse(synthed, mode='exec')
-#     synthed_ast_size = num_nodes(synthed_ast)
-#     synthed_output, synthed_exec_time = exec_eval(synthed_ast)
-
-#     stats['synthed ast size'] = synthed_ast_size
-#     stats['synthed output'] = synthed_output
-#     stats['synthed exec time'] = synthed_exec_time
-# except:
-#     stats['status'] = 'SynthedExecFail'
-#     return stats
-
-# if output_type == 'Number':
-#     stats['outputs match?'] = synthed_output == orig_output
-# elif output_type == 'Array':
-#     stats['outputs match?'] = np.array_equal(synthed_output, orig_output)
