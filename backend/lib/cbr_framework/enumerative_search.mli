@@ -19,7 +19,8 @@ val bottom_up
 
 (** [top_down ~max_iterations ~start ~expand ~correct] repeatedly applies
     [expand] to [start] at most [max_iterations] times searching for any
-    value that satisfies the [correct] predicate. The first argument of
+    value that satisfies the [correct] predicate, returning the first such value
+    and the number of expansions it took to find it. The first argument of
     [expand] is the current iteration depth, and the output of [correct]
     maps candidate programs to final programs. *)
 val top_down
@@ -27,4 +28,4 @@ val top_down
   -> start:'e list
   -> expand:(int -> 'e -> 'e list)
   -> correct:('e -> 'e option)
-  -> 'e option
+  -> (int * 'e) option

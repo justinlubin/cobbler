@@ -12,6 +12,7 @@ let rec pat_of_sexp : Sexp.t -> pat =
       PIndex (pat_of_sexp p, expr_of_sexp e)
   | Sexp.List [ Sexp.Atom "Number_Hole"; Sexp.Atom hole ] -> PHole (Number, hole)
   | Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ] -> PHole (Array, hole)
+  | Sexp.List [ Sexp.Atom "String_Hole"; Sexp.Atom hole ] -> PHole (String, hole)
   | Sexp.List [ Sexp.Atom "Constant_Hole"; Sexp.Atom hole ] ->
       PHole (Constant, hole)
   | Sexp.List [ Sexp.Atom "List_Hole"; Sexp.Atom hole ] -> PHole (List, hole)
@@ -20,6 +21,8 @@ let rec pat_of_sexp : Sexp.t -> pat =
 and expr_of_sexp : Sexp.t -> expr =
  fun sexp ->
   match sexp with
+  | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "False" ] -> Num 0
+  | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "True" ] -> Num 1
   | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] ->
       (try Num (int_of_string n) with
       | Failure _ -> raise (ParseFail (sprintf "could not parse number %s" n)))
@@ -31,6 +34,7 @@ and expr_of_sexp : Sexp.t -> expr =
   | Sexp.Atom name -> Name name
   | Sexp.List [ Sexp.Atom "Num_Hole"; Sexp.Atom hole ] -> Hole (Number, hole)
   | Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ] -> Hole (Array, hole)
+  | Sexp.List [ Sexp.Atom "String_Hole"; Sexp.Atom hole ] -> Hole (String, hole)
   | Sexp.List [ Sexp.Atom "Constant_Hole"; Sexp.Atom hole ] ->
       Hole (Constant, hole)
   | Sexp.List [ Sexp.Atom "List_Hole"; Sexp.Atom hole ] -> Hole (List, hole)
@@ -89,6 +93,8 @@ let rec sexp_of_pat : pat -> Sexp.t =
   | PHole (Number, name) ->
       Sexp.List [ Sexp.Atom "Number_Hole"; Sexp.Atom name ]
   | PHole (Array, name) -> Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom name ]
+  | PHole (String, name) ->
+      Sexp.List [ Sexp.Atom "String_Hole"; Sexp.Atom name ]
   | PHole (List, name) -> Sexp.List [ Sexp.Atom "List_Hole"; Sexp.Atom name ]
   | PHole (Constant, name) ->
       Sexp.List [ Sexp.Atom "Constant_Hole"; Sexp.Atom name ]
@@ -106,6 +112,7 @@ and sexp_of_expr : expr -> Sexp.t =
   | Name name -> Sexp.Atom name
   | Hole (Number, hole) -> Sexp.List [ Sexp.Atom "Num_Hole"; Sexp.Atom hole ]
   | Hole (Array, hole) -> Sexp.List [ Sexp.Atom "Array_Hole"; Sexp.Atom hole ]
+  | Hole (String, hole) -> Sexp.List [ Sexp.Atom "String_Hole"; Sexp.Atom hole ]
   | Hole (List, hole) -> Sexp.List [ Sexp.Atom "List_Hole"; Sexp.Atom hole ]
   | Hole (Constant, hole) ->
       Sexp.List [ Sexp.Atom "Constant_Hole"; Sexp.Atom hole ]
@@ -173,68 +180,138 @@ let pp_program : ?channel:Out_channel.t -> program -> unit =
   sexp_of_program p |> Sexp.pp_hum formatter;
   Format.pp_print_flush formatter ()
 
-let rec py_str_of_sexp : Sexp.t -> string =
+let rec vectorized_member_accesses : Sexp.t -> string list * Sexp.t =
  fun sexp ->
   match sexp with
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "__memberAccess"; p1; p2 ] ->
-      Printf.sprintf "%s.%s" (py_str_of_sexp p1) (py_str_of_sexp p2)
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "negate"; p1 ] ->
-      Printf.sprintf "-%s" (py_str_of_sexp p1)
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "len"; p1 ] ->
-      Printf.sprintf "len(%s)" (py_str_of_sexp p1)
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "range"; p1 ] ->
-      Printf.sprintf "np.arange(%s)" (py_str_of_sexp p1)
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.convolve_valid"; p1; p2 ] ->
-      "np.convolve("
-      ^ py_str_of_sexp p1
-      ^ ", "
-      ^ py_str_of_sexp p2
-      ^ ",'valid')"
   | Sexp.List
-      [ Sexp.Atom "Call"; Sexp.Atom "np.random.randint_size"; p1; p2; p3 ] ->
-      "np.random.randint("
-      ^ py_str_of_sexp p1
-      ^ ", "
-      ^ py_str_of_sexp p2
-      ^ ", size="
-      ^ py_str_of_sexp p3
-      ^ ")"
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.tolist"; p1 ] ->
-      "list(" ^ py_str_of_sexp p1 ^ ")"
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.full"; size; value ] ->
-      (match value with
-      | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "0" ] ->
-          Printf.sprintf "np.zeros(%s)" (py_str_of_sexp size)
-      | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "1" ] ->
-          Printf.sprintf "np.ones(%s)" (py_str_of_sexp size)
+      [ Sexp.Atom "Call"
+      ; Sexp.List
+          [ Sexp.Atom "Call"
+          ; Sexp.Atom "np.vectorize"
+          ; Sexp.Atom "__memberAccess"
+          ; Sexp.List [ Sexp.Atom "Str"; Sexp.Atom "{1}" ]
+          ]
+      ; Sexp.Atom attr
+      ; Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.array_object"; sub ]
+      ] ->
+      let remainder, base = vectorized_member_accesses sub in
+      (attr :: remainder, base)
+  | _ -> ([], sexp)
+
+let rec py_str_of_sexp : Sexp.t -> string =
+ fun sexp ->
+  match vectorized_member_accesses sexp with
+  | (_ :: _ as attrs), sub ->
+      Printf.sprintf
+        "np.vectorize(lambda x: x%s)(%s)"
+        (attrs |> List.rev |> List.map ~f:(fun a -> "." ^ a) |> String.concat)
+        (py_str_of_sexp sub)
+  | [], _ ->
+      (match sexp with
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "__memberAccess"; p1; p2 ] ->
+          Printf.sprintf "%s.%s" (py_str_of_sexp p2) (py_str_of_sexp p1)
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "negate"; p1 ] ->
+          Printf.sprintf "-%s" (py_str_of_sexp p1)
+      | Sexp.List
+          [ Sexp.Atom "Call"
+          ; Sexp.Atom
+              (( "+"
+               | "*"
+               | "-"
+               | "/"
+               | "**"
+               | "=="
+               | "!="
+               | ">"
+               | ">="
+               | "<"
+               | "<="
+               | "%" ) as op)
+          ; p1
+          ; p2
+          ] ->
+          Printf.sprintf "(%s %s %s)" (py_str_of_sexp p1) op (py_str_of_sexp p2)
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "len"; p1 ] ->
+          Printf.sprintf "len(%s)" (py_str_of_sexp p1)
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "range"; p1 ] ->
+          Printf.sprintf "np.arange(%s)" (py_str_of_sexp p1)
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.convolve_valid"; p1; p2 ] ->
+          "np.convolve("
+          ^ py_str_of_sexp p1
+          ^ ", "
+          ^ py_str_of_sexp p2
+          ^ ",'valid')"
+      | Sexp.List
+          [ Sexp.Atom "Call"; Sexp.Atom "np.random.randint_size"; p1; p2; p3 ]
+        ->
+          "np.random.randint("
+          ^ py_str_of_sexp p1
+          ^ ", "
+          ^ py_str_of_sexp p2
+          ^ ", size="
+          ^ py_str_of_sexp p3
+          ^ ")"
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.array_object"; p1 ] ->
+          "np.array(list(" ^ py_str_of_sexp p1 ^ "), dtype=object)"
+      | Sexp.List
+          [ Sexp.Atom "Call"
+          ; Sexp.Atom "np.vectorize"
+          ; p1
+          ; Sexp.List [ Sexp.Atom "Str"; Sexp.Atom "{}" ]
+          ] -> "np.vectorize(" ^ py_str_of_sexp p1 ^ ")"
+      | Sexp.List
+          [ Sexp.Atom "Call"
+          ; Sexp.Atom "np.vectorize"
+          ; p1
+          ; Sexp.List [ Sexp.Atom "Str"; Sexp.Atom set_string ]
+          ] ->
+          "np.vectorize(" ^ py_str_of_sexp p1 ^ ", excluded=" ^ set_string ^ ")"
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.tolist"; p1 ] ->
+          "list(" ^ py_str_of_sexp p1 ^ ")"
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.filter"; p1; p2 ] ->
+          "list(" ^ py_str_of_sexp p1 ^ "[" ^ py_str_of_sexp p2 ^ "])"
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.sum_string"; p1 ] ->
+          "np.sum(np.array(" ^ py_str_of_sexp p1 ^ ", dtype=\"object\"))"
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.full"; size; value ] ->
+          (match value with
+          | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "0" ] ->
+              Printf.sprintf "np.zeros(%s)" (py_str_of_sexp size)
+          | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom "1" ] ->
+              Printf.sprintf "np.ones(%s)" (py_str_of_sexp size)
+          | _ ->
+              Printf.sprintf
+                "np.full(%s, %s)"
+                (py_str_of_sexp size)
+                (py_str_of_sexp value))
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "broadcast"; p1 ] ->
+          Printf.sprintf "%s" (py_str_of_sexp p1)
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "sliceToEnd"; p1; p2 ] ->
+          Printf.sprintf "%s[%s:]" (py_str_of_sexp p1) (py_str_of_sexp p2)
+      | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "sliceUntil"; p1; p2 ] ->
+          Printf.sprintf "%s[:%s]" (py_str_of_sexp p1) (py_str_of_sexp p2)
+      | Sexp.List (Sexp.Atom "Call" :: fn :: args) ->
+          py_str_of_sexp fn
+          ^ "("
+          ^ (List.map ~f:py_str_of_sexp args |> String.concat ~sep:", ")
+          ^ ")"
+      | Sexp.List [ Sexp.Atom "Return"; right ] -> py_str_of_sexp right
+      | Sexp.List [ right ] -> py_str_of_sexp right
+      | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] -> n
+      | Sexp.List [ Sexp.Atom "Str"; Sexp.Atom s ] ->
+          Yojson.Basic.to_string (`String s)
+      | Sexp.List [ Sexp.Atom "Num_Hole"; _ ]
+      | Sexp.List [ Sexp.Atom "Array_Hole"; _ ]
+      | Sexp.List [ Sexp.Atom "String_Hole"; _ ]
+      | Sexp.List [ Sexp.Atom "Constant_Hole"; _ ]
+      | Sexp.List [ Sexp.Atom "List_Hole"; _ ] -> "?"
+      | Sexp.List [ Sexp.Atom "Index"; p1; p2 ] ->
+          Printf.sprintf "%s[%s]" (py_str_of_sexp p1) (py_str_of_sexp p2)
+      | Sexp.Atom "__emptyList" -> "[]"
+      | Sexp.Atom a -> a
       | _ ->
-          Printf.sprintf
-            "np.full(%s, %s)"
-            (py_str_of_sexp size)
-            (py_str_of_sexp value))
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "broadcast"; p1 ] ->
-      Printf.sprintf "%s" (py_str_of_sexp p1)
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "sliceToEnd"; p1; p2 ] ->
-      Printf.sprintf "%s[%s:]" (py_str_of_sexp p1) (py_str_of_sexp p2)
-  | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "sliceUntil"; p1; p2 ] ->
-      Printf.sprintf "%s[:%s]" (py_str_of_sexp p1) (py_str_of_sexp p2)
-  | Sexp.List (Sexp.Atom "Call" :: fn :: args) ->
-      py_str_of_sexp fn
-      ^ "("
-      ^ (List.map ~f:py_str_of_sexp args |> String.concat ~sep:", ")
-      ^ ")"
-  | Sexp.List [ Sexp.Atom "Return"; right ] -> py_str_of_sexp right
-  | Sexp.List [ right ] -> py_str_of_sexp right
-  | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] -> n
-  | Sexp.List [ Sexp.Atom "Num_Hole"; _ ]
-  | Sexp.List [ Sexp.Atom "Array_Hole"; _ ]
-  | Sexp.List [ Sexp.Atom "Constant_Hole"; _ ]
-  | Sexp.List [ Sexp.Atom "List_Hole"; _ ] -> "?"
-  | Sexp.Atom "__emptyList" -> "[]"
-  | Sexp.Atom a -> a
-  | _ ->
-      raise
-        (UnparseFail ("Invalid expression to unparse: " ^ Sexp.to_string sexp))
+          raise
+            (UnparseFail
+               ("Invalid expression to unparse: " ^ Sexp.to_string sexp)))
 
 and py_str_of_block : block -> string =
  fun block -> block |> sexp_of_block |> py_str_of_sexp

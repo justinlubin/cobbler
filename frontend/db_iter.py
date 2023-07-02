@@ -3,7 +3,7 @@ import json
 import datasets
 
 
-def elm_json(sample_limit=None):
+def elm_json(sample_limit=None, start=0):
     """Iterates through The Stack database, yielding elm-format JSON
     representations of Elm function/variable definitions from Elm files.
 
@@ -48,7 +48,6 @@ def python(sample_limit=None):
     )
 
     count = 0
-    code_so_far = ""
     for sample in iter(ds):
         if count > sample_limit:
             break
@@ -56,15 +55,14 @@ def python(sample_limit=None):
             nb_dict = json.loads(sample["content"])
             for cell in nb_dict["cells"]:
                 if cell["cell_type"] == "code":
-                    cell_code = None
+                    code = None
                     if type(cell["source"]) == str:
-                        cell_code = cell["source"]
+                        code = cell["source"]
                     elif type(cell["source"]) == list:
-                        cell_code = "\n".join(cell["source"])
+                        code = "\n".join(cell["source"])
                     else:
                         continue
-                    yield sample["max_stars_repo_path"], cell_code, code_so_far
-                    code_so_far += cell_code + "\n"
+                    yield sample["max_stars_repo_path"], code
         except Exception as e:
             print("[db_iter.python_cell exception]", e)
         count += 1

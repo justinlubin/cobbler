@@ -152,8 +152,12 @@ let rec unify_exn : constraint_set -> Typ.sub =
       let fvt = Typ.free_vars t in
       (match (s, t) with
       (* Base cases *)
-      | TBase b1, TBase b2 when [%eq: base_typ] b1 b2 -> unify_exn tail
       | TVar x1, TVar x2 when String.equal x1 x2 -> unify_exn tail
+      | TBase b1, TBase b2 when [%eq: base_typ] b1 b2 -> unify_exn tail
+      | TBase BTInt, TBase BTFloat | TBase BTFloat, TBase BTInt ->
+          unify_exn tail
+      | TDatatype ("List", _), TBase BTString
+      | TBase BTString, TDatatype ("List", _) -> unify_exn tail
       | TDatatype (dt1, _), TDatatype (dt2, _)
         when String.equal dt1 polymorphic_variant_universe
              || String.equal dt2 polymorphic_variant_universe -> unify_exn tail

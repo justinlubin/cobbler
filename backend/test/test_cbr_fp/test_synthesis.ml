@@ -16,6 +16,7 @@ let%test_unit "classic synth 1" =
   let actual_solution =
     Synthesis.solve ~use_unification:true ~depth:5 problem
     |> Option.value_exn
+    |> snd
     |> Exp.decompose_abs
     |> snd
     |> Exp.clean
@@ -32,6 +33,7 @@ let%test_unit "list2 mapfilter" =
   let actual_solution =
     Synthesis.solve ~use_unification:true ~depth:6 problem
     |> Option.value_exn
+    |> snd
     |> Exp.decompose_abs
     |> snd
     |> Exp.clean
@@ -48,6 +50,7 @@ let%test_unit "poly_mapfilter synthesis" =
   let actual_solution =
     Synthesis.solve ~use_unification:true ~depth:6 problem
     |> Option.value_exn
+    |> snd
     |> Exp.decompose_abs
     |> snd
     |> Exp.clean

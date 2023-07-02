@@ -290,11 +290,17 @@ let rec simpl_step1 : disagreement_set -> disagreement_set option =
       let binding2, head2, argument2 = abbreviate e2 in
       if headings_equal (binding1, head1) (binding2, head2)
       then (
-        let new_ds =
-          List.map2_exn argument1 argument2 ~f:(fun e1 e2 ->
+        (* TODO: Conceptually, this should never fail; however, it may actually
+           fail for polymorphic constructs like catamorphisms that can take in
+           different numbers of parameters even for the same datatype depending
+           on the result type. *)
+        match
+          List.map2 argument1 argument2 ~f:(fun e1 e2 ->
               (build_abstractions binding1 e1, build_abstractions binding2 e2))
-        in
-        simpl_step1 (new_ds @ rest_ds))
+        with
+        | Base.List.Or_unequal_lengths.Ok new_ds ->
+            simpl_step1 (new_ds @ rest_ds)
+        | Base.List.Or_unequal_lengths.Unequal_lengths -> None)
       else None
   | None -> Some ds
 

@@ -33,10 +33,12 @@ def elm_json(block):
         raise NoExtractionException("body is not case expression")
 
 
-def python(tree):
+def python(tree, rewrite_for=None):
     """Tries to extract a synthesis input from a Python script, assuming that
     it is represented as a Python AST object. Returns a tuple of (pre AST,
     body AST, post AST, variable name)."""
+
+    assert rewrite_for is not None
 
     if isinstance(tree, ast.Module) and len(tree.body) > 0:
         if isinstance(tree.body[-1], ast.Expr):
@@ -50,7 +52,7 @@ def python(tree):
     classifier.visit(tree)
     output_vars = classifier.output_vars
 
-    extractor = Extractor(output_vars)
+    extractor = Extractor(output_vars, rewrite_for)
     extractor.visit(tree)
     pre_ast = extractor.pre_ast
     body_ast = extractor.body_ast
@@ -68,6 +70,14 @@ def python(tree):
 
 
 # Python helper code
+
+gensym_counter = -1
+
+
+def gensym(x):
+    global gensym_counter
+    gensym_counter += 1
+    return x + str(gensym_counter)
 
 
 class VarClassifier(ast.NodeVisitor):
@@ -120,11 +130,12 @@ class VarClassifier(ast.NodeVisitor):
 
 
 class Extractor(ast.NodeVisitor):
-    def __init__(self, output_vars) -> None:
+    def __init__(self, output_vars, rewrite_for) -> None:
         self.output_vars = output_vars
         self.stmts = {"pre": [], "body": [], "post": []}
         self.num_modules = 0
         self.state = "pre"
+        self.rewrite_for = rewrite_for
 
     def visit_Name(self, node):
         return node.id
@@ -143,11 +154,24 @@ class Extractor(ast.NodeVisitor):
         self.stmts[self.state].append(node)
 
     def visit_For(self, node: ast.For):
-        if self.state == "pre":
-            self.state = "body"
-        self.stmts[self.state].append(node)
-        if self.state == "body":
+        if self.rewrite_for:
+            if self.state == "pre" or self.state == "body":
+                new_name = gensym("__array")
+                new_def = ast.parse(
+                    f"{new_name} = np.array({ast.unparse(node.iter)})"
+                ).body[0]
+                node.iter = new_def.targets[0]
+                self.stmts["pre"].append(new_def)
+                self.stmts["body"].append(node)
+            elif self.state == "post":
+                self.stmts["post"].append(node)
             self.state = "post"
+        else:
+            if self.state == "pre":
+                self.state = "body"
+            self.stmts[self.state].append(node)
+            if self.state == "body":
+                self.state = "post"
 
     def visit_Module(self, node):
         self.num_modules += 1

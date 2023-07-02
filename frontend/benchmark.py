@@ -26,7 +26,7 @@ CSV_FIELDS = [
 ]
 
 
-def elm_json(js):
+def elm_json(js, dry_run=False):
     """Benchmarks a single Elm function/variable definition, assuming that it is
     represented as an elm-format JSON object"""
     stats = {}
@@ -39,19 +39,22 @@ def elm_json(js):
         stats["synth status"] = "ExtractFail"
         return stats
 
-    start = timer()
+    if dry_run:
+        synthesis_result = {"status": "DryRun"}
+    else:
+        start = timer()
 
-    synthesis_result = subprocess.check_output(
-        [util.path_from_root("backend/_build/default/bin/main.exe"), "elm"],
-        input=json.dumps(block),
-        text=True,
-    )
+        synthesis_result = subprocess.check_output(
+            [util.path_from_root("backend/_build/default/bin/main.exe"), "elm"],
+            input=json.dumps(block),
+            text=True,
+        )
 
-    end = timer()
+        end = timer()
 
-    stats["synth time"] = end - start
+        stats["synth time"] = end - start
 
-    synthesis_result = json.loads(synthesis_result)
+        synthesis_result = json.loads(synthesis_result)
 
     stats["synth status"] = synthesis_result["status"]
     if "reason" in synthesis_result:
@@ -59,25 +62,21 @@ def elm_json(js):
 
     if synthesis_result["synth status"] == "Success":
         stats["synthed code"] = util.csv_str_encode(synthesis_result["solution"])
+        stats["synthed ast size"] = synthesis_result["size"]
 
     return stats
 
 
-def python(cell_code, code_so_far, toggle_eval=False):
+def python_helper(tree, toggle_eval=False, dry_run=False, rewrite_for=None):
+    assert rewrite_for is not None
+
     """Benchmarks a Python script, assuming that it is represented as a Python
     AST object"""
     stats = {}
-    stats["orig code"] = util.csv_str_encode(cell_code)
-    
-    try:
-        parsed_cell = ast.parse(cell_code)
-    except Exception as e:
-        stats["synth status"] = "ParseFail"
-        stats["synth reason"] = repr(e)
-        return stats
+    stats["orig code"] = util.csv_str_encode(ast.unparse(tree))
 
     try:
-        pre, body, post, output_variable = extract.python(parsed_cell)
+        pre, body, post, output_variable = extract.python(tree, rewrite_for=rewrite_for)
     except extract.NoExtractionException as e:
         stats["synth status"] = "ExtractFail"
         stats["synth reason"] = repr(e)
@@ -90,17 +89,22 @@ def python(cell_code, code_so_far, toggle_eval=False):
         stats["synth reason"] = repr(e)
         return stats
 
-    start = timer()
-    synthesis_result = subprocess.check_output(
-        [util.path_from_root("backend/_build/default/bin/main.exe"), "python"],
-        input=str(sexp),
-        text=True,
-    )
-    end = timer()
+    if dry_run:
+        synthesis_result = {"status": "DryRun"}
+    else:
+        start = timer()
 
-    stats["synth time"] = end - start
+        synthesis_result = subprocess.check_output(
+            [util.path_from_root("backend/_build/default/bin/main.exe"), "python"],
+            input=str(sexp),
+            text=True,
+        )
 
-    synthesis_result = json.loads(synthesis_result)
+        end = timer()
+
+        stats["synth time"] = end - start
+
+        synthesis_result = json.loads(synthesis_result)
 
     stats["synth status"] = synthesis_result["status"]
     if "reason" in synthesis_result:
@@ -116,13 +120,12 @@ def python(cell_code, code_so_far, toggle_eval=False):
         ).strip()
 
         stats["synthed code"] = util.csv_str_encode(synthed_code)
+        stats["synthed ast size"] = synthesis_result["size"]
 
         if toggle_eval:
             try:
-                #orig_ast = ast.parse(code_so_far + "\n" + cell_code, mode="exec")
-                orig_ast = ast.parse(cell_code, mode="exec")
-                orig_ast_size = util.num_nodes(orig_ast)
-                orig_output, orig_exec_time = util.exec_eval(orig_ast)
+                orig_ast_size = util.num_nodes(tree)
+                orig_output, orig_exec_time = util.exec_eval(tree)
 
                 stats["orig ast size"] = orig_ast_size
                 stats["orig output"] = orig_output
@@ -133,19 +136,15 @@ def python(cell_code, code_so_far, toggle_eval=False):
                 return stats
             
             try:
-                #synthed_ast = ast.parse(code_so_far + "\n" + synthed_code, mode="exec")
-                synthed_ast = ast.parse(synthed_code, mode="exec")
-                synthed_ast_size = util.num_nodes(synthed_ast)
+                synthed_ast = ast.parse(synthed_code)
                 synthed_output, synthed_exec_time = util.exec_eval(synthed_ast)
 
-                stats["synthed ast size"] = synthed_ast_size
                 stats["synthed output"] = synthed_output
                 stats["synthed exec time"] = synthed_exec_time
-            except:
+            except Exception as e:
                 stats["exec status"] = "SynthedExecFail"
                 stats["exec reason"] = repr(e)
                 return stats
             
             stats["exec status"] = orig_output == synthed_output
-
     return stats
