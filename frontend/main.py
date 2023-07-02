@@ -80,7 +80,7 @@ def refactor_helper(language=None):
     elif language == "python":
         stats = benchmark.python(ast.parse(code))
 
-    if stats["synth status"] == "Success":
+    if stats["status"] == "Success":
         decoded_data = util.csv_str_decode(stats["synthed code"])
         if language == "elm":
             print(show_elm(decoded_data))
@@ -88,8 +88,8 @@ def refactor_helper(language=None):
             print(show_python(decoded_data))
     else:
         print("No solution found.")
-        print("Status:", stats["synth status"])
-        print("Reason:", stats["synth reason"] if "synth reason" in stats else "")
+        print("Status:", stats["status"])
+        print("Reason:", stats["reason"] if "reason" in stats else "")
         sys.exit(1)
 
 
@@ -131,8 +131,8 @@ def view_benchmark_helper(
     with open(path, "r", newline="") as f:
         for i, row in enumerate(csv.DictReader(f, delimiter="\t")):
             if i == line_number - 2:
-                print("synth status:", row["synth status"])
-                print("synth reason:", row["synth reason"])
+                print("status:", row["status"])
+                print("reason:", row["reason"])
                 print("synth time:", row["synth time"])
                 print(
                     "------------------------------------------------------------------------------------------------"
@@ -170,9 +170,9 @@ def make_report_helper(
                     comment
                     + " =============================================================================\n"
                 )
-                output_f.write(comment + " Synthesis status: " + row["synth status"] + "\n")
-                if row["synth reason"]:
-                    output_f.write(comment + " Reason: " + row["synth reason"] + "\n")
+                output_f.write(comment + " Synthesis status: " + row["status"] + "\n")
+                if row["reason"]:
+                    output_f.write(comment + " Reason: " + row["reason"] + "\n")
                 output_f.write(
                     comment + " Synthesis time: " + row["synth time"] + "\n\n"
                 )
@@ -207,7 +207,7 @@ def filter_benchmarks_helper(
             )
             writer.writeheader()
             for row in csv.DictReader(input_f, delimiter="\t"):
-                in_statuses = row["synth status"] in statuses
+                in_statuses = row["status"] in statuses
                 if not invert and in_statuses or invert and not in_statuses:
                     writer.writerow(row)
 

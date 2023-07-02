@@ -13,8 +13,8 @@ CSV_FIELDS = [
     "orig code",
     "synthed code",
     "synth time",
-    "synth status",
-    "synth reason",
+    "status",
+    "reason",
     "orig output",
     "orig ast size",
     "orig exec time",
@@ -26,7 +26,7 @@ CSV_FIELDS = [
 ]
 
 
-def elm_json(js, dry_run=False):
+def elm_json(js, dry_run=False, toggle_eval=False): #TODO: deal with toggle_eval somehow
     """Benchmarks a single Elm function/variable definition, assuming that it is
     represented as an elm-format JSON object"""
     stats = {}
@@ -36,7 +36,7 @@ def elm_json(js, dry_run=False):
     try:
         block = extract.elm_json(js)
     except extract.NoExtractionException:
-        stats["synth status"] = "ExtractFail"
+        stats["status"] = "ExtractFail"
         return stats
 
     if dry_run:
@@ -56,37 +56,37 @@ def elm_json(js, dry_run=False):
 
         synthesis_result = json.loads(synthesis_result)
 
-    stats["synth status"] = synthesis_result["status"]
+    stats["status"] = synthesis_result["status"]
     if "reason" in synthesis_result:
-        stats["synth reason"] = synthesis_result["reason"]
+        stats["reason"] = synthesis_result["reason"]
 
-    if synthesis_result["synth status"] == "Success":
+    if synthesis_result["status"] == "Success":
         stats["synthed code"] = util.csv_str_encode(synthesis_result["solution"])
         stats["synthed ast size"] = synthesis_result["size"]
 
     return stats
 
 
-def python_helper(tree, toggle_eval=False, dry_run=False, rewrite_for=None):
-    assert rewrite_for is not None
-
+def python_helper(tree, dry_run=False, rewrite_for=None, toggle_eval=False):
     """Benchmarks a Python script, assuming that it is represented as a Python
     AST object"""
+    assert rewrite_for is not None
+
     stats = {}
     stats["orig code"] = util.csv_str_encode(ast.unparse(tree))
 
     try:
         pre, body, post, output_variable = extract.python(tree, rewrite_for=rewrite_for)
     except extract.NoExtractionException as e:
-        stats["synth status"] = "ExtractFail"
-        stats["synth reason"] = repr(e)
+        stats["status"] = "ExtractFail"
+        stats["reason"] = repr(e)
         return stats
 
     try:
         sexp = python_to_ir.parse(body)
     except Exception as e:
-        stats["synth status"] = "IRConversionFail"
-        stats["synth reason"] = repr(e)
+        stats["status"] = "IRConversionFail"
+        stats["reason"] = repr(e)
         return stats
 
     if dry_run:
@@ -106,9 +106,9 @@ def python_helper(tree, toggle_eval=False, dry_run=False, rewrite_for=None):
 
         synthesis_result = json.loads(synthesis_result)
 
-    stats["synth status"] = synthesis_result["status"]
+    stats["status"] = synthesis_result["status"]
     if "reason" in synthesis_result:
-        stats["synth reason"] = synthesis_result["reason"]
+        stats["reason"] = synthesis_result["reason"]
 
     if synthesis_result["status"] == "Success":
         synthed_code = (
@@ -146,5 +146,19 @@ def python_helper(tree, toggle_eval=False, dry_run=False, rewrite_for=None):
                 stats["exec reason"] = repr(e)
                 return stats
             
-            stats["exec status"] = orig_output == synthed_output
+            if orig_output == synthed_output:
+                stats["exec status"] = "OutputMatch"
+            else:
+                stats["exec status"] = "OutputMismatch"
+    return stats
+
+def python(tree, dry_run=False, toggle_eval=False):
+    """Benchmarks a Python script, assuming that it is represented as a Python
+    AST object"""
+    stats = python_helper(tree, dry_run=dry_run, rewrite_for=False, toggle_eval=toggle_eval)
+    if stats["status"] != "Success":
+        stats2 = python_helper(tree, dry_run=dry_run, rewrite_for=True, toggle_eval=toggle_eval)
+        if "synth time" in stats2 and "synth time" in stats:
+            stats2["synth time"] += stats["synth time"]
+        stats = stats2
     return stats

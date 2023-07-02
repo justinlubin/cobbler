@@ -1,6 +1,7 @@
 import subprocess
 import json
 import datasets
+import ast
 
 
 def elm_json(sample_limit=None, start=0):
@@ -62,7 +63,7 @@ def python(sample_limit=None):
                         code = "\n".join(cell["source"])
                     else:
                         continue
-                    yield sample["max_stars_repo_path"], code
+                    yield sample["max_stars_repo_path"], ast.parse(code)
         except Exception as e:
             print("[db_iter.python_cell exception]", e)
         count += 1
