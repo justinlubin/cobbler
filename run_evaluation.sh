@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
-./cobbler benchmark --language=elm --dry-run --sample-limit=10000 data/elm-all.tsv
-./cobbler benchmark --language=python --dry-run --sample-limit=100000 data/python-all.tsv
+./cobbler benchmark --language=elm --dry-run --sample-limit=10000 data/elm-train.tsv
+./cobbler benchmark --language=python --dry-run --sample-limit=100000 data/python-train.tsv
+
+./cobbler benchmark --language=elm --dry-run --sample-limit=90637 data/elm-all.tsv
+./cobbler benchmark --language=python --dry-run --sample-limit=1000000 data/python-all.tsv
 
 ./cobbler filter-benchmarks --input=data/elm-all.tsv --output=data/elm-filtered.tsv --invert ExtractFail
 ./cobbler filter-benchmarks --input=data/python-all.tsv --output=data/python-filtered.tsv --invert ExtractFail

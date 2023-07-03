@@ -78,7 +78,7 @@ let pctor_of_json : Json.t -> string * string list =
       | [] -> ("Nil", [])
       | [ hd ] ->
           (match j |> J.member "rest" with
-          | `Null -> raise (ParseFail "TODO")
+          | `Null -> raise (ParseFail "singleton list pattern not supported")
           | rest -> ("Cons", [ pvar_of_json hd; rest |> pvar_of_json ]))
       | _ -> raise (ParseFail (sprintf "nested list patterns unsupported")))
   | s -> raise (ParseFail (sprintf "unknown constructor pattern tag '%s'" s))
