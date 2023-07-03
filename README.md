@@ -1,5 +1,7 @@
 # Component-based refactoring
 
+TODO: Must remove HuggingFace key!
+
 [![Tests](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml/badge.svg)](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml)
 
 This project contains the source code for the `cobbler` program synthesizer, which implements the component-based refactoring algorithm.
@@ -32,6 +34,11 @@ Once that is done, see `./cobbler --help`.
 ### Other dependencies
 
 - This project also depends on [elm-format](https://github.com/avh4/elm-format) (tested with version 0.8.7), which is installable via `npm`
+
+## Running the evaluation
+
+- To run the evaluation described in the paper, run the `run_evaluation.sh`
+  script in the project's root repository
 
 ## Running the analysis scripts
 

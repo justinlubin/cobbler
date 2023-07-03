@@ -12,6 +12,8 @@ import benchmark
 import db_iter
 import util
 
+import numpy as np
+
 
 def refresh_binary():
     try:
@@ -118,6 +120,16 @@ def benchmark_helper(
                     print(f"Completed '{previous_path}' ({sample_num}/{sample_limit})")
                 previous_path = sample_path
             stats = benchmarker(block, dry_run=dry_run, toggle_eval=unsafe_eval)
+            if stats["status"] in ["Success", "SynthFail"]:
+                times = []
+                for _ in range(10):
+                    stats_tmp = benchmarker(
+                        block, dry_run=dry_run, toggle_eval=unsafe_eval
+                    )
+                    assert stats_tmp["status"] == stats["status"]
+                    times.append(stats_tmp["synth time"])
+                stats["synth time"] = np.mean(times)
+                stats["synth time stddev"] = np.std(times)
             writer.writerow(stats)
         print(f"Completed '{previous_path}' ({sample_num+1}/{sample_limit})")
 
