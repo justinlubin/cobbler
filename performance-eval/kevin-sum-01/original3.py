@@ -1,5 +1,5 @@
 import numpy as np
-N = 1e5
+N = 10 ** 5
 
 x = np.random.randint(-10, 10, size = N)
 the_sum = 0
