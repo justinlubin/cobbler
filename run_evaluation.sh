@@ -8,3 +8,5 @@
 
 ./cobbler rerun-benchmarks --language=elm --input=data/elm-filtered.tsv --output=data/elm-final.tsv
 ./cobbler rerun-benchmarks --language=python --input=data/python-filtered.tsv --output=data/python-final.tsv
+
+python analysis/analyze_results.py
