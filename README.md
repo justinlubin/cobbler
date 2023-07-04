@@ -48,6 +48,8 @@ The scripts in the `analysis/` directory analyze the benchmarking results. They 
 - `matplotlib`
 - `pandas`
 
+(For convenience, these are automatically installed when running `make deps` in the `frontend` directory.)
+
 ## Running tests
 
 To run the backend tests, run `make test` from the `backend` subdirectory.

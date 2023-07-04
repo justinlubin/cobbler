@@ -1,3 +1,5 @@
 datasets
 huggingface_hub
 numpy
+pandas
+matplotlib

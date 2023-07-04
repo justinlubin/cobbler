@@ -127,9 +127,8 @@ def benchmark_helper(
                         block, dry_run=dry_run, toggle_eval=unsafe_eval
                     )
                     assert stats_tmp["status"] == stats["status"]
-                    times.append(stats_tmp["synth time"])
-                stats["synth time"] = np.mean(times)
-                stats["synth time stddev"] = np.std(times)
+                    times.append(str(stats_tmp["synth time"]))
+                stats["synth time"] = ",".join(times)
             writer.writerow(stats)
         print(f"Completed '{previous_path}' ({sample_num+1}/{sample_limit})")
 
@@ -224,6 +223,30 @@ def filter_benchmarks_helper(
                 in_statuses = row["status"] in statuses
                 if not invert and in_statuses or invert and not in_statuses:
                     writer.writerow(row)
+
+
+def subtract_benchmarks_helper(
+    superset_path=None,
+    subset_path=None,
+    output_path=None,
+):
+    seen_subset = set()
+    with open(subset_path, "r", newline="") as subset_f:
+        for row in csv.DictReader(subset_f, delimiter="\t"):
+            seen_subset.add(row["orig code"])
+
+    with open(superset_path, "r", newline="") as superset_f:
+        with open(output_path, "w", newline="") as output_f:
+            writer = csv.DictWriter(
+                output_f,
+                fieldnames=benchmark.CSV_FIELDS,
+                delimiter="\t",
+            )
+            writer.writeheader()
+            for row in csv.DictReader(superset_f, delimiter="\t"):
+                if row["orig code"] in seen_subset:
+                    continue
+                writer.writerow(row)
 
 
 def rerun_benchmarks_helper(
@@ -474,6 +497,31 @@ if __name__ == "__main__":
         help="the statuses to filter",
     )
 
+    # Subtract benchmark results subcommand
+
+    subtract_benchmarks_parser = subparsers.add_parser(
+        "subtract",
+        help="subtract out parts of a benchmark",
+    )
+    subtract_benchmarks_parser.add_argument(
+        "--superset",
+        type=pathlib.Path,
+        required=True,
+        help="the path of superset benchmarking tsv",
+    )
+    subtract_benchmarks_parser.add_argument(
+        "--subset",
+        type=pathlib.Path,
+        required=True,
+        help="the path of subset benchmarking tsv to subtract out",
+    )
+    subtract_benchmarks_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the new benchmarking tsv",
+    )
+
     # Re-run benchmark suite subcommand
 
     rerun_benchmark_parser = subparsers.add_parser(
@@ -604,6 +652,12 @@ if __name__ == "__main__":
             output_path=args.output,
             invert=args.invert,
             statuses=args.statuses,
+        )
+    elif args.subcommand == "subtract":
+        subtract_benchmarks_helper(
+            superset_path=args.superset,
+            subset_path=args.subset,
+            output_path=args.output,
         )
     elif args.subcommand == "rerun-benchmarks":
         refresh_binary()

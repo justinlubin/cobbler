@@ -16,13 +16,21 @@ OUTPUT_DIR = "analysis/output/"
 
 def load_data(filename):
     df = pd.read_csv(INPUT_DIR + filename, sep="\t")[
-        ["synthed ast size", "synth time", "synth time stddev", "status"]
+        ["synthed ast size", "synth time", "status"]
     ]
-    return df[df["status"].isin(["Success", "SynthFail"])]
+    df = df[df["status"].isin(["Success", "SynthFail"])].reset_index()
+    df["synth time"] = df["synth time"].apply(
+        lambda row: [float(x) for x in row.split(",")]
+    )
+    df["synth time med"] = df["synth time"].apply(lambda r: np.median(r))
+    df["synth time min"] = df["synth time"].apply(lambda r: np.min(r))
+    df["synth time max"] = df["synth time"].apply(lambda r: np.max(r))
+    df.drop(columns={"synth time"}, inplace=True)
+    return df
 
 
-data_elm = load_data("elm-final.tsv")
-data_python = load_data("python-final.tsv")
+data_elm = load_data("elm-test.tsv")
+data_python = load_data("python-test.tsv")
 
 # %% Synthesis time vs. AST size
 
@@ -41,14 +49,14 @@ def synthtime_vs_astsize(data, name):
 
     ax = fig.add_subplot(gs[1, 0])
 
-    spread = 0.3
+    spread = 0.7
     ax.scatter(
         data["synthed ast size"]
         + spread * np.random.rand(data.shape[0])
         - (spread / 2),
-        np.log10(data["synth time"]),
+        np.log10(data["synth time med"]),
         marker="o",
-        s=5,
+        s=4,
     )
 
     ax.set_xticks(np.arange(1, data["synthed ast size"].max() + 1))
@@ -65,12 +73,9 @@ def synthtime_vs_astsize(data, name):
         data["synthed ast size"].dropna(),
         return_counts=True,
     )
-    b = ax_hist.bar(
-        labels,
-        counts,
-        align="center",
-    )
+    b = ax_hist.bar(labels, counts, align="center", width=0.7)
     ax_hist.bar_label(b)
+    ax_hist.set_ylabel("# Samples")
 
     fig.savefig(f"{OUTPUT_DIR}/{name}-synthtime_vs_astsize.pdf")
 
@@ -82,8 +87,8 @@ synthtime_vs_astsize(data_python, "python")
 
 
 def summarize(data, prefix, write):
-    success = data[data["status"] == "Success"]["synth time"].describe()
-    fail = data[data["status"] == "SynthFail"]["synth time"].describe()
+    success = data[data["status"] == "Success"]["synth time med"].describe()
+    fail = data[data["status"] == "SynthFail"]["synth time med"].describe()
 
     write(
         "\\newcommand{\\",
@@ -174,8 +179,8 @@ with open(f"{OUTPUT_DIR}time-summary.txt", "w") as f:
 fig, ax = plt.subplots(1, 1, figsize=(10, 4))
 p = ax.boxplot(
     [
-        np.log10(data_python["synth time"]),
-        np.log10(data_elm["synth time"]),
+        np.log10(data_python["synth time med"]),
+        np.log10(data_elm["synth time med"]),
     ],
     labels=["Python", "Elm"],
     whis=(0, 100),

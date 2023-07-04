@@ -13,7 +13,6 @@ CSV_FIELDS = [
     "orig code",
     "synthed code",
     "synth time",
-    "synth time stddev",
     "status",
     "reason",
     "orig output",

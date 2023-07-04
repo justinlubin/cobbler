@@ -57,7 +57,7 @@ let main_elm : string -> Yojson.Basic.t =
     let problem =
       Synthesis.problem_of_definitions (stdlib_sigma, gamma, env) name
     in
-    match Synthesis.solve ~use_unification:true ~depth:4 problem with
+    match Synthesis.solve ~use_unification:true ~depth:3 problem with
     | None -> `Assoc [ ("status", `String "SynthFail") ]
     | Some (expansions, wrapped_solution) ->
         (try
