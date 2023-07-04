@@ -61,6 +61,7 @@ def synthtime_vs_astsize(data, name):
 
     ax.set_xticks(np.arange(1, data["synthed ast size"].max() + 1))
     ax.set_yticks([-2, -1, 0], labels=["0.01", "0.1", "1"])
+    ax.set_ylim([-2, 1])
 
     ax.set_xlabel("# Components used")
     ax.set_ylabel("Synthesis time (s)")
@@ -75,8 +76,9 @@ def synthtime_vs_astsize(data, name):
     )
     b = ax_hist.bar(labels, counts, align="center", width=0.7)
     ax_hist.bar_label(b)
-    ax_hist.set_ylabel("# Samples")
+    ax_hist.set_ylabel("# Entries")
 
+    fig.tight_layout()
     fig.savefig(f"{OUTPUT_DIR}/{name}-synthtime_vs_astsize.pdf")
 
 
@@ -179,20 +181,23 @@ with open(f"{OUTPUT_DIR}time-summary.txt", "w") as f:
 fig, ax = plt.subplots(1, 1, figsize=(10, 4))
 p = ax.boxplot(
     [
-        np.log10(data_python["synth time med"]),
-        np.log10(data_elm["synth time med"]),
+        np.log10(data_python[data_python["status"] == "SynthFail"]["synth time med"]),
+        np.log10(data_elm[data_elm["status"] == "SynthFail"]["synth time med"]),
+        np.log10(data_python[data_python["status"] == "Success"]["synth time med"]),
+        np.log10(data_elm[data_elm["status"] == "Success"]["synth time med"]),
     ],
-    labels=["Python", "Elm"],
+    labels=[
+        "Python (unsuccessful)",
+        "Elm (unsuccessful)",
+        "Python (successful)",
+        "Elm (successful)",
+    ],
     whis=(0, 100),
     vert=False,
-    # patch_artist=True,
 )
-# for median in p["medians"]:
-#     median.set_color("black")
-# for box in p["boxes"]:
-#     box.set_facecolor("white")
 
 ax.set_xticks([-2, -1, 0, 1], labels=["0.01", "0.1", "1", "10"])
 ax.set_xlabel("Synthesis time (s)")
 
+fig.tight_layout()
 fig.savefig(f"{OUTPUT_DIR}synthtime_boxplot.pdf")
