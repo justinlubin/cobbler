@@ -10,3 +10,5 @@
 ./cobbler rerun-benchmarks --language=python --input=data/python-filtered.tsv --output=data/python-final.tsv
 
 python analysis/analyze_results.py
+
+python performance-eval/performance_eval.py
