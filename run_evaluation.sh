@@ -19,3 +19,5 @@
 ./cobbler subtract --superset=data/python-final.tsv --subset=data/python-train.tsv --output=data/python-test.tsv
 
 python analysis/analyze_results.py
+
+python performance-eval/performance_eval.py
