@@ -23,8 +23,10 @@ def load_data(filename):
         lambda row: [float(x) for x in row.split(",")]
     )
     df["synth time med"] = df["synth time"].apply(lambda r: np.median(r))
-    df["synth time min"] = df["synth time"].apply(lambda r: np.min(r))
-    df["synth time max"] = df["synth time"].apply(lambda r: np.max(r))
+    # Source: https://stackoverflow.com/a/23229224
+    df["synth time iqr"] = df["synth time"].apply(
+        lambda r: np.subtract(*np.percentile(r, [75, 25]))
+    )
     df.drop(columns={"synth time"}, inplace=True)
     return df
 
@@ -92,39 +94,41 @@ def summarize(data, prefix, write):
     success = data[data["status"] == "Success"]["synth time med"].describe()
     fail = data[data["status"] == "SynthFail"]["synth time med"].describe()
 
+    fmt = "{0:.2f}"
+
     write(
         "\\newcommand{\\",
         prefix,
         "SuccessSynthTimeA}{",
-        success["min"],
+        fmt.format(success["min"]),
         "}",
     )
     write(
         "\\newcommand{\\",
         prefix,
         "SuccessSynthTimeB}{",
-        success["25%"],
+        fmt.format(success["25%"]),
         "}",
     )
     write(
         "\\newcommand{\\",
         prefix,
         "SuccessSynthTimeC}{",
-        success["50%"],
+        fmt.format(success["50%"]),
         "}",
     )
     write(
         "\\newcommand{\\",
         prefix,
         "SuccessSynthTimeD}{",
-        success["75%"],
+        fmt.format(success["75%"]),
         "}",
     )
     write(
         "\\newcommand{\\",
         prefix,
         "SuccessSynthTimeE}{",
-        success["max"],
+        fmt.format(success["max"]),
         "}",
     )
     write()
@@ -133,35 +137,46 @@ def summarize(data, prefix, write):
         "\\newcommand{\\",
         prefix,
         "FailSynthTimeA}{",
-        fail["min"],
+        fmt.format(fail["min"]),
         "}",
     )
     write(
         "\\newcommand{\\",
         prefix,
         "FailSynthTimeB}{",
-        fail["25%"],
+        fmt.format(fail["25%"]),
         "}",
     )
     write(
         "\\newcommand{\\",
         prefix,
         "FailSynthTimeC}{",
-        fail["50%"],
+        fmt.format(fail["50%"]),
         "}",
     )
     write(
         "\\newcommand{\\",
         prefix,
         "FailSynthTimeD}{",
-        fail["75%"],
+        fmt.format(fail["75%"]),
         "}",
     )
     write(
         "\\newcommand{\\",
         prefix,
         "FailSynthTimeE}{",
-        fail["max"],
+        fmt.format(fail["max"]),
+        "}",
+    )
+    write()
+
+
+def synthesis_deviation(df, write):
+    iqr_factor = (df["synth time iqr"] / df["synth time med"]).max()
+
+    write(
+        "\\newcommand{\\SynthTimeIQRPercent}{",
+        "{0:.2f}".format(100 * iqr_factor),
         "}",
     )
     write()
@@ -174,6 +189,8 @@ with open(f"{OUTPUT_DIR}time-summary.txt", "w") as f:
 
     summarize(data_elm, "Elm", write)
     summarize(data_python, "Python", write)
+
+    synthesis_deviation(pd.concat([data_elm, data_python]), write)
 
 
 # %% Box plots of synthesis time
