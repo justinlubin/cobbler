@@ -1,5 +1,4 @@
-addr_spans = soup.find_all('span', class_='addr')
-addresses = []
-for span in addr_spans:
-    addresses.append(span.a.text)
-addresses
+target_type = []
+for row in target_columns.itertuples():
+    target_type.append(row.filename + "." + row.listofcolumns)
+target_type
