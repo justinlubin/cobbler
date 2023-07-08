@@ -1,5 +1,4 @@
 import numpy as np
-
 N = 10**7
 
 x = np.random.randint(-10, 10, size=N)
