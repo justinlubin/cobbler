@@ -1,4 +1,5 @@
-result = 0
-for n in numbers:
-    result = result + int(n)
-result
+short_planets = []
+for planet in planetas:
+    if len(planet) < 7:
+        short_planets.append(planet)
+short_planets

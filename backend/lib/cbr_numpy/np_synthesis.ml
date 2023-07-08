@@ -163,10 +163,27 @@ let rec fix_filter : expr -> expr =
           let e1', ce1 = fix_filter_pred' e1 in
           let e2', ce2 = fix_filter_pred' e2 in
           (Index (e1', e2'), ce1 @ ce2)
+      | Call
+          ( (Name
+               ( "+"
+               | "*"
+               | "-"
+               | "/"
+               | "**"
+               | "=="
+               | "!="
+               | ">"
+               | ">="
+               | "<"
+               | "<="
+               | "%" ) as head)
+          , args ) ->
+          let a, ca = List.map ~f:fix_filter_pred' args |> List.unzip in
+          (Call (head, a), List.concat ca)
       | Call (head, args) ->
           let h, ch = fix_filter_pred' head in
           let a, ca = List.map ~f:fix_filter_pred' args |> List.unzip in
-          (Call (h, a), ch @ List.concat ca)
+          (Call (Call (Name "np.vectorize", [ h ]), a), ch @ List.concat ca)
       | Num _ | Str _ | Name _ | Hole (_, _) -> (e, [])
     in
     let pred', cs = fix_filter_pred' pred in

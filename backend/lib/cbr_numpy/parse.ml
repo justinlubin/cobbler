@@ -269,7 +269,7 @@ let rec py_str_of_sexp : Sexp.t -> string =
       | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.tolist"; p1 ] ->
           "list(" ^ py_str_of_sexp p1 ^ ")"
       | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.filter"; p1; p2 ] ->
-          "list(" ^ py_str_of_sexp p1 ^ "[" ^ py_str_of_sexp p2 ^ "])"
+          "list(np.array(" ^ py_str_of_sexp p1 ^ ")[" ^ py_str_of_sexp p2 ^ "])"
       | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.sum_string"; p1 ] ->
           "np.sum(np.array(" ^ py_str_of_sexp p1 ^ ", dtype=\"object\"))"
       | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.full"; size; value ] ->
