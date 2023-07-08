@@ -158,7 +158,7 @@ let power_defn =
     ; For
         ( PHole (Number, "pow_i")
         , Call (Name "range", [ Call (Name "len", [ Name "pow_1" ]) ])
-        , subtract_body )
+        , power_body )
     ; Return (Hole (Array, "pow_result"))
     ] )
 
