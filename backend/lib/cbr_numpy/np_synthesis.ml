@@ -205,6 +205,24 @@ let rec simplify : expr -> expr =
           simplify
             (Call
                (Name "sliceUntil", [ Call (Name "np.tolist", [ arg ]); amount ]))
+      (* Add/Product identities *)
+      | ( Name "np.add"
+        , [ ( Call (Name "np.zeros", _)
+            | Call (Name "np.full", [ _; Num 0 ])
+            | Num 0 )
+          ; arg
+          ] )
+      | ( Name "np.add"
+        , [ arg
+          ; ( Call (Name "np.zeros", _)
+            | Call (Name "np.full", [ _; Num 0 ])
+            | Num 0 )
+          ] )
+      | ( Name "np.product"
+        , [ (Call (Name "np.full", [ _; Num 1 ]) | Num 1); arg ] )
+      | ( Name "np.product"
+        , [ arg; (Call (Name "np.full", [ _; Num 1 ]) | Num 1) ] ) ->
+          simplify arg
       (* Copy *)
       | Name "np.copy", [ arg; amount ] ->
           simplify
