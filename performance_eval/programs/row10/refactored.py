@@ -1,6 +1,3 @@
-import numpy as np
-N = 10**3
-
 def func(x):
     return x * x + x + 100
 
