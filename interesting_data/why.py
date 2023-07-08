@@ -1,5 +1,4 @@
-short_planets = []
-for planet in planetas:
-    if len(planet) < 7:
-        short_planets.append(planet)
-short_planets
+total_team = []
+for i in range(len(team1)):
+    total_team.append(team1[i] + team2[i])
+total_team

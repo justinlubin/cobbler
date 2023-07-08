@@ -247,8 +247,7 @@ let rec simplify : expr -> expr =
       | Name "np.copy", [ (Call (Call (Name "np.vectorize", _), _) as inner) ]
         -> simplify inner
       (* sliceToEnd *)
-      | Name "len", [ Call (Name "sliceToEnd", [ a; x ]) ]
-      | Name "len", [ Call (Name "sliceUntil", [ a; x ]) ] ->
+      | Name "len", [ Call (Name "sliceToEnd", [ a; x ]) ] ->
           simplify (Call (Name "-", [ Call (Name "len", [ a ]); x ]))
       | ( Name "sliceToEnd"
         , [ a; Call (Name "-", [ Call (Name "len", [ a' ]); x ]) ] )
@@ -283,6 +282,7 @@ let rec simplify : expr -> expr =
                , List.map inner_args ~f:(fun a ->
                      Call (Name "sliceToEnd", [ a; n ])) ))
       (* sliceUntil *)
+      | Name "len", [ Call (Name "sliceUntil", [ _; x ]) ] -> simplify x
       | ( Name "sliceUntil"
         , [ Call (Name "np.random.randint_size", [ low; high; _ ]); x ] ) ->
           simplify (Call (Name "np.random.randint_size", [ low; high; x ]))
@@ -432,47 +432,51 @@ let loop_vars : program -> String.Set.t = fun (_, b) -> loop_vars_block b
 
 exception EarlyCutoff of string
 
-let possible_types : program -> hole_type list =
+let infer : program -> string * hole_type list =
  fun (_, b) ->
   match List.last_exn b with
   | Return (Name var) ->
-      (match
-         List.find_map_exn b ~f:(fun s ->
-             match s with
-             | Assign (PName lhs, rhs) when String.equal lhs var -> Some rhs
-             | _ -> None)
-       with
-      (* Success cases *)
-      | Num (0 | 1) -> [ Number ]
-      | Call (Name "np.zeros", _) -> [ Array ]
-      | Name "__emptyList" -> [ List ]
-      (* Failure cases *)
-      | Num n ->
-          raise
-            (EarlyCutoff
-               (sprintf
-                  "target variable starts as unsupported number %s"
-                  (string_of_int n)))
-      | Index (_, _) -> raise (EarlyCutoff "target variable starts as index")
-      | Call (Name fn, _) ->
-          raise
-            (EarlyCutoff
-               (sprintf
-                  "target variable starts as unsupported function '%s'"
-                  fn))
-      | Call (_, _) ->
-          raise (EarlyCutoff "target variable starts as complex function call")
-      | Str s ->
-          raise
-            (EarlyCutoff (sprintf "target variable starts as string '%s'" s))
-      | Name n ->
-          raise (EarlyCutoff (sprintf "target variable starts as name '%s'" n))
-      | Hole (_, _) -> failwith "user input has a hole")
+      ( var
+      , (match
+           List.find_map_exn b ~f:(fun s ->
+               match s with
+               | Assign (PName lhs, rhs) when String.equal lhs var -> Some rhs
+               | _ -> None)
+         with
+        (* Success cases *)
+        | Num (0 | 1) -> [ Number ]
+        | Call (Name "np.zeros", _) -> [ Array ]
+        | Name "__emptyList" -> [ List ]
+        (* Failure cases *)
+        | Num n ->
+            raise
+              (EarlyCutoff
+                 (sprintf
+                    "target variable starts as unsupported number %s"
+                    (string_of_int n)))
+        | Index (_, _) -> raise (EarlyCutoff "target variable starts as index")
+        | Call (Name fn, _) ->
+            raise
+              (EarlyCutoff
+                 (sprintf
+                    "target variable starts as unsupported function '%s'"
+                    fn))
+        | Call (_, _) ->
+            raise
+              (EarlyCutoff "target variable starts as complex function call")
+        | Str s ->
+            raise
+              (EarlyCutoff (sprintf "target variable starts as string '%s'" s))
+        | Name n ->
+            raise
+              (EarlyCutoff (sprintf "target variable starts as name '%s'" n))
+        | Hole (_, _) -> failwith "user input has a hole") )
   | _ -> raise (EarlyCutoff "last statement not a variable return")
 
 let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
  fun depth ?(debug = false) target use_egraphs ->
   let target = canonicalize target in
+  let target_var, target_possible_types = infer target in
   let target_loop_vars = loop_vars target in
   let unify : pattern:program -> substitutions option =
     if use_egraphs
@@ -499,7 +503,7 @@ let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
             if Set.is_empty
                  (Set.inter
                     (referenced_vars_expr possible_solution)
-                    target_loop_vars)
+                    (Set.add target_loop_vars target_var))
             then Some possible_solution
             else None
         | None -> None)
@@ -509,8 +513,7 @@ let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
     Cbr_framework.Enumerative_search.top_down
       ~max_iterations:depth
       ~start:
-        (target
-        |> possible_types
+        (target_possible_types
         |> List.map ~f:(fun t -> Hole (t, Util.gensym "hole")))
       ~expand:(expand (referenced_vars target))
       ~correct
