@@ -21,3 +21,4 @@
 python analysis/analyze_results.py
 
 python performance-eval/performance_eval.py
+python performance-eval/analyze_performance_eval.py
