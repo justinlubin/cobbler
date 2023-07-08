@@ -88,13 +88,14 @@ class IRParser(ast.NodeVisitor):
                 raise UnsupportedFeatureException(
                     f"Unsupported attribute feature '{className}' in {ast.dump(node)}"
                 )
+
         if base == "np":
             return SAtom("np" + "." + ".".join(reversed(chain)))
         if base == "random" and chain == ["randint"]:
             return SAtom("np.random.randint")
 
         ret = SAtom(base)
-        for c in chain:
+        for c in reversed(chain):
             ret = SList([SAtom("Call"), SAtom("__memberAccess"), SAtom(c), ret])
 
         return ret
