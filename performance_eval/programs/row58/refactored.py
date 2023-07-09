@@ -1,3 +1,2 @@
-records = np.random.randint(-10, 10, size = N)
-prod_lst = list(records)
-prod_lst
+y = np.prod(np.divide(range((N - 25), N), N))
+y

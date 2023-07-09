@@ -1,5 +1,5 @@
-A = np.random.randint(-10, 10, size = N)
-B = []
-for dato in A:
-    B.append(dato * 2)
-B
+records = np.random.randint(-10, 10, size = N)
+prod_lst = []
+for i in records:
+    prod_lst.append(i)
+prod_lst

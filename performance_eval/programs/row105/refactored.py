@@ -1,2 +1,3 @@
-total_sum = np.sum(range(0, N))
-total_sum
+__array6388 = np.array(range(0, N))
+list_of_elements = list(__array6388)
+list_of_elements

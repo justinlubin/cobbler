@@ -1,3 +1,3 @@
-__array3033 = np.array(range(N))
-sumatoria = np.sum(__array3033)
-sumatoria
+values = np.random.randint(-10, 10, size=N)
+rootValues = list(np.vectorize(np.sqrt)(np.array(list(values), dtype=object)))
+rootValues

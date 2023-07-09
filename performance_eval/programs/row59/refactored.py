@@ -1,2 +1,2 @@
-y = np.prod(np.divide(range((N - 25), N), N))
-y
+temp_list = list(np.power(np.arange(N), np.full(N, 2)))
+temp_list

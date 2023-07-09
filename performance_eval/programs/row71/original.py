@@ -1,4 +1,4 @@
-new_list = []
-for i in range(N):
-    new_list.append(i ** 2)
-new_list
+unaccented_schools = []
+for sch in escuelas:
+    unaccented_schools.append(unidecode.unidecode(sch))
+unaccented_schools

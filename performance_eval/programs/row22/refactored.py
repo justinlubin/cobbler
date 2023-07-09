@@ -1,6 +1,3 @@
-inputs = np.random.random(N)
-weights = np.random.random(N)
-b = 2
-outputs = np.sum(np.multiply(inputs, weights[:len(inputs)]))
-outputs = outputs + b
-outputs
+__array3498 = np.array(range(-N // 2, N // 2))
+result = list(__array3498[(__array3498 < 0)])
+result

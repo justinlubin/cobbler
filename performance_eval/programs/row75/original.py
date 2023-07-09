@@ -1,4 +1,4 @@
-base_list = []
-for x in range(N):
-    base_list.append(x)
-base_list
+x = []
+for i in range(N):
+    x.append(i * i)
+x

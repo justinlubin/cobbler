@@ -1,4 +1,4 @@
-y = range(1, N+1)
+x = np.random.randint(-10, 10, size=N)
 
-ln_y = list(np.vectorize(np.log)(np.array(list(y), dtype=object)))
-ln_y
+ind_variables_list = list(x[:N])
+ind_variables_list

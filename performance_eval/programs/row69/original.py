@@ -1,5 +1,5 @@
 groceries = np.random.choice(['Eggs', 'Milk', 'Flour', 'Carrots', 'Napkins', 'Olive Oil'], size=N)
 storage = []
-for grocery_item in groceries:
+for grocery_item in groceries[1:N-1]:
     storage.append(grocery_item)
 storage

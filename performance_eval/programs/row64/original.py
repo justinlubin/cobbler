@@ -1,6 +1,6 @@
-forcasted_max = np.random.random(N) * 2
+df_data = np.random.randint(-10, 10, size=N)
 
-l = []
-for i in forcasted_max[forcasted_max >= 1.07]:
-    l.append(i)
-l
+columnName = []
+for i in df_data:
+    columnName.append(i)
+columnName

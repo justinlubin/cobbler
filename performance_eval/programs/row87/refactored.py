@@ -1,4 +1,3 @@
-enc_flag = np.random.choice(['1','2','3','a','b','c'], size = N)
-
-int_enc_flag = list(np.vectorize(int, excluded={2})(np.array(list(enc_flag), dtype=object), 16))
-int_enc_flag
+G = np.random.randint(-10, 10, size = (N, 3))
+SumG = list(np.vectorize(sum)(np.array(list(G), dtype=object)))
+SumG

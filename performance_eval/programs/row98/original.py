@@ -1,5 +1,4 @@
-result = []
-for i in range(1, N):
-    if i % 3 == 0:
-        result.append(i)
-result
+numbers = []
+for x in range(N):
+    numbers.append(x ** 2)
+numbers

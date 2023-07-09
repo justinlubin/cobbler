@@ -4,4 +4,5 @@ mapped = []
 for n in final:
     mapped.append(n)
 mapped.sort()
+print('Len:', len(mapped))
 mapped

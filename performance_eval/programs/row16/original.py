@@ -1,4 +1,6 @@
-numbers = []
-for number in range(1, N+1):
-    numbers.append(number)
-numbers
+y = np.random.randint(1, 20, size=N)
+
+ln_y = []
+for i in y:
+    ln_y.append(np.log(i))
+ln_y

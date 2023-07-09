@@ -1,4 +1,4 @@
-total_sum = 0
+list_of_elements = []
 for value in range(0, N):
-    total_sum = total_sum + value
-total_sum
+    list_of_elements.append(value)
+list_of_elements

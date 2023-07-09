@@ -1,6 +1,5 @@
-listFib = np.random.randint(-10, 10, size=N)
-
-lista = []
-for i in listFib:
-    lista.append(i * 2)
-lista
+numbers = np.random.randint(-10, 10, size=N)
+sqaures = []
+for number in numbers:
+    sqaures.append(number * number)
+sqaures

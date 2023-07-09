@@ -1,4 +1,3 @@
-l = np.random.randint(-10, 10, size=N)
-
-new_list = list(np.multiply(l, 10))
-new_list
+__array3747 = np.array(quotes[0].find_all('a', {'class': 'tag'}))
+tags = list(np.vectorize(lambda x: x.text)(__array3747))
+tags

@@ -1,6 +1,4 @@
-l = np.random.randint(-10, 10, size=N)
-
-new_list = []
-for element in l:
-    new_list.append(element * 10)
-new_list
+tags = []
+for tag in quotes[0].find_all('a', {'class': 'tag'}):
+    tags.append(tag.text)
+tags

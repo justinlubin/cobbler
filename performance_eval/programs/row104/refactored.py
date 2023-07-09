@@ -1,2 +1,2 @@
-total = np.sum(np.arange(N))
-total
+total_sum = np.sum(range(0, N))
+total_sum

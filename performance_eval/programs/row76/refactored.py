@@ -1,2 +1,2 @@
-x = list(np.multiply(np.arange(N), np.arange(N)))
-x
+even_counter = np.sum(np.ones(len(range(2, N + 1, 2))))
+even_counter

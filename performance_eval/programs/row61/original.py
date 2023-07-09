@@ -1,6 +1,5 @@
-lista = np.random.randint(-10, 10, size=N)
-
-b = []
-for i in lista:
-    b.append(i * 2)
-b
+addr_spans = soup.find_all('span', class_='addr')
+addresses = []
+for span in addr_spans:
+    addresses.append(span.a.text)
+addresses

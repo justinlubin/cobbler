@@ -1,2 +1,2 @@
-numbers = list(np.power(np.arange(N), np.full(N, 2)))
-numbers
+title_list = list(np.vectorize(lambda x: x.h3.text)(titles))
+title_list

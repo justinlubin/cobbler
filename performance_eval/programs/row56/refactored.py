@@ -1,3 +1,3 @@
-L = np.random.randint(-10, 10, size = N)
-dot_list = np.sum(np.multiply(L, L))
-dot_list
+A = np.random.randint(-10, 10, size = N)
+B = list(np.multiply(A, 2))
+B

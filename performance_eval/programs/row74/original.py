@@ -1,4 +1,4 @@
-cubes = []
-for i in range(N):
-    cubes.append(i ** 3)
-cubes
+base_list = []
+for x in range(N):
+    base_list.append(x)
+base_list

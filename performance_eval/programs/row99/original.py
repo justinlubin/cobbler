@@ -1,4 +1,4 @@
-numbers = []
-for x in range(N):
-    numbers.append(x ** 2)
-numbers
+title_list = []
+for title in titles:
+    title_list.append(title.h3.text)
+title_list

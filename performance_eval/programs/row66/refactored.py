@@ -1,3 +1,2 @@
-list = np.random.randint(1, 100, size=N)
-list_2 = list(list[((list % 2) == 0)])
-list_2
+temp = list(np.vectorize(lambda x: x.text)(Temp))
+temp

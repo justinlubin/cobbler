@@ -1,2 +1,3 @@
-new_list = list(np.power(np.arange(N), np.full(10, 2)))
-new_list
+unaccented_schools = list(np.vectorize(unidecode.unidecode)(np.array(list(escuelas), dtype=object)))
+unaccented_schools
+

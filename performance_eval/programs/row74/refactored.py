@@ -1,2 +1,2 @@
-cubes = list(np.power(np.arange(N), np.full(5, 3)))
-cubes
+base_list = list(np.arange(N))
+base_list

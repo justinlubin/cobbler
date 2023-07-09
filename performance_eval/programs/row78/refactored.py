@@ -1,2 +1,6 @@
-even_summation = np.sum(range(2, N+1, 2))
-even_summation
+def estandariza_rut(x):
+    return x > 0
+
+ruts = np.random.randint(-10, 10, size=N)
+ruts_ok = list(np.vectorize(estandariza_rut)(np.array(list(ruts), dtype=object)))
+ruts_ok

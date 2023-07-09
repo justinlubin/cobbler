@@ -1,5 +1,5 @@
-x = np.random.randint(-10, 10, size = N)
-list1 = []
-for item in x:
-    list1.append(item)
-list1
+Q = []
+e = np.random.randint(-10, 10, size = N)
+for i in range(N):
+    Q.append(e[i])
+Q

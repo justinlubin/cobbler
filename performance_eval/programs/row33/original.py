@@ -1,6 +1,6 @@
-a = np.random.randint(-10, 10, size = N)
-b = np.random.randint(-10, 10, size = N)
-dot = 0
-for i in range(len(a)):
-    dot += a[i] * b[i]
-dot
+distances = np.random.randint(-10, 10, size = N)
+times = np.random.randint(-10, 10, size = N)
+speeds = []
+for i in range(len(distances)):
+    speeds.append(distances[i] / times[i])
+speeds

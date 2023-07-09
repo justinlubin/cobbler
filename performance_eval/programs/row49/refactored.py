@@ -1,3 +1,2 @@
-lse = np.random.randint(-10, 10, size = N)
-mlse = list(np.vectorize(np.mean)(np.array(list(lse), dtype=object)))
-mlse
+POIS = list(np.vectorize(poi, excluded={2})(np.array(list(addresses), dtype=object), "canada"))
+POIS

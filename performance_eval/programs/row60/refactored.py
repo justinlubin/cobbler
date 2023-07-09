@@ -1,2 +1,4 @@
-temp_list = list(np.power(np.arange(N), np.full(N, 2)))
-temp_list
+lista = np.random.randint(-10, 10, size=N)
+
+b = list(np.multiply(lista, 2))
+b

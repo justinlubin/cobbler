@@ -1,4 +1,8 @@
-even_summation = 0
-for i in range(2, N + 1, 2):
-    even_summation += i
-even_summation
+def estandariza_rut(x):
+    return x > 0
+
+ruts = np.random.randint(-10, 10, size=N)
+ruts_ok = []
+for rut in ruts:
+    ruts_ok.append(estandariza_rut(rut))
+ruts_ok

@@ -1,4 +1,4 @@
-y = 1
-for i in range(N - 25, N):
-    y = y * (i / N)
-y
+temp_list = []
+for x in range(N):
+    temp_list.append(x ** 2)
+temp_list

@@ -1,4 +1,3 @@
-x = np.random.randint(-10, 10, size=N)
-
-ind_variables_list = list(x[:N])
-ind_variables_list
+__array3044 = np.array(range(N))
+sumatoria = np.sum(__array3044)
+sumatoria

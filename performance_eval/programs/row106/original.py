@@ -1,4 +1,5 @@
-list_of_elements = []
-for value in range(0, N):
-    list_of_elements.append(value)
-list_of_elements
+subjects = np.random.randint(-10, 10, size = N)
+subject_letter = []
+for subject in subjects:
+    subject_letter.append(subjects[1])
+subject_letter

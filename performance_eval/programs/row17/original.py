@@ -1,6 +1,6 @@
-y = range(1, N+1)
+x = np.random.randint(-10, 10, size=N)
 
-ln_y = []
-for i in y:
-    ln_y.append(np.log(i))
-ln_y
+ind_variables_list = []
+for i in range(N):
+    ind_variables_list.append(x[i])
+ind_variables_list

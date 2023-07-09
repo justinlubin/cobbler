@@ -1,4 +1,5 @@
-less_than_10 = []
-for i in range(N):
-    less_than_10.append(i)
-less_than_10
+L = np.random.randint(-10, 10, size = N)
+dot_list = 0
+for e in L:
+    dot_list += e * e
+dot_list

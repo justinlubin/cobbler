@@ -1,4 +1,3 @@
-a = np.random.randint(-10, 10, size = N)
-b = np.random.randint(-10, 10, size = N)
-dot = np.sum(np.multiply(a, b[:len(a)]))
-dot
+seg = np.random.randint(-10, 10, size = N)
+i = np.sum(np.ones(len(seg)))
+i

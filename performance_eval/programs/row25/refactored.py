@@ -1,7 +1,4 @@
-import string
-myURLS = np.random.choice(list(string.ascii_lowercase), size=N)
+l = np.random.randint(-10, 10, size=N)
 
-baseURL = 'http://www.importantsite.com/'
-full_URLS = list(np.add(np.full(len(myURLS), baseURL), myURLS))
-full_URLS
-s
+new_list = list(np.multiply(l, 10))
+new_list

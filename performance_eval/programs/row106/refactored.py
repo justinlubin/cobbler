@@ -1,3 +1,3 @@
-__array6377 = np.array(range(0, N))
-list_of_elements = list(__array6377)
-list_of_elements
+subjects = np.random.randint(-10, 10, size = N)
+subject_letter = list(np.full(len(subjects), subjects[1]))
+subject_letter

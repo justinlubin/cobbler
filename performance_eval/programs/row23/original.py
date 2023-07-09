@@ -1,5 +1,5 @@
-result = []
-for x in range(-N, N):
-    if x < 0:
-        result.append(x)
-result
+palavra = '!@#$%' * N
+cods = []
+for c in palavra:
+    cods.append(ord(c))
+cods

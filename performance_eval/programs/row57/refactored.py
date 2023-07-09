@@ -1,3 +1,3 @@
-A = np.random.randint(-10, 10, size = N)
-B = list(np.multiply(A, 2))
-B
+records = np.random.randint(-10, 10, size = N)
+prod_lst = list(records)
+prod_lst

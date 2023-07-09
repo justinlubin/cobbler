@@ -1,4 +1,4 @@
-a = np.random.randint(-10, 10, size = N)
-b = np.random.randint(-10, 10, size = N)
-dot = np.sum(np.multiply(a, b[:len(a)]))
-dot
+distances = np.random.randint(-10, 10, size = N)
+times = np.random.randint(-10, 10, size = N)
+speeds = list(np.divide(distances, times[:len(distances)]))
+speeds

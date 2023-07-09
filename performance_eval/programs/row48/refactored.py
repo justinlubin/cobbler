@@ -1,3 +1,3 @@
-se = np.random.randint(-10, 10, size = N)
-lse = list(np.vectorize(np.log)(np.array(list(se), dtype=object)))
-lse
+lse = np.random.randint(-10, 10, size = N)
+mlse = list(np.vectorize(np.mean)(np.array(list(lse), dtype=object)))
+mlse

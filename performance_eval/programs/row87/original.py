@@ -1,6 +1,5 @@
-enc_flag = np.random.choice(['1','2','3','a','b','c'], size = N)
-
-int_enc_flag = []
-for i in enc_flag:
-    int_enc_flag.append(int(i, 16))
-int_enc_flag
+G = np.random.randint(-10, 10, size = (N, 3))
+SumG = []
+for list in G:
+    SumG.append(sum(list))
+SumG

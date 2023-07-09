@@ -1,6 +1,5 @@
-distances = np.random.randint(-10, 10, size = N)
-times = np.random.randint(-10, 10, size = N)
-speeds = []
-for i in range(len(distances)):
-    speeds.append(distances[i] / times[i])
-speeds
+L = np.random.randint(-10, 10, size = N)
+L2 = []
+for e in L:
+    L2.append(e + 3)
+L2

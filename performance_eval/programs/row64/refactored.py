@@ -1,5 +1,4 @@
-forcasted_max = np.random.random(N) * 2
+df_data = np.random.randint(-10, 10, size=N)
 
-__array4833 = np.array(forcasted_max[forcasted_max >= 1.07])
-l = list(__array4833)
-l
+columnName = list(df_data)
+columnName

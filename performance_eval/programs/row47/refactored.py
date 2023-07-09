@@ -1,3 +1,3 @@
-mse = np.random.randint(-10, 10, size = N)
-rmse = list(np.vectorize(np.sqrt)(np.array(list(mse), dtype=object)))
-rmse
+se = np.random.randint(-10, 10, size = N)
+lse = list(np.vectorize(np.log)(np.array(list(se), dtype=object)))
+lse

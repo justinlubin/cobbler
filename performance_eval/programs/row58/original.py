@@ -1,5 +1,4 @@
-records = np.random.randint(-10, 10, size = N)
-prod_lst = []
-for i in records:
-    prod_lst.append(i)
-prod_lst
+y = 1
+for i in range(N - 25, N):
+    y = y * (i / N)
+y

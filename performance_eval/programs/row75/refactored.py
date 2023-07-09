@@ -1,2 +1,2 @@
-base_list = list(np.arange(N))
-base_list
+x = list(np.multiply(np.arange(N), np.arange(N)))
+x

@@ -1,4 +1,6 @@
-temp_list = []
-for x in range(N):
-    temp_list.append(x ** 2)
-temp_list
+lista = np.random.randint(-10, 10, size=N)
+
+b = []
+for i in lista:
+    b.append(i * 2)
+b
