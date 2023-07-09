@@ -1,5 +1,5 @@
 x = np.random.randint(-10, 10, size=N)
-squares = np.multiply(x, x)
+sqaures = np.multiply(x, x)
 sqaures_under_10 = []
 for sqaure in sqaures:
     if sqaure < 10:

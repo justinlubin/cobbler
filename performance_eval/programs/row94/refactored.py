@@ -1,4 +1,5 @@
-teste = imdb['Genres'].str.cat(sep=', ').split(', ')
+teste = list(np.random.randint(-10, 10, size=N))
+
 len(teste)
 len(list(set(teste)))
 Generos = sorted(list(set(teste)))

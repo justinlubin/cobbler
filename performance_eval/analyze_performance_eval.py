@@ -14,7 +14,7 @@ metadata.index = np.char.add("row", (metadata.index.values + 2).astype(str))
 
 # %% Load data
 
-DATA_SIZE_POWERS = [0, 1, 2, 3, 4, 5]  # 6, , 7, 8]
+DATA_SIZE_POWERS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 data = (
     pd.read_csv(

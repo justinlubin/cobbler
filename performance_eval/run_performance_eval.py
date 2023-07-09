@@ -4,11 +4,12 @@ import os
 import timeit
 
 
-DATA_SIZE_POWERS = [0, 1, 2, 3, 4, 5]  # 6, 7, 8]
+DATA_SIZE_POWERS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 
 def time_program(program_name, program, N):
-    if program_name == "row27":
+    # Omit programs that do large exponentiation
+    if program_name in ["row27", "row93"]:
         return ""
 
     full_program = f"import numpy as np\nN = {N}\n{program}"
