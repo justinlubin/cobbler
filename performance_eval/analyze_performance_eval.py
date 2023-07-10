@@ -41,6 +41,10 @@ for p in DATA_SIZE_POWERS:
         data[f"refactored {p} med"] + data["synth time med"]
     )
 
+data = data[~(data["raw speedup 1"].isna())]
+assert len(data) == 102 - 2  # true successes - exponential examples
+
+
 # %% Compute summary
 
 

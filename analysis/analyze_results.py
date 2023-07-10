@@ -8,7 +8,7 @@ import pandas as pd
 
 np.random.seed(100)
 
-INPUT_DIR = "data/"
+INPUT_DIR = "analysis/"
 OUTPUT_DIR = "analysis/output/"
 
 # %% Load data
@@ -18,7 +18,7 @@ def load_data(filename):
     df = pd.read_csv(INPUT_DIR + filename, sep="\t")[
         ["synthed ast size", "synth time", "status"]
     ]
-    df = df[df["status"].isin(["Success", "SynthFail"])].reset_index()
+    df = df[df["status"].isin(["Success", "SynthFail"])].reset_index(drop=True)
     df["synth time"] = df["synth time"].apply(
         lambda row: [float(x) for x in row.split(",")]
     )
@@ -33,6 +33,83 @@ def load_data(filename):
 
 data_elm = load_data("elm-test.tsv")
 data_python = load_data("python-test.tsv")
+
+# %% Handle Python bug
+
+# These count as failures
+PYTHON_SUCCESS_ROWS_TO_DROP = set([24, 29, 43, 44, 53, 87])
+
+for row in PYTHON_SUCCESS_ROWS_TO_DROP:
+    i = data_python[data_python["status"] == "Success"].index[row - 2]
+    data_python.drop(labels=i, inplace=True)
+
+# %% Applicability summary
+
+
+def applicability_summarize(data, prefix, write, dropped=None):
+    assert dropped is not None
+
+    num_success = (data["status"] == "Success").sum()
+    num_fail = (data["status"] == "SynthFail").sum() + dropped
+    num_total = num_success + num_fail
+    assert num_total == len(data) + dropped
+
+    fmt = "{:,}"
+
+    write(
+        "\\newcommand{\\Num",
+        prefix,
+        "Success}{",
+        fmt.format(num_success),
+        "}",
+    )
+
+    write(
+        "\\newcommand{\\Num",
+        prefix,
+        "Fail}{",
+        fmt.format(num_fail),
+        "}",
+    )
+
+    write(
+        "\\newcommand{\\Num",
+        prefix,
+        "SamplesTest}{",
+        fmt.format(num_total),
+        "}",
+    )
+
+    write(
+        "\\newcommand{\\",
+        prefix,
+        "TestPercent}{",
+        round(100 * (num_success / num_total)),
+        "}",
+    )
+
+    write()
+
+
+with open(f"{OUTPUT_DIR}applicability-summary.txt", "w") as f:
+
+    def write(*args):
+        f.write("".join(map(str, args)) + "\n")
+
+    applicability_summarize(
+        data_elm,
+        "Elm",
+        write,
+        dropped=0,
+    )
+
+    applicability_summarize(
+        data_python,
+        "Python",
+        write,
+        dropped=len(PYTHON_SUCCESS_ROWS_TO_DROP),
+    )
+
 
 # %% Synthesis time vs. AST size
 
@@ -80,6 +157,8 @@ def synthtime_vs_astsize(data, name):
     ax_hist.bar_label(b)
     ax_hist.set_ylabel("# Entries")
 
+    fig.align_ylabels()
+
     fig.tight_layout()
     fig.savefig(f"{OUTPUT_DIR}/{name}-synthtime_vs_astsize.pdf")
 
@@ -90,7 +169,7 @@ synthtime_vs_astsize(data_python, "python")
 # %% Five-number summaries of synthesis time
 
 
-def summarize(data, prefix, write):
+def time_summarize(data, prefix, write):
     success = data[data["status"] == "Success"]["synth time med"].describe()
     fail = data[data["status"] == "SynthFail"]["synth time med"].describe()
 
@@ -187,8 +266,8 @@ with open(f"{OUTPUT_DIR}time-summary.txt", "w") as f:
     def write(*args):
         f.write("".join(map(str, args)) + "\n")
 
-    summarize(data_elm, "Elm", write)
-    summarize(data_python, "Python", write)
+    time_summarize(data_elm, "Elm", write)
+    time_summarize(data_python, "Python", write)
 
     synthesis_deviation(pd.concat([data_elm, data_python]), write)
 
