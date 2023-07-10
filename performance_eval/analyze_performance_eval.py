@@ -51,40 +51,42 @@ def geo_mean(xs):
 
 with open("performance_eval/output/speedup_summary.txt", "w") as f:
     f.write(
-        "\\PerformanceEvalCount{" + str((~data["raw speedup 1"].isna()).sum()) + "}\n\n"
+        "\\newcommand{\\PerformanceEvalCount}{"
+        + str((~data["raw speedup 1"].isna()).sum())
+        + "}\n\n"
     )
 
     for p, alpha in zip(DATA_SIZE_POWERS, "ABCDEFG"):
         # Combined
 
         f.write(
-            "\\RawSpeedupGM"
+            "\\newcommand{\\RawSpeedupGM"
             + alpha
-            + "{"
+            + "}{"
             + "{0:.2f}".format(geo_mean(data[f"raw speedup {p}"]))
             + "}\n"
         )
 
         f.write(
-            "\\PenalizedSpeedupGM"
+            "\\newcommand{\\PenalizedSpeedupGM"
             + alpha
-            + "{"
+            + "}{"
             + "{0:.2f}".format(geo_mean(data[f"penalized speedup {p}"]))
             + "}\n"
         )
 
         f.write(
-            "\\RawActualSpeedupCount"
+            "\\newcommand{\\RawActualSpeedupCount"
             + alpha
-            + "{"
+            + "}{"
             + str((data[f"raw speedup {p}"] > 1).sum())
             + "}\n"
         )
 
         f.write(
-            "\\PenalizedActualSpeedupCount"
+            "\\newcommand{\\PenalizedActualSpeedupCount"
             + alpha
-            + "{"
+            + "}{"
             + str((data[f"penalized speedup {p}"] > 1).sum())
             + "}\n"
         )
@@ -92,17 +94,17 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
         # Perf
 
         f.write(
-            "\\RawPerfSpeedupGM"
+            "\\newcommand{\\RawPerfSpeedupGM"
             + alpha
-            + "{"
+            + "}{"
             + "{0:.2f}".format(geo_mean(data[data["perf"] == 1][f"raw speedup {p}"]))
             + "}\n"
         )
 
         f.write(
-            "\\PenalizedPerfSpeedupGM"
+            "\\newcommand{\\PenalizedPerfSpeedupGM"
             + alpha
-            + "{"
+            + "}{"
             + "{0:.2f}".format(
                 geo_mean(data[data["perf"] == 1][f"penalized speedup {p}"])
             )
@@ -110,17 +112,17 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
         )
 
         f.write(
-            "\\RawPerfActualSpeedupCount"
+            "\\newcommand{\\RawPerfActualSpeedupCount"
             + alpha
-            + "{"
+            + "}{"
             + str((data[data["perf"] == 1][f"raw speedup {p}"] > 1).sum())
             + "}\n"
         )
 
         f.write(
-            "\\PenalizedPerfActualSpeedupCount"
+            "\\newcommand{\\PenalizedPerfActualSpeedupCount"
             + alpha
-            + "{"
+            + "}{"
             + str((data[data["perf"] == 1][f"penalized speedup {p}"] > 1).sum())
             + "}\n"
         )
@@ -128,17 +130,17 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
         # NoPerf
 
         f.write(
-            "\\RawNoPerfSpeedupGM"
+            "\\newcommand{\\RawNoPerfSpeedupGM"
             + alpha
-            + "{"
+            + "}{"
             + "{0:.2f}".format(geo_mean(data[data["perf"] == 0][f"raw speedup {p}"]))
             + "}\n"
         )
 
         f.write(
-            "\\PenalizedNoPerfSpeedupGM"
+            "\\newcommand{\\PenalizedNoPerfSpeedupGM"
             + alpha
-            + "{"
+            + "}{"
             + "{0:.2f}".format(
                 geo_mean(data[data["perf"] == 0][f"penalized speedup {p}"])
             )
@@ -146,17 +148,17 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
         )
 
         f.write(
-            "\\RawNoPerfActualSpeedupCount"
+            "\\newcommand{\\RawNoPerfActualSpeedupCount"
             + alpha
-            + "{"
+            + "}{"
             + str((data[data["perf"] == 0][f"raw speedup {p}"] > 1).sum())
             + "}\n"
         )
 
         f.write(
-            "\\PenalizedNoPerfActualSpeedupCount"
+            "\\newcommand{\\PenalizedNoPerfActualSpeedupCount"
             + alpha
-            + "{"
+            + "}{"
             + str((data[data["perf"] == 0][f"penalized speedup {p}"] > 1).sum())
             + "}\n"
         )
