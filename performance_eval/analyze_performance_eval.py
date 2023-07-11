@@ -54,7 +54,7 @@ def geo_mean(a, b):
 
 
 def geo_median(xs):
-    s = np.sort(xs)
+    s = np.sort(xs[~np.isnan(xs)])
     n = len(s)
     if n % 2 == 1:
         return s[n // 2]
@@ -201,17 +201,17 @@ def make_plot(column_prefix):
         for p in DATA_SIZE_POWERS:
             vals = data[data["perf"] == perf][f"{column_prefix} speedup {p}"]
             vals = vals[~(vals.isna())]
-            vals = np.log10(vals)
+            log10vals = np.log10(vals)
             fg_parts = ax.violinplot(
-                vals,
+                log10vals,
                 positions=[p],
                 vert=True,
                 showmeans=False,
                 showextrema=False,
-                showmedians=True,
+                showmedians=False,
             )
             bg_parts = ax.violinplot(
-                vals,
+                log10vals,
                 positions=[p],
                 vert=True,
                 showmeans=False,
@@ -231,7 +231,12 @@ def make_plot(column_prefix):
                 pc.set_edgecolor("None")
                 pc.set_alpha(0.2)
 
-            fg_parts["cmedians"].set_color(color)
+            ax.hlines(
+                np.log10(geo_median(vals)),
+                p - 0.2,
+                p + 0.2,
+                color=color,
+            )
 
     ax.set_xticks(
         DATA_SIZE_POWERS,
