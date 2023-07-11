@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpt
 
 # %% Load metadata
 
@@ -173,6 +174,9 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
 
 
 def make_plot(column_prefix):
+    perf_color = "tab:blue"
+    noperf_color = "tab:orange"
+
     fig, ax = plt.subplots(1, 1, figsize=(12, 6))
     for _, row in data.iterrows():
         ax.plot(
@@ -180,9 +184,45 @@ def make_plot(column_prefix):
             [np.log10(row[f"{column_prefix} speedup {p}"]) for p in DATA_SIZE_POWERS],
             marker="o",
             markersize=2,
-            color="tab:blue" if row["perf"] == 1 else "tab:orange",
-            alpha=0.2,
+            color=perf_color if row["perf"] == 1 else noperf_color,
+            alpha=0.05,
         )
+
+    for perf in [0, 1]:
+        for p in DATA_SIZE_POWERS:
+            vals = data[data["perf"] == perf][f"{column_prefix} speedup {p}"]
+            vals = vals[~(vals.isna())]
+            vals = np.log10(vals)
+            fg_parts = ax.violinplot(
+                vals,
+                positions=[p],
+                vert=True,
+                showmeans=False,
+                showextrema=False,
+                showmedians=True,
+            )
+            bg_parts = ax.violinplot(
+                vals,
+                positions=[p],
+                vert=True,
+                showmeans=False,
+                showextrema=False,
+                showmedians=False,
+            )
+
+            color = perf_color if perf == 1 else noperf_color
+
+            for pc in fg_parts["bodies"]:
+                pc.set_facecolor("None")
+                pc.set_edgecolor(color)
+                pc.set_alpha(1)
+
+            for pc in bg_parts["bodies"]:
+                pc.set_facecolor(color)
+                pc.set_edgecolor("None")
+                pc.set_alpha(0.2)
+
+            fg_parts["cmedians"].set_color(color)
 
     ax.set_xticks(
         DATA_SIZE_POWERS,
@@ -193,6 +233,14 @@ def make_plot(column_prefix):
 
     ax.set_xlabel(r"log$_{10}$($\bf{Data\ size}$)", fontsize=12)
     ax.set_ylabel(r"log$_{10}$($\bf{Speedup}$)", fontsize=12)
+
+    perf_patch = mpt.Patch(color=perf_color)
+    noperf_patch = mpt.Patch(color=noperf_color)
+    ax.legend(
+        [perf_patch, noperf_patch],
+        ["Uses performant NumPy functions", "Uses cosmetic NumPy functions only"],
+        loc="lower right",
+    )
 
     fig.tight_layout()
     fig.savefig(f"performance_eval/output/speedup-{column_prefix}.pdf")

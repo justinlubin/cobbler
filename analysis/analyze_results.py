@@ -139,11 +139,11 @@ def synthtime_vs_astsize(data, name):
     )
 
     ax.set_xticks(np.arange(1, data["synthed ast size"].max() + 1))
-    ax.set_yticks([-2, -1, 0], labels=["0.01", "0.1", "1"])
-    ax.set_ylim([-2, 1])
+    ax.set_yticks([-2, -1, 0])
+    ax.set_ylim([-2, 0.5])
 
-    ax.set_xlabel("# Components used")
-    ax.set_ylabel("Synthesis time (s)")
+    ax.set_xlabel(r"$\bf{\#\ Components\ used}$", fontsize=12)
+    ax.set_ylabel(r"log$_{10}$($\bf{Synthesis\ time}$)", fontsize=12)
 
     ax_hist = fig.add_subplot(gs[0, 0], sharex=ax)
     ax_hist.tick_params(axis="x", labelbottom=False)
@@ -155,7 +155,7 @@ def synthtime_vs_astsize(data, name):
     )
     b = ax_hist.bar(labels, counts, align="center", width=0.7)
     ax_hist.bar_label(b)
-    ax_hist.set_ylabel("# Entries")
+    ax_hist.set_ylabel(r"$\bf{\#\ Entries}$", fontsize=12)
 
     fig.align_ylabels()
 
@@ -283,17 +283,20 @@ p = ax.boxplot(
         np.log10(data_elm[data_elm["status"] == "Success"]["synth time med"]),
     ],
     labels=[
-        "Python (unsuccessful)",
-        "Elm (unsuccessful)",
-        "Python (successful)",
-        "Elm (successful)",
+        r"$\bf{Python}$ (unsuccessful)",
+        r"$\bf{Elm}$ (unsuccessful)",
+        r"$\bf{Python}$ (successful)",
+        r"$\bf{Elm}$ (successful)",
     ],
     whis=(0, 100),
     vert=False,
+    # showmedians=True,
+    # showmeans=False,
+    # showextrema=True,
 )
 
-ax.set_xticks([-2, -1, 0, 1], labels=["0.01", "0.1", "1", "10"])
-ax.set_xlabel("Synthesis time (s)")
+ax.set_xticks([-2, -1, 0, 1])
+ax.set_xlabel(r"log$_{10}$($\bf{Synthesis\ time}$)", fontsize=12)
 
 fig.tight_layout()
 fig.savefig(f"{OUTPUT_DIR}synthtime_boxplot.pdf")
