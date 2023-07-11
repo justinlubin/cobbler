@@ -46,12 +46,23 @@ data = data[~(data["raw speedup 1"].isna())]
 assert len(data) == 102 - 2  # true successes - exponential examples
 
 
+# %% Geometric mean/median helpers
+
+
+def geo_mean(a, b):
+    return np.sqrt(a * b)
+
+
+def geo_median(xs):
+    s = np.sort(xs)
+    n = len(s)
+    if n % 2 == 1:
+        return s[n // 2]
+    else:
+        return geo_mean(s[(n // 2) - 1], s[n // 2])
+
+
 # %% Compute summary
-
-
-# Source: https://stackoverflow.com/a/43099751
-def geo_mean(xs):
-    return np.exp(np.log(xs).mean())
 
 
 with open("performance_eval/output/speedup_summary.txt", "w") as f:
@@ -61,14 +72,16 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
         + "}\n\n"
     )
 
-    for p, alpha in zip(DATA_SIZE_POWERS, "ABCDEFG"):
+    fmt = "{0:.2f}"
+
+    for p, alpha in zip(DATA_SIZE_POWERS, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
         # Combined
 
         f.write(
             "\\newcommand{\\RawSpeedupGM"
             + alpha
             + "}{"
-            + "{0:.2f}".format(geo_mean(data[f"raw speedup {p}"]))
+            + fmt.format(geo_median(data[f"raw speedup {p}"]))
             + "}\n"
         )
 
@@ -76,7 +89,7 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
             "\\newcommand{\\PenalizedSpeedupGM"
             + alpha
             + "}{"
-            + "{0:.2f}".format(geo_mean(data[f"penalized speedup {p}"]))
+            + fmt.format(geo_median(data[f"penalized speedup {p}"]))
             + "}\n"
         )
 
@@ -102,7 +115,7 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
             "\\newcommand{\\RawPerfSpeedupGM"
             + alpha
             + "}{"
-            + "{0:.2f}".format(geo_mean(data[data["perf"] == 1][f"raw speedup {p}"]))
+            + fmt.format(geo_median(data[data["perf"] == 1][f"raw speedup {p}"]))
             + "}\n"
         )
 
@@ -110,9 +123,7 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
             "\\newcommand{\\PenalizedPerfSpeedupGM"
             + alpha
             + "}{"
-            + "{0:.2f}".format(
-                geo_mean(data[data["perf"] == 1][f"penalized speedup {p}"])
-            )
+            + fmt.format(geo_median(data[data["perf"] == 1][f"penalized speedup {p}"]))
             + "}\n"
         )
 
@@ -138,7 +149,7 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
             "\\newcommand{\\RawNoPerfSpeedupGM"
             + alpha
             + "}{"
-            + "{0:.2f}".format(geo_mean(data[data["perf"] == 0][f"raw speedup {p}"]))
+            + fmt.format(geo_median(data[data["perf"] == 0][f"raw speedup {p}"]))
             + "}\n"
         )
 
@@ -146,9 +157,7 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
             "\\newcommand{\\PenalizedNoPerfSpeedupGM"
             + alpha
             + "}{"
-            + "{0:.2f}".format(
-                geo_mean(data[data["perf"] == 0][f"penalized speedup {p}"])
-            )
+            + fmt.format(geo_median(data[data["perf"] == 0][f"penalized speedup {p}"]))
             + "}\n"
         )
 
@@ -238,7 +247,7 @@ def make_plot(column_prefix):
     noperf_patch = mpt.Patch(color=noperf_color)
     ax.legend(
         [perf_patch, noperf_patch],
-        ["Uses performant NumPy functions", "Uses cosmetic NumPy functions only"],
+        ["Uses performant NumPy functions", "Uses cosmetic functions only"],
         loc="lower right",
     )
 

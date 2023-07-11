@@ -43,6 +43,40 @@ for row in PYTHON_SUCCESS_ROWS_TO_DROP:
     i = data_python[data_python["status"] == "Success"].index[row - 2]
     data_python.drop(labels=i, inplace=True)
 
+# %% Component summary
+
+
+def component_summarize(data, prefix, write):
+    fmt = "{:,}"
+
+    write(
+        "\\newcommand{\\Num",
+        prefix,
+        "Interesting}{",
+        fmt.format((data["synthed ast size"] > 1).sum()),
+        "}",
+    )
+
+    write()
+
+
+with open(f"{OUTPUT_DIR}component-summary.txt", "w") as f:
+
+    def write(*args):
+        f.write("".join(map(str, args)) + "\n")
+
+    component_summarize(
+        data_elm,
+        "Elm",
+        write,
+    )
+
+    component_summarize(
+        data_python,
+        "Python",
+        write,
+    )
+
 # %% Applicability summary
 
 
