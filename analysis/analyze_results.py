@@ -308,7 +308,7 @@ with open(f"{OUTPUT_DIR}time-summary.txt", "w") as f:
 
 # %% Box plots of synthesis time
 
-fig, ax = plt.subplots(1, 1, figsize=(10, 4))
+fig, ax = plt.subplots(1, 1, figsize=(10, 3))
 p = ax.boxplot(
     [
         np.log10(data_python[data_python["status"] == "SynthFail"]["synth time med"]),
