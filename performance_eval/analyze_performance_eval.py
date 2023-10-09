@@ -68,7 +68,17 @@ def geo_median(xs):
 with open("performance_eval/output/speedup_summary.txt", "w") as f:
     f.write(
         "\\newcommand{\\PerformanceEvalCount}{"
-        + str((~data["raw speedup 1"].isna()).sum())
+        + str((~(data["raw speedup 1"].isna())).sum())
+        + "}\n"
+    )
+    f.write(
+        "\\newcommand{\\PerformanceEvalCountPerf}{"
+        + str((~(data[data["perf"] == 1]["raw speedup 1"].isna())).sum())
+        + "}\n"
+    )
+    f.write(
+        "\\newcommand{\\PerformanceEvalCountNoPerf}{"
+        + str((~(data[data["perf"] == 0]["raw speedup 1"].isna())).sum())
         + "}\n\n"
     )
 
