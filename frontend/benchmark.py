@@ -33,7 +33,6 @@ def elm_json(
     represented as an elm-format JSON object"""
     stats = {}
     stats["orig code"] = util.csv_str_encode(json.dumps(js))
-    stats["exec status"] = len(stats["orig code"])
 
     try:
         block = extract.elm_json(js)
