@@ -40,7 +40,7 @@ let rec show_single : exp -> string =
   | EBase (BEFloat f) -> string_of_float f
   | EBase (BEString s) -> sprintf "\"%s\"" s
   | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
-  | ERScheme (RSCata, dt, args) ->
+  | ERScheme (RSCata _, dt, args) ->
       sprintf
         "(cata %s%s)"
         dt
@@ -82,7 +82,7 @@ let rec show_multi : int -> exp -> string =
   | EBase (BEFloat f) -> string_of_float f
   | EBase (BEString s) -> sprintf "\"%s\"" s
   | EHole (name, typ) -> sprintf "(?? %s %s)" name (Typ.show typ)
-  | ERScheme (RSCata, dt, args) ->
+  | ERScheme (RSCata _, dt, args) ->
       sprintf
         "(cata %s%s)"
         dt
@@ -115,6 +115,22 @@ let build_abs : string list -> exp -> exp =
 let build_app : exp -> exp list -> exp =
  fun head args ->
   List.fold_left args ~init:head ~f:(fun acc arg -> EApp (acc, arg))
+
+let rec all_variables : exp -> String.Set.t = function
+  | EVar x -> String.Set.singleton x
+  | EApp (head, arg) -> Set.union (all_variables head) (all_variables arg)
+  | EAbs (param, body) -> Set.add (all_variables body) param
+  | EMatch (scrutinee, branches) ->
+      String.Set.union_list
+        (all_variables scrutinee
+        :: List.map
+             ~f:(fun (_, (arg_names, rhs)) ->
+               Set.union (all_variables rhs) (String.Set.of_list arg_names))
+             branches)
+  | ECtor (_, arg) -> String.Set.union_list (List.map ~f:all_variables arg)
+  | ERScheme (_, _, args) ->
+      args |> List.map ~f:all_variables |> String.Set.union_list
+  | EBase _ | EHole (_, _) -> String.Set.empty
 
 let rec free_variables : exp -> String.Set.t = function
   | EVar x -> String.Set.singleton x
@@ -237,6 +253,59 @@ let freshen_with : (string -> string) -> exp -> exp =
 
 let freshen : exp -> exp = freshen_with (fun _ -> Util.gensym gensym_prefix)
 
+let alphabet : string list =
+  [ "x"
+  ; "y"
+  ; "z"
+  ; "a"
+  ; "b"
+  ; "c"
+  ; "d"
+  ; "e"
+  ; "f"
+  ; "g"
+  ; "h"
+  ; "i"
+  ; "j"
+  ; "k"
+  ; "l"
+  ; "m"
+  ; "n"
+  ; "o"
+  ; "p"
+  ; "q"
+  ; "r"
+  ; "s"
+  ; "t"
+  ; "u"
+  ; "v"
+  ; "w"
+  ]
+
+let is_univar : string -> bool =
+ fun s ->
+  match String.chop_prefix ~prefix:"__univar#" s with
+  | Some s -> s |> Int.of_string_opt |> Option.is_some
+  | None -> false
+
+let freshen_univars : exp -> exp =
+ fun e ->
+  let all_vars = all_variables e in
+  let nice_vars =
+    ref
+      (List.filter_map
+         ~f:(fun x -> if not (Set.mem all_vars x) then Some (x, 0) else None)
+         alphabet)
+  in
+  let fresh_nice_var () =
+    match !nice_vars with
+    | (hd, n) :: tl ->
+        nice_vars := tl @ [ (hd, n + 1) ];
+        hd ^ if Int.equal n 0 then "" else string_of_int n
+    | _ -> failwith "impossible"
+  in
+  freshen_with (fun x -> if is_univar x then fresh_nice_var () else x) e
+
 let alpha_normalize : exp -> exp =
  fun e ->
   let suffix = ref (-1) in
@@ -256,7 +325,7 @@ let normalize : datatype_env -> exp -> exp =
     | EApp (head, arg) ->
         (match (recur head, recur arg) with
         | EAbs (param, body), arg' -> substitute (param, arg') body
-        | ERScheme (RSCata, dt, cata_args), ECtor (ctor, ctor_args) ->
+        | ERScheme (RSCata ct, dt, cata_args), ECtor (ctor, ctor_args) ->
             let dt_params, ctors = Map.find_exn sigma dt in
             let index, ctor_domain =
               List.find_mapi_exn
@@ -271,7 +340,8 @@ let normalize : datatype_env -> exp -> exp =
                     ~f:(fun arg tau ->
                       match tau with
                       | TDatatype (dt', _) when String.equal dt dt' ->
-                          recur (EApp (ERScheme (RSCata, dt, cata_args), arg))
+                          recur
+                            (EApp (ERScheme (RSCata ct, dt, cata_args), arg))
                       | _ -> arg)
                     ctor_args
                     ctor_domain))

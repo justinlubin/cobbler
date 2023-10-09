@@ -65,12 +65,24 @@ def show_elm(s):
     except subprocess.CalledProcessError as e:
         return "elm-format error: " + e.stderr.decode("utf8") + "\n\n" + s
 
+def prettify_elm(code):
+    elm_format_output = subprocess.check_output(
+        ["elm-format", "--stdin", "--json"],
+        input=code.encode("utf-8"),
+    )
+    prettify_output = subprocess.check_output(
+        [util.path_from_root("backend/_build/default/bin/main.exe"), "elm-prettify"],
+        input=json.dumps(json.loads(elm_format_output)["body"][0]),
+        text=True,
+    )
+    return show_elm(json.loads(prettify_output))
+
 
 def show_python(s):
     return s
 
 
-def refactor_helper(language=None):
+def refactor_helper(language=None, show_input=None):
     code = sys.stdin.read()
 
     if language == "elm":
@@ -85,8 +97,14 @@ def refactor_helper(language=None):
     if stats["status"] == "Success":
         decoded_data = util.csv_str_decode(stats["synthed code"])
         if language == "elm":
+            if show_input:
+                print(prettify_elm(code))
+                print(";" * 80)
             print(show_elm(decoded_data))
         elif language == "python":
+            if show_input:
+                print(show_python(code))
+                print(";" * 80)
             print(show_python(decoded_data))
     else:
         print("No solution found.")
@@ -384,6 +402,11 @@ if __name__ == "__main__":
         required=True,
         help="the language of the code to refactor",
     )
+    refactor_parser.add_argument(
+        "--prettify-input",
+        action=argparse.BooleanOptionalAction,
+        help="also prettify (and print) the input",
+    )
 
     # Run benchmark suite subcommand
 
@@ -612,6 +635,7 @@ if __name__ == "__main__":
         refresh_binary()
         refactor_helper(
             language=args.language,
+            show_input=args.prettify_input
         )
     elif args.subcommand == "benchmark":
         refresh_binary()

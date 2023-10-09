@@ -159,6 +159,23 @@ let solve : use_unification:bool -> depth:int -> problem -> (int * exp) option =
                     (Unification.show_term normalized_candidate_body_uniterm))
              else ()
            in *)
+           (* let () =
+             if String.is_substring
+                  ~substring:"maybe_withDefault"
+                  (Exp.show_single candidate_body)
+                && String.is_substring
+                     ~substring:"maybe_map"
+                     (Exp.show_single candidate_body)
+             then
+               failwith
+               @@ sprintf
+                    "%s\n\n%s\n\n%s\n\n%s\n\n;;;;;"
+                    (Exp.show_single reference)
+                    (Exp.show_single candidate_body)
+                    (Exp.show_single normalized_reference_body)
+                    (Exp.show_single normalized_candidate_body)
+             else ()
+           in *)
            match
              Unification.unify
                1000

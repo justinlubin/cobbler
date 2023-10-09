@@ -114,7 +114,7 @@ let rec constraint_type : datatype_env -> typ_env -> exp -> typ * constraint_set
   | EBase (BEFloat _) -> (TBase BTFloat, [])
   | EBase (BEString _) -> (TBase BTString, [])
   | EHole (_, t) -> (t, [])
-  | ERScheme (RSCata, dt, args) ->
+  | ERScheme (RSCata _, dt, args) ->
       let dt_params, ctors = Map.find_exn sigma dt in
       let sub_list =
         List.map ~f:(fun p -> (p, Typ.fresh_type_var ())) dt_params

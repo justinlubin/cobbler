@@ -50,8 +50,6 @@ and exp_of_sexp : Sexp.t -> exp = function
       EHole (name, typ_of_sexp tau)
   | Sexp.List [ Sexp.Atom "lambda"; Sexp.Atom param; body ] ->
       EAbs (param, exp_of_sexp body)
-  | Sexp.List (Sexp.Atom "cata" :: Sexp.Atom dt :: args) ->
-      ERScheme (RSCata, dt, List.map ~f:exp_of_sexp args)
   | Sexp.List (Sexp.Atom "match" :: scrutinee :: branches) ->
       EMatch (exp_of_sexp scrutinee, List.map ~f:branch_of_sexp branches)
   | Sexp.List (Sexp.Atom head :: args) when is_constructor head ->

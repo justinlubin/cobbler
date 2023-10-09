@@ -83,7 +83,13 @@ and to_unification_term'
   | EBase (BEString s) -> embed' "base_string" s []
   | EHole (name, typ) ->
       Atom (Variable (sprintf "__ua_hole^%s" name, to_unification_typ typ))
-  | ERScheme (RSCata, dt, args) -> embed' "cata" dt args
+  | ERScheme (RSCata ct, dt, args) ->
+      let flag =
+        match ct with
+        | RSCataNonrecursive -> 0
+        | RSCataRecursive -> 1
+      in
+      embed' "cata" dt (EBase (BEInt flag) :: args)
 
 let to_unification_term
     : Lang.datatype_env -> Lang.typ_env -> Lang.exp -> Unification.term
@@ -134,14 +140,17 @@ let rec from_unification_term
         | Some ("base_string", s) -> EBase (BEString s)
         | Some ("cata", dt) ->
             (* Only supports applied catas *)
+            let first_arg = List.hd_exn arguments in
+            let middle_args = arguments |> List.tl_exn |> List.drop_last_exn in
             let last_arg = List.last_exn arguments in
-            let all_but_last_arg = List.drop_last_exn arguments in
             EApp
               ( ERScheme
                   ( RSCata
+                      (match from_unification_term sigma first_arg with
+                      | EBase (BEInt 0) -> RSCataNonrecursive
+                      | _ -> RSCataRecursive)
                   , dt
-                  , List.map ~f:(from_unification_term sigma) all_but_last_arg
-                  )
+                  , List.map ~f:(from_unification_term sigma) middle_args )
               , from_unification_term sigma last_arg )
         | _ -> build_arguments (EVar x))
   in

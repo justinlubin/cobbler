@@ -6,7 +6,7 @@ let rec fuse' : datatype_env -> exp -> exp =
   let rec recur = function
     | EVar x -> EVar x
     (* Catamorphism fusion *)
-    | EApp (u, EApp (ERScheme (RSCata, dt, fs), arg)) ->
+    | EApp (u, EApp (ERScheme (RSCata ct, dt, fs), arg)) ->
         (match
            Option.all
              (List.map2_exn
@@ -15,11 +15,12 @@ let rec fuse' : datatype_env -> exp -> exp =
                 fs
                 (snd (Map.find_exn sigma dt)))
          with
-        | Some new_fs -> recur (EApp (ERScheme (RSCata, dt, new_fs), arg))
+        | Some new_fs -> recur (EApp (ERScheme (RSCata ct, dt, new_fs), arg))
         | None ->
             EApp
               ( recur u
-              , EApp (ERScheme (RSCata, dt, List.map ~f:recur fs), recur arg) ))
+              , EApp (ERScheme (RSCata ct, dt, List.map ~f:recur fs), recur arg)
+              ))
     (* Match fusion 1 (e.g. options, booleans), a.k.a. "if lifting" *)
     | EApp (head, EMatch (scrutinee, branches)) ->
         recur

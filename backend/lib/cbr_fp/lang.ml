@@ -33,8 +33,13 @@ type datatype_env = (string list * (string * typ list) list) String.Map.t
 (** Case branches *)
 type branch = string * (string list * exp)
 
+(** Catamorphism types *)
+and rs_cata_type =
+  | RSCataRecursive
+  | RSCataNonrecursive
+
 (** Recursion schemes *)
-and rscheme = RSCata
+and rscheme = RSCata of rs_cata_type
 
 (** Base expressions *)
 and base_exp =

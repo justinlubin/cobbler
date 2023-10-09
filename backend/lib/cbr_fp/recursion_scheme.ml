@@ -26,7 +26,9 @@ let nonrecursive_matches_to_catas : datatype_env -> exp -> exp =
            |> Option.all
          with
         | Some cata_args ->
-            recur (EApp (ERScheme (RSCata, dt, cata_args), scrutinee))
+            recur
+              (EApp
+                 (ERScheme (RSCata RSCataNonrecursive, dt, cata_args), scrutinee))
         | None -> EMatch (recur scrutinee, Exp.map_branches ~f:recur branches))
     (* Other cases *)
     | EVar x -> EVar x
@@ -56,53 +58,58 @@ let cata_of_definition_exn : datatype_env -> string -> exp -> exp =
       let first_ctor, _ = List.hd_exn branches in
       let (dt, _), _ = Option.value_exn (Typ.ctor_typ sigma first_ctor) in
       let _, ctors = Map.find_exn sigma dt in
-      let rs =
-        ERScheme
-          ( RSCata
-          , dt
-          , List.map ctors ~f:(fun (ctor_name, domain) ->
-                let branch_params, rhs =
-                  List.Assoc.find_exn ~equal:String.equal branches ctor_name
-                in
-                let cata_arg =
-                  List.fold_right
-                    (List.zip_exn branch_params domain)
-                    ~init:rhs
-                    ~f:(fun (branch_param, branch_param_type) acc ->
-                      match branch_param_type with
-                      | TDatatype (dt', _) when String.equal dt dt' ->
-                          let acc_param = Util.gensym "rs_acc" in
-                          let candidate =
-                            EAbs
-                              ( acc_param
-                              , Exp.replace_subexp
-                                  ~old_subexp:
-                                    (Exp.build_app
-                                       (EVar name)
-                                       (List.mapi top_params ~f:(fun i p ->
-                                            if Int.equal i scrutinee_index
-                                            then EVar branch_param
-                                            else EVar p)))
-                                  ~new_subexp:(EVar acc_param)
-                                  acc )
-                          in
-                          if Set.mem (Exp.free_variables candidate) branch_param
-                          then
-                            failwith
-                              "cannot replace all references of branch \
-                               parameter to accumulator"
-                          else candidate
-                      | _ -> EAbs (branch_param, acc))
-                in
-                if Set.mem (Exp.free_variables cata_arg) name
-                then
-                  failwith
-                    (sprintf
-                       "non-structural recursion for constructor %s"
-                       ctor_name)
-                else cata_arg) )
+      let cata_args, any_args_recursive =
+        List.unzip
+          (List.map ctors ~f:(fun (ctor_name, domain) ->
+               let branch_params, rhs =
+                 List.Assoc.find_exn ~equal:String.equal branches ctor_name
+               in
+               let cata_arg, any_params_recursive =
+                 List.fold_right
+                   (List.zip_exn branch_params domain)
+                   ~init:(rhs, false)
+                   ~f:(fun (branch_param, branch_param_type) (acc, apr) ->
+                     match branch_param_type with
+                     | TDatatype (dt', _) when String.equal dt dt' ->
+                         let acc_param = Util.gensym "rs_acc" in
+                         let candidate =
+                           EAbs
+                             ( acc_param
+                             , Exp.replace_subexp
+                                 ~old_subexp:
+                                   (Exp.build_app
+                                      (EVar name)
+                                      (List.mapi top_params ~f:(fun i p ->
+                                           if Int.equal i scrutinee_index
+                                           then EVar branch_param
+                                           else EVar p)))
+                                 ~new_subexp:(EVar acc_param)
+                                 acc )
+                         in
+                         if Set.mem (Exp.free_variables candidate) branch_param
+                         then
+                           failwith
+                             "cannot replace all references of branch \
+                              parameter to accumulator"
+                         else (candidate, true)
+                     | _ -> (EAbs (branch_param, acc), apr))
+               in
+               if Set.mem (Exp.free_variables cata_arg) name
+               then
+                 failwith
+                   (sprintf
+                      "non-structural recursion for constructor %s"
+                      ctor_name)
+               else (cata_arg, any_params_recursive)))
       in
-      Exp.build_abs top_params (EApp (rs, scrutinee))
+      let ct =
+        if List.exists ~f:(fun x -> x) any_args_recursive
+        then RSCataRecursive
+        else RSCataNonrecursive
+      in
+      Exp.build_abs
+        top_params
+        (EApp (ERScheme (RSCata ct, dt, cata_args), scrutinee))
   | _, e -> failwith "top-level expression is not a match"
 
 let cata_of_definition : datatype_env -> string -> exp -> exp option =

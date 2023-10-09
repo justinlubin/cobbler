@@ -58,6 +58,10 @@ val substitute : string * t -> t -> t
     within a program execution) for all bound variables. *)
 val freshen : exp -> exp
 
+(** [freshen e] alpha-converts [e] to have new names (guaranteed to be unique
+    within a program execution) for all bound variables only for univars. *)
+val freshen_univars : exp -> exp
+
 (** [alpha_normalize e] returns a canonical expression among those
     alpha-equivalent to [e]. *)
 val alpha_normalize : exp -> exp

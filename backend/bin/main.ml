@@ -1,11 +1,12 @@
 open Core
 
+let elm_stdlib_fname : string = "backend/bin/Stdlib.json"
+
 let main_elm : string -> Yojson.Basic.t =
  fun input ->
   let open Cbr_fp in
-  let stdlib_fname = "backend/bin/Stdlib.json" in
   let stdlib_sigma, stdlib_gamma, stdlib_env =
-    In_channel.with_file stdlib_fname ~f:(fun file ->
+    In_channel.with_file elm_stdlib_fname ~f:(fun file ->
         Parse_json.definitions (In_channel.input_all file))
   in
   try
@@ -82,6 +83,7 @@ let main_elm : string -> Yojson.Basic.t =
              ; ( "solution"
                , `String
                    (Unparse_elm.definition
+                      stdlib_sigma
                       name
                       (orig_typ_binders, orig_typ)
                       solution) )
@@ -121,6 +123,22 @@ let main_elm : string -> Yojson.Basic.t =
   | Invalid_argument s ->
       `Assoc [ ("status", `String "Invalid_argument"); ("reason", `String s) ]
 
+let main_elm_prettify : string -> Yojson.Basic.t =
+ fun input ->
+  let open Cbr_fp in
+  let stdlib_sigma, stdlib_gamma, stdlib_env =
+    In_channel.with_file elm_stdlib_fname ~f:(fun file ->
+        Parse_json.definitions (In_channel.input_all file))
+  in
+  try
+    let name, typ, rhs = Parse_json.variable_definition input in
+    `String (Unparse_elm.definition stdlib_sigma name typ rhs)
+  with
+  | Parse_json.ParseFail s ->
+      `Assoc [ ("status", `String "ParseFail"); ("reason", `String s) ]
+  | Yojson.Json_error s ->
+      `Assoc [ ("status", `String "Yojson.Json_error"); ("reason", `String s) ]
+
 let main_python : string -> Yojson.Basic.t =
  fun input ->
   let open Cbr_numpy in
@@ -152,6 +170,7 @@ let () =
   let result =
     match Array.get (Sys.get_argv ()) 1 with
     | "elm" -> main_elm input
+    | "elm-prettify" -> main_elm_prettify input
     | "python" -> main_python input
     | lang -> failwith (sprintf "unknown language '%s'" lang)
   in
