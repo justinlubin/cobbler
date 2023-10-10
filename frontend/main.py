@@ -7,12 +7,15 @@ import json
 import pathlib
 import subprocess
 import sys
+import os
 
 import benchmark
 import db_iter
 import util
 
 import numpy as np
+
+BENCHMARK_REPLICATES = 1
 
 
 def refresh_binary():
@@ -140,7 +143,7 @@ def benchmark_helper(
             stats = benchmarker(block, dry_run=dry_run, toggle_eval=unsafe_eval)
             if stats["status"] in ["Success", "SynthFail"]:
                 times = []
-                for _ in range(10):
+                for _ in range(BENCHMARK_REPLICATES):
                     stats_tmp = benchmarker(
                         block, dry_run=dry_run, toggle_eval=unsafe_eval
                     )
@@ -361,6 +364,33 @@ def remove_duplicates_helper(
                     continue
                 writer.writerow(row)
                 seen.add(orig_code)
+
+def dump_successes_helper(
+    input_path=None,
+    output_path=None,
+    language=None,
+):
+    show_code = show_elm_json if language == "elm" else show_python
+    show_synthed_code = show_elm if language == "elm" else show_python
+    extension = "elm" if language == "elm" else "py"
+    with open(input_path, "r", newline="") as input_f:
+        for i, row in enumerate(csv.DictReader(input_f, delimiter="\t")):
+            if row["status"] != "Success":
+                continue
+
+            row_number = i + 2
+            folder = f"{output_path}/row{row_number:06d}"
+            os.makedirs(folder, exist_ok=True)
+
+            with open(f"{folder}/input.{extension}", "w") as output_orig_f:
+                with open(f"{folder}/output.{extension}", "w") as output_synthed_f:
+                    output_orig_f.write(
+                        show_code(util.csv_str_decode(row["orig code"])) + "\n\n"
+                    )
+
+                    output_synthed_f.write(
+                        show_synthed_code(util.csv_str_decode(row["synthed code"]))
+                    )
 
 
 if __name__ == "__main__":
@@ -623,6 +653,31 @@ if __name__ == "__main__":
         help="the path to output the new benchmarking tsv",
     )
 
+    # Dump successes to folder subcommand
+
+    dump_successes_parser = subparsers.add_parser(
+        "dump-successes",
+        help="dump all successes in individual files for downstream processing",
+    )
+    dump_successes_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the benchmark",
+    )
+    dump_successes_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path of the benchmarking tsv to dump the successes of",
+    )
+    dump_successes_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to the directory to output the successes",
+    )
+
     # Setup
 
     csv.field_size_limit(sys.maxsize)
@@ -704,4 +759,10 @@ if __name__ == "__main__":
         remove_duplicates_helper(
             input_path=args.input,
             output_path=args.output,
+        )
+    elif args.subcommand == "dump-successes":
+        dump_successes_helper(
+            input_path=args.input,
+            output_path=args.output,
+            language=args.language
         )

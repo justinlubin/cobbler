@@ -1,0 +1,10 @@
+
+[[Choices]]
+Strongly prefer (A)
+Somewhat prefer (A)
+Neutral
+Somewhat prefer (B)
+Strongly prefer (B)
+
+[[Question:TE:Essay]]
+Why?

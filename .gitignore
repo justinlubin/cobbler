@@ -12,3 +12,4 @@ data/*
 .npm
 analysis/output/*
 performance_eval/output/*
+survey/code/row*

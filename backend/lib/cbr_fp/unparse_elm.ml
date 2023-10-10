@@ -32,6 +32,14 @@ let clean_name : string -> string =
   |> String.substr_replace_all ~pattern:"#" ~with_:""
   |> String.lstrip ~drop:(Char.equal '_')
 
+let rec list_literal : exp -> exp -> exp list option =
+ fun hd tl ->
+  match tl with
+  | ECtor ("Nil", []) -> Some [ hd ]
+  | ECtor ("Cons", [ hd'; tl' ]) ->
+      Option.map ~f:(fun es -> hd :: es) (list_literal hd' tl')
+  | _ -> None
+
 let prettify_exp : datatype_env -> exp -> exp =
  fun sigma ->
   let rec recur e =
@@ -66,7 +74,13 @@ let prettify_exp : datatype_env -> exp -> exp =
         | None ->
             ERScheme (RSCata RSCataNonrecursive, dt, List.map ~f:recur args))
     | EApp (e1, e2) -> EApp (recur e1, recur e2)
-    | EAbs (x, body) -> EAbs (clean_name x, recur body)
+    | EAbs (x, body) ->
+        let x = clean_name x in
+        (match recur body with
+        | EApp (f, EVar x')
+          when String.equal x x' && not (Set.mem (Exp.free_variables f) x) -> f
+        | body when not (Set.mem (Exp.free_variables body) x) -> EAbs ("_", body)
+        | body -> EAbs (x, body))
     | EMatch (scrutinee, branches) ->
         (match branches with
         | [ ("True", ([], ECtor ("True", []))); ("False", ([], e')) ] ->
@@ -74,13 +88,12 @@ let prettify_exp : datatype_env -> exp -> exp =
         | [ ("True", ([], e')); ("False", ([], ECtor ("False", []))) ] ->
             recur (Exp.build_app (EVar "&&") [ scrutinee; e' ])
         | _ -> EMatch (recur scrutinee, Exp.map_branches ~f:recur branches))
-    | ECtor (ctor, args) ->
-        ECtor
-          ( (match ctor with
-            | "Cons" -> "::"
-            | "Nil" -> "[]"
-            | _ -> ctor)
-          , List.map ~f:recur args )
+    | ECtor ("Nil", []) -> ECtor ("[]", [])
+    | ECtor ("Cons", [ hd; tl ]) ->
+        (match list_literal hd tl with
+        | Some elements -> ECtor ("::Literal", List.map ~f:recur elements)
+        | None -> ECtor ("::", [ recur hd; recur tl ]))
+    | ECtor (ctor, args) -> ECtor (ctor, List.map ~f:recur args)
     | EBase b -> EBase b
     | EHole (name, tau) -> EHole (name, tau)
     | ERScheme (rs, dt, args) -> ERScheme (rs, dt, List.map ~f:recur args)
@@ -115,6 +128,7 @@ let rec exp'' : ?in_pipeline:bool -> int -> exp -> string =
  fun ?(in_pipeline = false) depth e ->
   let indent = "\n" ^ String.init (4 * (depth + 1)) ~f:(fun _ -> ' ') in
   match Exp.decompose_app e with
+  | EVar f, [ arg ] when is_infix f -> sprintf "((%s) %s)" f (exp'' depth arg)
   | EVar f, [ left; right ] when is_infix f ->
       sprintf "(%s %s %s)" (exp'' depth left) f (exp'' depth right)
   | EVar f, (_ :: _ as args) when Set.mem backward_functions f ->
@@ -147,6 +161,12 @@ let rec exp'' : ?in_pipeline:bool -> int -> exp -> string =
                      (params |> List.map ~f:(fun p -> " " ^ p) |> String.concat)
                      (exp'' depth rhs))
             |> String.concat)
+      | ECtor ("::Literal", elements) ->
+          "["
+          ^ (elements |> List.map ~f:(exp'' depth) |> String.concat ~sep:", ")
+          ^ "]"
+      | ECtor (ctor, [ left; right ]) when is_infix ctor ->
+          sprintf "(%s %s %s)" (exp'' depth left) ctor (exp'' depth right)
       | ECtor (ctor, args) ->
           sprintf
             "(%s%s)"
