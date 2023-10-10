@@ -1,19 +1,13 @@
-Dependencies to make survey images:
+This survey contains the code to make a Qualtrics survey txt file.
 
-- pandoc
-- phantomjs
-- imagemagick
-
-Run `./code-to-png.sh elm <filename>` to make a png out of code
-
-In parent directory, run `./cobbler dump-successes --language=elm --input=data/elm-test.tsv --output=survey/code`
-
-In this directory, run `./make-images.py`
-
-Dependencies to make survey html:
+There is one additional dependency to make this txt file:
 
 - pandoc
 
-In parent directory, run `./cobbler dump-successes --language=elm --input=data/elm-test.tsv --output=survey/code`
+Steps:
 
-In this directory, run `./make-survey.py`
+1. In parent directory, run `./cobbler dump-successes --language=elm --input=data/elm-test-synth.tsv --output=survey/code`
+
+2. In this directory, run `./make-survey.py`
+
+The output is in `survey.txt`.
