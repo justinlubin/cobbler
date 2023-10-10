@@ -13,3 +13,4 @@ data/*
 analysis/output/*
 performance_eval/output/*
 survey/code/row*
+survey/survey.txt
