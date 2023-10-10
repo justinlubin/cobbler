@@ -31,9 +31,13 @@ Once that is done, see `./cobbler --help`.
 3. *Optional: If you use virtual environments, create a new one for this project now. The next step will use `pip` to install the necessary Python packages.*
 4. Run `make deps`
 
-### Other dependencies
+### Additional dependencies
 
 - This project also depends on [elm-format](https://github.com/avh4/elm-format) (tested with version 0.8.7), which is installable via `npm`
+
+### Optional dependencies (to generate survey txt file)
+
+- [`pandoc`](https://pandoc.org/)
 
 ## Running the evaluation
 
@@ -55,6 +59,11 @@ The scripts in the `analysis/` directory analyze the benchmarking results. They 
 To run the backend tests, run `make test` from the `backend` subdirectory.
 
 To run the frontend tests, run `make test` from the `frontend` subdirectory.
+
+## Generating the Qualtrics survey txt file
+
+To generate a txt file that can be uploaded to Qualtrics, see the `survey`
+subdirectory.
 
 ## Acknowledgments
 
