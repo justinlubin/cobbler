@@ -25,7 +25,7 @@ def elm_json(block):
                             or type["name"] == "Result"
                             or type["name"] == "List"
                         ):
-                            return block
+                            return block, type["name"]
             raise NoExtractionException("scrutinee not of correct type")
         else:
             raise NoExtractionException("scrutinee is not parameter")

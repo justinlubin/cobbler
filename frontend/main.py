@@ -80,6 +80,9 @@ def prettify_elm(code):
     )
     return show_elm(json.loads(prettify_output))
 
+def prettify_elm_json(s):
+    return prettify_elm(show_elm_json(s))
+
 
 def show_python(s):
     return s
@@ -365,21 +368,23 @@ def remove_duplicates_helper(
                 writer.writerow(row)
                 seen.add(orig_code)
 
-def dump_successes_helper(
+def gen_survey_code_helper(
     input_path=None,
     output_path=None,
     language=None,
 ):
-    show_code = show_elm_json if language == "elm" else show_python
+    show_code = prettify_elm_json if language == "elm" else show_python
     show_synthed_code = show_elm if language == "elm" else show_python
     extension = "elm" if language == "elm" else "py"
     with open(input_path, "r", newline="") as input_f:
         for i, row in enumerate(csv.DictReader(input_f, delimiter="\t")):
-            if row["status"] != "Success":
+            if row["status"] != "Success" or int(row["synthed ast size"]) < 2:
                 continue
 
+            kind = row["kind"] if "kind" in row else "UnknownKind"
+
             row_number = i + 2
-            folder = f"{output_path}/row{row_number:06d}"
+            folder = f"{output_path}/{kind}/row{row_number:06d}"
             os.makedirs(folder, exist_ok=True)
 
             with open(f"{folder}/input.{extension}", "w") as output_orig_f:
@@ -655,27 +660,27 @@ if __name__ == "__main__":
 
     # Dump successes to folder subcommand
 
-    dump_successes_parser = subparsers.add_parser(
-        "dump-successes",
-        help="dump all successes in individual files for downstream processing",
+    gen_survey_code_parser = subparsers.add_parser(
+        "gen-survey-code",
+        help="extract a benchmarking tsv to individual files in a directory for survey processing",
     )
-    dump_successes_parser.add_argument(
+    gen_survey_code_parser.add_argument(
         "--language",
         choices=["elm", "python"],
         required=True,
         help="the language of the benchmark",
     )
-    dump_successes_parser.add_argument(
+    gen_survey_code_parser.add_argument(
         "--input",
         type=pathlib.Path,
         required=True,
-        help="the path of the benchmarking tsv to dump the successes of",
+        help="the path of the benchmarking tsv",
     )
-    dump_successes_parser.add_argument(
+    gen_survey_code_parser.add_argument(
         "--output",
         type=pathlib.Path,
         required=True,
-        help="the path to the directory to output the successes",
+        help="the path of the output directory",
     )
 
     # Setup
@@ -760,8 +765,8 @@ if __name__ == "__main__":
             input_path=args.input,
             output_path=args.output,
         )
-    elif args.subcommand == "dump-successes":
-        dump_successes_helper(
+    elif args.subcommand == "gen-survey-code":
+        gen_survey_code_helper(
             input_path=args.input,
             output_path=args.output,
             language=args.language

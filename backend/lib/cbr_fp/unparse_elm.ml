@@ -23,14 +23,24 @@ let infix_chars : Char.Set.t =
 let is_infix : string -> bool =
  fun s -> String.for_all ~f:(Set.mem infix_chars) s
 
-let backward_functions : String.Set.t =
-  String.Set.of_list [ "Maybe.withDefault"; "Maybe.map" ]
+let pretty_ctor : string -> string = function
+  | "Basics.True" -> "True"
+  | "Basics.False" -> "False"
+  | "Maybe.Just" -> "Just"
+  | "Maybe.Nothing" -> "Nothing"
+  | "Result.Ok" -> "Ok"
+  | "Result.Err" -> "Err"
+  | s -> s
 
 let clean_name : string -> string =
  fun s ->
   s
   |> String.substr_replace_all ~pattern:"#" ~with_:""
   |> String.lstrip ~drop:(Char.equal '_')
+
+let clean_pat : string -> string = function
+  | s when String.is_prefix ~prefix:"__wildcard#" s -> "_"
+  | s -> s
 
 let rec list_literal : exp -> exp -> exp list option =
  fun hd tl ->
@@ -51,16 +61,16 @@ let prettify_exp : datatype_env -> exp -> exp =
         (match String.chop_suffix ~suffix:"____CBR" x with
         | Some left ->
             (match String.chop_prefix ~prefix:"basics_" left with
-            | Some mid -> EVar (sprintf "%s" (clean_name mid))
+            | Some mid -> EVar (sprintf "$%s" (clean_name mid))
             | None ->
                 (match String.chop_prefix ~prefix:"maybe_" left with
-                | Some mid -> EVar (sprintf "Maybe.%s" (clean_name mid))
+                | Some mid -> EVar (sprintf "$Maybe.%s" (clean_name mid))
                 | None ->
                     (match String.chop_prefix ~prefix:"result_" left with
-                    | Some mid -> EVar (sprintf "Result.%s" (clean_name mid))
+                    | Some mid -> EVar (sprintf "$Result.%s" (clean_name mid))
                     | None ->
                         (match String.chop_prefix ~prefix:"list_" left with
-                        | Some mid -> EVar (sprintf "List.%s" (clean_name mid))
+                        | Some mid -> EVar (sprintf "$List.%s" (clean_name mid))
                         | None -> EVar (clean_name x)))))
         | None -> EVar (clean_name x))
     | EApp (ERScheme (RSCata RSCataNonrecursive, dt, args), scrutinee) ->
@@ -110,17 +120,24 @@ let rec prettify_typ : typ -> typ =
 
 let rec typ' : typ -> string =
  fun t ->
-  match t with
-  | TBase BTInt -> "Int"
-  | TBase BTString -> "String"
-  | TBase BTFloat -> "Float"
-  | TVar x -> x
-  | TDatatype (dt, args) ->
-      sprintf
-        "(%s%s)"
-        dt
-        (args |> List.map ~f:(fun a -> " " ^ typ' a) |> String.concat)
-  | TArr (t1, t2) -> sprintf "(%s -> %s)" (typ' t1) (typ' t2)
+  let dom, cod = Typ.decompose_arr t in
+  let cod_string =
+    match cod with
+    | TBase BTInt -> "Int"
+    | TBase BTString -> "String"
+    | TBase BTFloat -> "Float"
+    | TVar x -> x
+    | TDatatype (dt, args) ->
+        sprintf
+          "(%s%s)"
+          dt
+          (args |> List.map ~f:(fun a -> " " ^ typ' a) |> String.concat)
+    | TArr (t1, t2) -> sprintf "(%s -> %s)" (typ' t1) (typ' t2)
+  in
+  "("
+  ^ (dom |> List.map ~f:(fun d -> typ' d ^ " -> ") |> String.concat ~sep:"")
+  ^ cod_string
+  ^ ")"
 
 let typ : typ -> string = fun t -> typ' (prettify_typ t)
 
@@ -131,7 +148,7 @@ let rec exp'' : ?in_pipeline:bool -> int -> exp -> string =
   | EVar f, [ arg ] when is_infix f -> sprintf "((%s) %s)" f (exp'' depth arg)
   | EVar f, [ left; right ] when is_infix f ->
       sprintf "(%s %s %s)" (exp'' depth left) f (exp'' depth right)
-  | EVar f, (_ :: _ as args) when Set.mem backward_functions f ->
+  | EVar f, (_ :: _ as args) when Char.equal (String.get f 0) '$' ->
       let nonlast_args = List.drop_last_exn args in
       let last_arg = List.last_exn args in
       let left, right = if in_pipeline then ("", "") else ("(", ")") in
@@ -140,33 +157,51 @@ let rec exp'' : ?in_pipeline:bool -> int -> exp -> string =
         left
         (exp'' ~in_pipeline:true depth last_arg)
         indent
-        f
+        (String.drop_prefix f 1)
         (String.concat ~sep:" " (List.map ~f:(exp'' (depth + 1)) nonlast_args))
         right
   | _ ->
       (match e with
       | EVar x -> sprintf "(%s)" x
       | EApp (e1, e2) -> sprintf "(%s %s)" (exp'' depth e1) (exp'' depth e2)
-      | EAbs (x, body) -> sprintf "(\\%s -> %s)" x (exp'' depth body)
+      | EAbs (x, body) ->
+          sprintf "(\\%s -> %s)" (clean_pat x) (exp'' depth body)
       | EMatch (scrutinee, branches) ->
           sprintf
             "(case %s of%s)"
             (exp'' depth scrutinee)
             (branches
             |> List.map ~f:(fun (ctor, (params, rhs)) ->
-                   sprintf
-                     "%s%s%s -> %s"
-                     indent
-                     ctor
-                     (params |> List.map ~f:(fun p -> " " ^ p) |> String.concat)
-                     (exp'' depth rhs))
+                   match (ctor, params) with
+                   | "Nil", [] -> sprintf "%s[] -> %s" indent (exp'' depth rhs)
+                   | "Cons", [ hd; tl ] ->
+                       sprintf
+                         "%s%s :: %s -> %s"
+                         indent
+                         (clean_pat hd)
+                         (clean_pat tl)
+                         (exp'' depth rhs)
+                   | _, _ ->
+                       sprintf
+                         "%s%s%s -> %s"
+                         indent
+                         (pretty_ctor ctor)
+                         (params
+                         |> List.map ~f:(fun p -> " " ^ clean_pat p)
+                         |> String.concat)
+                         (exp'' depth rhs))
             |> String.concat)
       | ECtor ("::Literal", elements) ->
-          "["
-          ^ (elements |> List.map ~f:(exp'' depth) |> String.concat ~sep:", ")
-          ^ "]"
+          let inner =
+            elements |> List.map ~f:(exp'' depth) |> String.concat ~sep:", "
+          in
+          "[" ^ (if String.length inner > 40 then "\n" else "") ^ inner ^ "]"
       | ECtor (ctor, [ left; right ]) when is_infix ctor ->
-          sprintf "(%s %s %s)" (exp'' depth left) ctor (exp'' depth right)
+          sprintf
+            "(%s %s %s)"
+            (exp'' depth left)
+            (pretty_ctor ctor)
+            (exp'' depth right)
       | ECtor (ctor, args) ->
           sprintf
             "(%s%s)"

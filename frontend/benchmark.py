@@ -23,6 +23,7 @@ CSV_FIELDS = [
     "synthed exec time",
     "exec status",
     "exec reason",
+    "kind",
 ]
 
 
@@ -35,10 +36,12 @@ def elm_json(
     stats["orig code"] = util.csv_str_encode(json.dumps(js))
 
     try:
-        block = extract.elm_json(js)
+        block, kind = extract.elm_json(js)
     except extract.NoExtractionException:
         stats["status"] = "ExtractFail"
         return stats
+
+    stats["kind"] = kind
 
     if dry_run:
         synthesis_result = {"status": "DryRun"}
