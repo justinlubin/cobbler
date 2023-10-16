@@ -1,2 +1,2 @@
 
-[[Question:MC:SingleAnswer:Horizontal]]
+[[Question:MC:SingleAnswer:Vertical]]

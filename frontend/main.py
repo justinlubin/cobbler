@@ -38,20 +38,6 @@ def refresh_binary():
         sys.exit(1)
 
 
-def show_elm_json(s):
-    try:
-        wrapped = '{"moduleName":"Main","imports":{},"body": [' + s + "]}"
-        return "\n".join(
-            subprocess.check_output(
-                ["elm-format", "--stdin", "--from-json"],
-                input=(wrapped).encode("utf8"),
-                stderr=subprocess.PIPE,
-            )
-            .decode("utf8")
-            .splitlines()[3:]
-        )
-    except subprocess.CalledProcessError as e:
-        return "elm-format error: " + e.stderr.decode("utf8") + "\n\n" + wrapped
 
 
 def show_elm(s):
@@ -68,6 +54,14 @@ def show_elm(s):
     except subprocess.CalledProcessError as e:
         return "elm-format error: " + e.stderr.decode("utf8") + "\n\n" + s
 
+def prettify_elm_json(js):
+    prettify_output = subprocess.check_output(
+        [util.path_from_root("backend/_build/default/bin/main.exe"), "elm-prettify"],
+        input=js,
+        text=True,
+    )
+    return show_elm(json.loads(prettify_output))
+
 def prettify_elm(code):
     elm_format_output = subprocess.check_output(
         ["elm-format", "--stdin", "--json"],
@@ -79,9 +73,6 @@ def prettify_elm(code):
         text=True,
     )
     return show_elm(json.loads(prettify_output))
-
-def prettify_elm_json(s):
-    return prettify_elm(show_elm_json(s))
 
 
 def show_python(s):
@@ -195,8 +186,8 @@ def make_report_helper(
     output_path=None,
     language=None,
 ):
-    show_code = show_elm_json if language == "elm" else show_python
-    show_synthed_code = show_elm if language == "elm" else show_python
+    show_code = prettify_elm_json if language == "elm" else show_python
+    show_synthed_code = prettify_elm if language == "elm" else show_python
     comment = "--" if language == "elm" else "##"
     with open(input_path, "r", newline="") as input_f:
         with open(output_path, "w") as output_f:
@@ -721,8 +712,8 @@ if __name__ == "__main__":
         view_benchmark_helper(
             path=args.path_to_tsv,
             line_number=args.line_number,
-            show_code=show_elm_json if args.language == "elm" else show_python,
-            show_synthed_code=show_elm if args.language == "elm" else show_python,
+            show_code=prettify_elm_json if args.language == "elm" else show_python,
+            show_synthed_code=prettify_elm if args.language == "elm" else show_python,
         )
     elif args.subcommand == "make-report":
         make_report_helper(

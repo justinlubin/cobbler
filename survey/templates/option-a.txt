@@ -1,3 +1,1 @@
-<p>Which implementation of this function do you prefer?</p>
-<hr />
 <h1>Option (A)</h1>
