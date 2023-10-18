@@ -1,6 +1,15 @@
 open Core
 open Lang
 
+let escape : string -> string =
+ fun s ->
+  s
+  |> String.substr_replace_all ~pattern:"\\" ~with_:"\\\\"
+  |> String.substr_replace_all ~pattern:"\n" ~with_:"\\n"
+  |> String.substr_replace_all ~pattern:"\r" ~with_:"\\r"
+  |> String.substr_replace_all ~pattern:"\t" ~with_:"\\t"
+  |> String.substr_replace_all ~pattern:"\"" ~with_:"\\\""
+
 let infix_chars : Char.Set.t =
   Char.Set.of_list
     [ '+'
@@ -213,7 +222,7 @@ let rec exp'' : ?in_pipeline:bool -> int -> exp -> string =
             ctor
             (args |> List.map ~f:(fun a -> " " ^ exp'' depth a) |> String.concat)
       | EBase (BEInt n) -> string_of_int n
-      | EBase (BEString s) -> sprintf "\"%s\"" (String.escaped s)
+      | EBase (BEString s) -> sprintf "\"%s\"" (escape s)
       | EBase (BEFloat f) -> string_of_float f
       | EHole (_, _) -> failwith "Cannot unparse hole"
       | ERScheme _ -> failwith "Cannot unparse recursion scheme")
