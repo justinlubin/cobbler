@@ -13,4 +13,5 @@ data/*
 analysis/output/*
 performance_eval/output/*
 survey/code/*
-survey/survey.txt
+survey/split-code/*
+survey/survey/*
