@@ -9,7 +9,7 @@ random.seed(100)
 TEMPLATES_DIR = "templates"
 QUESTIONS_PER_KIND = None  # None = all
 
-MAX_SPLIT_SIZE = 35  # None = all (good size??: 100)
+MAX_SPLIT_SIZE = 25  # None = all (good size??: 100)
 
 subprocess.run(["./clean-survey.sh"])
 
@@ -18,6 +18,7 @@ for kind in os.listdir("code"):
         continue
 
     rows = os.listdir(f"code/{kind}")
+    rows = random.sample(rows, k=len(rows))
 
     split = 0
     count = 0
