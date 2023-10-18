@@ -709,6 +709,7 @@ if __name__ == "__main__":
                 dry_run=args.dry_run,
             )
     elif args.subcommand == "view-benchmark":
+        refresh_binary()
         view_benchmark_helper(
             path=args.path_to_tsv,
             line_number=args.line_number,
@@ -716,6 +717,7 @@ if __name__ == "__main__":
             show_synthed_code=prettify_elm if args.language == "elm" else show_python,
         )
     elif args.subcommand == "make-report":
+        refresh_binary()
         make_report_helper(
             input_path=args.input,
             output_path=args.output,
@@ -757,6 +759,7 @@ if __name__ == "__main__":
             output_path=args.output,
         )
     elif args.subcommand == "gen-survey-code":
+        refresh_binary()
         gen_survey_code_helper(
             input_path=args.input,
             output_path=args.output,

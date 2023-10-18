@@ -193,9 +193,14 @@ let rec exp'' : ?in_pipeline:bool -> int -> exp -> string =
             |> String.concat)
       | ECtor ("::Literal", elements) ->
           let inner =
-            elements |> List.map ~f:(exp'' depth) |> String.concat ~sep:", "
+            elements
+            |> List.map ~f:(exp'' (depth + 1))
+            |> String.concat ~sep:", "
           in
-          "[" ^ (if String.length inner > 40 then "\n" else "") ^ inner ^ "]"
+          "["
+          ^ (if String.length inner > 40 then "\n" ^ indent else "")
+          ^ inner
+          ^ "]"
       | ECtor (ctor, [ left; right ]) when is_infix ctor ->
           sprintf
             "(%s %s %s)"
@@ -208,7 +213,7 @@ let rec exp'' : ?in_pipeline:bool -> int -> exp -> string =
             ctor
             (args |> List.map ~f:(fun a -> " " ^ exp'' depth a) |> String.concat)
       | EBase (BEInt n) -> string_of_int n
-      | EBase (BEString s) -> sprintf "\"%s\"" s
+      | EBase (BEString s) -> sprintf "\"%s\"" (String.escaped s)
       | EBase (BEFloat f) -> string_of_float f
       | EHole (_, _) -> failwith "Cannot unparse hole"
       | ERScheme _ -> failwith "Cannot unparse recursion scheme")
@@ -226,5 +231,5 @@ let definition : datatype_env -> string -> typ_scheme -> exp -> string =
     name
     (typ t)
     name
-    (params |> List.map ~f:(fun p -> " " ^ p) |> String.concat)
+    (params |> List.map ~f:(fun p -> " " ^ clean_pat p) |> String.concat)
     (exp' sigma 1 inner_rhs)
