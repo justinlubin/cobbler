@@ -9,7 +9,7 @@ random.seed(100)
 TEMPLATES_DIR = "templates"
 QUESTIONS_PER_KIND = None  # None = all
 
-MAX_SPLIT_SIZE = 100  # None = all (good size??: 100)
+MAX_SPLIT_SIZE = 35  # None = all (good size??: 100)
 
 subprocess.run(["./clean-survey.sh"])
 
