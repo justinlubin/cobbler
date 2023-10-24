@@ -15,3 +15,5 @@ performance_eval/output/*
 survey/code/*
 survey/split-code/*
 survey/survey/*
+survey-analysis/input/*
+survey-analysis/output/*

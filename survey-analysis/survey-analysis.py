@@ -13,10 +13,21 @@ warnings.simplefilter(
     category=pd.errors.PerformanceWarning,
 )
 
+# %% Config
+
+INPUT_DIR = "input"
+OUTPUT_DIR = "output"
+
+STYLE_COLORS = {
+    "Direct (input)": "#73D8F8",
+    "Combinator (output)": "#BC89C5",
+}
+
+
 # %% Load data files
 
 raw_data = pd.read_csv(
-    "results.tsv",
+    f"{INPUT_DIR}/results.tsv",
     sep="\t",
     encoding="utf-16",
     header=1,
@@ -188,41 +199,48 @@ prefersums = make_sums(preferdata)
 # %% Make bar plots
 
 
-def simple_bars(summary, adjective):
-    fig, ax = plt.subplots(1, 1, figsize=(3, 4))
+def simple_bars(summary, adjective, filename=None):
+    fig, ax = plt.subplots(1, 1, figsize=(4, 4))
 
     util.bar_plot(
         ax,
         y=summary["Percent"],
         group_labels=summary["Type"],
         legend_labels=summary["Code Style"],
-        legend_label_colors={
-            "Direct (input)": "#BC89C5",
-            "Combinator (output)": "#73D8F8",
-        },
+        legend_label_colors=STYLE_COLORS,
     )
 
     ax.set_ylim(0, 1)
     ax.set_yticks(np.arange(0, 1.1, 0.2))
     ax.yaxis.set_major_formatter(mtick.FuncFormatter("{:.0%}".format))
+    # ax.set_ylabel("Total code marked as " + adjective)
 
-    # fig.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
-    # fig.legend(loc="center left", bbox_to_anchor=(1, 0))
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.1), ncols=2)
+    ax.set_title(f"Total code marked as {adjective}")
     fig.tight_layout()
     # fig.suptitle(f"Which style is {adjective}?")
 
+    if filename:
+        fig.savefig(f"{OUTPUT_DIR}/filename")
 
-simple_bars(readsummary, r"more $\bf{readable}$")
-simple_bars(prefersummary, r"$\bf{preferred}$")
+
+simple_bars(readsummary, r"more $\bf{readable}$", filename="readable.pdf")
+simple_bars(prefersummary, r"$\bf{preferred}$", filename="preferred.pdf")
 
 # %% Make experience scatter plots
 
 
-def exp_scatter(exp_data):
+def exp_scatter(exp_data, adjective, filename=None):
     fig, ax = plt.subplots(1, 1, figsize=(4, 3))
-    ax.scatter(exp_data["Exp"], exp_data["Percent-O"])
+    ax.scatter(
+        exp_data["Exp"],
+        exp_data["Percent-O"],
+        c=STYLE_COLORS["Combinator (output)"],
+        clip_on=False,
+        zorder=10,
+    )
 
-    ax.set_xlim(0, 100)
+    ax.set_xlim(0, exp_data["Exp"].max() + 1)
     ax.set_ylim(0, 1)
     ax.set_yticks(np.arange(0, 1.1, 0.2))
     ax.yaxis.set_major_formatter(mtick.FuncFormatter("{:.0%}".format))
@@ -230,15 +248,28 @@ def exp_scatter(exp_data):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    ax.set_ylabel("Combinator style preferred")
+    ax.set_ylabel("Combinator style " + adjective)
     ax.set_xlabel("Years experience with STFP")
 
     fig.tight_layout()
+
+    if filename:
+        fig.savefig(f"{OUTPUT_DIR}/filename")
 
 
 read_exp_data = metadata.join(readsums)[["Exp", "Percent-O"]]
 prefer_exp_data = metadata.join(prefersums)[["Exp", "Percent-O"]]
 
-read_exp_data["Exp"] = np.random.random(2) * 100
+read_exp_data["Exp"] = np.random.random(6) * 100
+prefer_exp_data["Exp"] = np.random.random(6) * 100
 
-exp_scatter(read_exp_data)
+exp_scatter(
+    read_exp_data,
+    r"more $\bf{readable}$",
+    filename="readable_exp.pdf",
+)
+exp_scatter(
+    prefer_exp_data,
+    r"$\bf{preferred}$",
+    filename="prefer_exp.pdf",
+)
