@@ -221,7 +221,7 @@ def simple_bars(summary, adjective, filename=None):
     # fig.suptitle(f"Which style is {adjective}?")
 
     if filename:
-        fig.savefig(f"{OUTPUT_DIR}/filename")
+        fig.savefig(f"{OUTPUT_DIR}/{filename}")
 
 
 simple_bars(readsummary, r"more $\bf{readable}$", filename="readable.pdf")
@@ -254,14 +254,11 @@ def exp_scatter(exp_data, adjective, filename=None):
     fig.tight_layout()
 
     if filename:
-        fig.savefig(f"{OUTPUT_DIR}/filename")
+        fig.savefig(f"{OUTPUT_DIR}/{filename}")
 
 
 read_exp_data = metadata.join(readsums)[["Exp", "Percent-O"]]
 prefer_exp_data = metadata.join(prefersums)[["Exp", "Percent-O"]]
-
-read_exp_data["Exp"] = np.random.random(6) * 100
-prefer_exp_data["Exp"] = np.random.random(6) * 100
 
 exp_scatter(
     read_exp_data,

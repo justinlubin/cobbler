@@ -192,7 +192,7 @@ with open("performance_eval/output/speedup_summary.txt", "w") as f:
 # %% Plot data
 
 
-def make_plot(column_prefix):
+def make_plot1(column_prefix):
     perf_color = "tab:blue"
     noperf_color = "tab:orange"
 
@@ -263,6 +263,84 @@ def make_plot(column_prefix):
     ax.legend(
         [perf_patch, noperf_patch],
         ["Uses performant NumPy functions", "Uses cosmetic functions only"],
+        loc="lower right",
+    )
+
+    fig.tight_layout()
+    fig.savefig(f"performance_eval/output/speedup-{column_prefix}.pdf")
+
+
+def make_plot(column_prefix):
+    perf_color = "#BC89C5"
+    noperf_color = "#73D8F8"
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 4))
+
+    for perf in [0, 1]:
+        for p in DATA_SIZE_POWERS:
+            vals = data[data["perf"] == perf][f"{column_prefix} speedup {p}"]
+            vals = vals[~(vals.isna())]
+            log10vals = np.log10(vals)
+            color = perf_color if perf == 1 else noperf_color
+            ax.boxplot(
+                log10vals,
+                widths=0.25,
+                positions=[p - 0.15 + perf * 0.3],
+                vert=True,
+                flierprops={
+                    "markersize": 1,
+                    "marker": "o",
+                    "markerfacecolor": None,
+                    "markeredgecolor": "black",
+                },
+                boxprops={
+                    "facecolor": color,
+                },
+                medianprops={
+                    "color": "black",
+                },
+                # whiskerprops={
+                #    "color": color,
+                # },
+                # capprops={
+                #    "color": color,
+                # },
+                zorder=10,
+                patch_artist=True,
+            )
+        # assert len(bp["boxes"]) == 1
+        # bp["boxes"][0].set_facecolor(color)
+
+    ax.set_xticks(
+        DATA_SIZE_POWERS,
+        labels=DATA_SIZE_POWERS,
+    )
+
+    ax.set_ylim(-6.5, 1.5)
+    ax.set_yticks(np.arange(-6, 1.1, 1))
+
+    ax.axhline(0, linewidth=1, color="gray", linestyle="--")
+
+    ax.set_xlabel(r"log$_{10}$($\bf{Data\ size}$)", fontsize=12)
+    ax.set_ylabel(r"log$_{10}$($\bf{Speedup}$)", fontsize=12)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    # ax.spines["bottom"].set_visible(False)
+
+    # ax.xaxis.set_ticks_position("none")
+
+    perf_patch = mpt.Patch(color=perf_color)
+    noperf_patch = mpt.Patch(color=noperf_color)
+    ax.legend(
+        [
+            noperf_patch,
+            perf_patch,
+        ],
+        [
+            "Uses cosmetic functions only",
+            "Uses performant NumPy functions",
+        ],
         loc="lower right",
     )
 

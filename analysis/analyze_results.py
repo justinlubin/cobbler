@@ -31,8 +31,8 @@ def load_data(filename):
     return df
 
 
-data_elm = load_data("elm-test-synth.tsv")
-data_python = load_data("python-test-synth.tsv")
+data_elm = load_data("elm-test.tsv")
+data_python = load_data("python-test.tsv")
 
 # %% Handle Python bug
 
@@ -148,7 +148,7 @@ with open(f"{OUTPUT_DIR}applicability-summary.txt", "w") as f:
 # %% Synthesis time vs. AST size
 
 
-def synthtime_vs_astsize(data, name):
+def synthtime_vs_astsize_1(data, name):
     fig = plt.figure()
 
     gs = fig.add_gridspec(
@@ -197,8 +197,94 @@ def synthtime_vs_astsize(data, name):
     fig.savefig(f"{OUTPUT_DIR}/{name}-synthtime_vs_astsize.pdf")
 
 
+def synthtime_vs_astsize(data, name):
+    fig, ax = plt.subplots(1, 1, figsize=(7, 3))
+
+    sizes = []
+    vals = []
+    for size, subdata in data.groupby("synthed ast size"):
+        sizes.append(size)
+        vals.append(np.log10(subdata["synth time med"]).values)
+
+    ax.boxplot(
+        vals,
+        labels=sizes,
+        vert=False,
+        # boxprops={
+        #     "color": "#BC89C5",
+        # },
+        # whiskerprops={
+        #     "color": "#BC89C5",
+        # },
+        # capprops={
+        #     "color": "#BC89C5",
+        # },
+        flierprops={
+            "markersize": 1,
+            "marker": "o",
+            "markerfacecolor": "black",
+            "markeredgecolor": None,
+        },
+        medianprops={
+            "color": "black",
+        },
+    )
+
+    ax.set_xticks([-2, -1, 0])
+    ax.set_xlim(-2.1, 0.1)
+    ax.set_xlabel(r"log$_{10}$($\bf{Synthesis\ time}$ in seconds)", fontsize=12)
+
+    ax.set_yticks(sizes, labels=[str(int(x)) for x in sizes])
+    ax.set_ylabel(r"$\bf{\#\ Components\ used}$", fontsize=12)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    fig.tight_layout()
+    fig.savefig(f"{OUTPUT_DIR}/{name}-synthtime_vs_astsize.pdf")
+
+
 synthtime_vs_astsize(data_elm, "elm")
 synthtime_vs_astsize(data_python, "python")
+
+# %% AST size histograms
+
+
+def astsize_dist(data, name):
+    fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+
+    labels, counts = np.unique(
+        data["synthed ast size"].dropna(),
+        return_counts=True,
+    )
+
+    b = ax.bar(
+        labels,
+        counts,
+        align="center",
+        width=0.7,
+        color="black",
+    )
+    ax.bar_label(b)
+
+    ax.set_xticks(labels)
+    ax.set_xlabel(r"$\bf{\#\ Components\ used}$", fontsize=12)
+
+    max_count = max(counts)
+    ystep = 10 if max_count < 500 else 500
+    ax.set_yticks(np.arange(0, max_count, ystep))
+    ax.set_ylabel(r"$\bf{\#\ Entries}$", fontsize=12)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    fig.tight_layout()
+    fig.savefig(f"{OUTPUT_DIR}{name}-astsize_dist.pdf")
+
+
+astsize_dist(data_elm, "elm")
+astsize_dist(data_python, "python")
+
 
 # %% Five-number summaries of synthesis time
 
@@ -308,7 +394,34 @@ with open(f"{OUTPUT_DIR}time-summary.txt", "w") as f:
 
 # %% Box plots of synthesis time
 
-fig, ax = plt.subplots(1, 1, figsize=(10, 2.4))
+# fig, ax = plt.subplots(1, 1, figsize=(10, 2.4))
+# p = ax.boxplot(
+#     [
+#         np.log10(data_python[data_python["status"] == "SynthFail"]["synth time med"]),
+#         np.log10(data_elm[data_elm["status"] == "SynthFail"]["synth time med"]),
+#         np.log10(data_python[data_python["status"] == "Success"]["synth time med"]),
+#         np.log10(data_elm[data_elm["status"] == "Success"]["synth time med"]),
+#     ],
+#     labels=[
+#         r"$\bf{Python}$ (unsuccessful)",
+#         r"$\bf{Elm}$ (unsuccessful)",
+#         r"$\bf{Python}$ (successful)",
+#         r"$\bf{Elm}$ (successful)",
+#     ],
+#     whis=(0, 100),
+#     vert=False,
+#     # showmedians=True,
+#     # showmeans=False,
+#     # showextrema=True,
+# )
+#
+# ax.set_xticks([-2, -1, 0, 1])
+# ax.set_xlabel(r"log$_{10}$($\bf{Synthesis\ time}$)", fontsize=12)
+#
+# fig.tight_layout()
+# fig.savefig(f"{OUTPUT_DIR}synthtime_boxplot.pdf")
+
+fig, ax = plt.subplots(1, 1, figsize=(7, 3))
 p = ax.boxplot(
     [
         np.log10(data_python[data_python["status"] == "SynthFail"]["synth time med"]),
@@ -322,15 +435,26 @@ p = ax.boxplot(
         r"$\bf{Python}$ (successful)",
         r"$\bf{Elm}$ (successful)",
     ],
-    whis=(0, 100),
     vert=False,
     # showmedians=True,
     # showmeans=False,
     # showextrema=True,
+    flierprops={
+        "markersize": 1,
+        "marker": "o",
+        "markerfacecolor": "black",
+        "markeredgecolor": None,
+    },
+    medianprops={
+        "color": "black",
+    },
 )
 
 ax.set_xticks([-2, -1, 0, 1])
-ax.set_xlabel(r"log$_{10}$($\bf{Synthesis\ time}$)", fontsize=12)
+ax.set_xlabel(r"log$_{10}$($\bf{Synthesis\ time}$ in seconds)", fontsize=12)
+
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
 
 fig.tight_layout()
 fig.savefig(f"{OUTPUT_DIR}synthtime_boxplot.pdf")
