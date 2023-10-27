@@ -176,7 +176,7 @@ def synthtime_vs_astsize_1(data, name):
     ax.set_yticks([-2, -1, 0])
     ax.set_ylim([-2, 0.5])
 
-    ax.set_xlabel(r"$\bf{\#\ Components\ used}$", fontsize=12)
+    ax.set_xlabel(r"$\bf{\#\ Components}$", fontsize=12)
     ax.set_ylabel(r"log$_{10}$($\bf{Synthesis\ time}$)", fontsize=12)
 
     ax_hist = fig.add_subplot(gs[0, 0], sharex=ax)
@@ -197,8 +197,8 @@ def synthtime_vs_astsize_1(data, name):
     fig.savefig(f"{OUTPUT_DIR}/{name}-synthtime_vs_astsize.pdf")
 
 
-def synthtime_vs_astsize(data, name):
-    fig, ax = plt.subplots(1, 1, figsize=(7, 3))
+def synthtime_vs_astsize(data, name, title):
+    fig, ax = plt.subplots(1, 1, figsize=(6, 2.5))
 
     sizes = []
     vals = []
@@ -210,8 +210,10 @@ def synthtime_vs_astsize(data, name):
         vals,
         labels=sizes,
         vert=False,
+        # patch_artist=True,
         # boxprops={
-        #     "color": "#BC89C5",
+        #     # "color": "#BC89C5",
+        #     # "facecolor": "gray",
         # },
         # whiskerprops={
         #     "color": "#BC89C5",
@@ -230,28 +232,32 @@ def synthtime_vs_astsize(data, name):
         },
     )
 
-    ax.set_xticks([-2, -1, 0])
+    ax.set_xticks(np.arange(-2, 0.1, 0.5))
     ax.set_xlim(-2.1, 0.1)
     ax.set_xlabel(r"log$_{10}$($\bf{Synthesis\ time}$ in seconds)", fontsize=12)
 
     ax.set_yticks(sizes, labels=[str(int(x)) for x in sizes])
-    ax.set_ylabel(r"$\bf{\#\ Components\ used}$", fontsize=12)
+    ax.set_ylabel(r"$\bf{\#\ Components}$", fontsize=12)
 
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
+    ax.set_title(
+        r"$\bf{" + title + r"}$",
+        pad=12,
+    )
     fig.tight_layout()
     fig.savefig(f"{OUTPUT_DIR}/{name}-synthtime_vs_astsize.pdf")
 
 
-synthtime_vs_astsize(data_elm, "elm")
-synthtime_vs_astsize(data_python, "python")
+synthtime_vs_astsize(data_elm, "elm", "Elm")
+synthtime_vs_astsize(data_python, "python", "Python")
 
 # %% AST size histograms
 
 
-def astsize_dist(data, name):
-    fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+def astsize_dist(data, name, title):
+    fig, ax = plt.subplots(1, 1, figsize=(2.5, 3))
 
     labels, counts = np.unique(
         data["synthed ast size"].dropna(),
@@ -263,12 +269,13 @@ def astsize_dist(data, name):
         counts,
         align="center",
         width=0.7,
-        color="black",
+        color="gray",
+        edgecolor="black",
     )
     ax.bar_label(b)
 
     ax.set_xticks(labels)
-    ax.set_xlabel(r"$\bf{\#\ Components\ used}$", fontsize=12)
+    ax.set_xlabel(r"$\bf{\#\ Components}$", fontsize=12)
 
     max_count = max(counts)
     ystep = 10 if max_count < 500 else 500
@@ -278,12 +285,16 @@ def astsize_dist(data, name):
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
+    ax.set_title(
+        r"$\bf{" + title + r"}$",
+        pad=12,
+    )
     fig.tight_layout()
     fig.savefig(f"{OUTPUT_DIR}{name}-astsize_dist.pdf")
 
 
-astsize_dist(data_elm, "elm")
-astsize_dist(data_python, "python")
+astsize_dist(data_elm, "elm", "Elm")
+astsize_dist(data_python, "python", "Python")
 
 
 # %% Five-number summaries of synthesis time
@@ -421,7 +432,7 @@ with open(f"{OUTPUT_DIR}time-summary.txt", "w") as f:
 # fig.tight_layout()
 # fig.savefig(f"{OUTPUT_DIR}synthtime_boxplot.pdf")
 
-fig, ax = plt.subplots(1, 1, figsize=(7, 3))
+fig, ax = plt.subplots(1, 1, figsize=(7.5, 2.5))
 p = ax.boxplot(
     [
         np.log10(data_python[data_python["status"] == "SynthFail"]["synth time med"]),
@@ -450,7 +461,7 @@ p = ax.boxplot(
     },
 )
 
-ax.set_xticks([-2, -1, 0, 1])
+ax.set_xticks(np.arange(-2, 1.1, 0.5))
 ax.set_xlabel(r"log$_{10}$($\bf{Synthesis\ time}$ in seconds)", fontsize=12)
 
 ax.spines["top"].set_visible(False)
