@@ -224,8 +224,58 @@ def simple_bars(summary, adjective, filename=None):
         fig.savefig(f"{OUTPUT_DIR}/{filename}")
 
 
-simple_bars(readsummary, r"more $\bf{readable}$", filename="readable.pdf")
-simple_bars(prefersummary, r"$\bf{preferred}$", filename="preferred.pdf")
+def stacked_bars(summary, adjective, filename=None):
+    fig, ax = plt.subplots(1, 1, figsize=(3.5, 4))
+
+    summary_i = summary[summary["Code Style"] == "Direct (input)"]
+    summary_o = summary[summary["Code Style"] == "Combinator (output)"]
+
+    o_bars = ax.bar(
+        summary_o["Type"],
+        summary_o["Percent"],
+        label="Combinator (output)",
+        color=STYLE_COLORS["Combinator (output)"],
+        # edgecolor="black",
+    )
+    ax.bar(
+        summary_i["Type"],
+        summary_i["Percent"],
+        bottom=summary_o["Percent"],
+        label="Direct (input)",
+        color=STYLE_COLORS["Direct (input)"],
+        # edgecolor="black",
+    )
+    ax.bar_label(
+        o_bars, label_type="center", fmt="{:.0%}", c="white", fontweight="bold"
+    )
+
+    ax.set_xlim(-0.5, 2.5)
+    ax.set_xticks(summary_i["Type"], labels=summary_i["Type"])
+
+    ax.set_ylim(0, 1)
+    ax.set_yticks(np.arange(0, 1.1, 0.2))
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter("{:.0%}".format))
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.1),
+        ncols=1,
+    )
+    ax.set_title(
+        f"Total code marked as {adjective}",
+        pad=10,
+    )
+    fig.tight_layout()
+
+    if filename:
+        fig.savefig(f"{OUTPUT_DIR}/{filename}")
+
+
+stacked_bars(readsummary, r"more $\bf{readable}$", filename="readable.pdf")
+stacked_bars(prefersummary, r"$\bf{preferred}$", filename="preferred.pdf")
 
 # %% Make experience scatter plots
 

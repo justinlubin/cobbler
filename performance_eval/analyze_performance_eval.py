@@ -274,7 +274,7 @@ def make_plot(column_prefix):
     perf_color = "#BC89C5"
     noperf_color = "#73D8F8"
 
-    fig, ax = plt.subplots(1, 1, figsize=(8, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(7, 4))
 
     for perf in [0, 1]:
         for p in DATA_SIZE_POWERS:
@@ -284,8 +284,8 @@ def make_plot(column_prefix):
             color = perf_color if perf == 1 else noperf_color
             ax.boxplot(
                 log10vals,
-                widths=0.25,
-                positions=[p - 0.15 + perf * 0.3],
+                widths=0.3,
+                positions=[p - 0.2 + (1 - perf) * 0.4],
                 vert=True,
                 flierprops={
                     "markersize": 1,
@@ -334,12 +334,12 @@ def make_plot(column_prefix):
     noperf_patch = mpt.Patch(color=noperf_color)
     ax.legend(
         [
-            noperf_patch,
             perf_patch,
+            noperf_patch,
         ],
         [
-            "Uses cosmetic functions only",
             "Uses performant NumPy functions",
+            "Uses cosmetic functions only",
         ],
         loc="lower right",
     )
