@@ -247,7 +247,8 @@ def stacked_bars(summary, adjective, filename=None):
         summary_o["Percent"],
         label="Combinator (output)",
         color=STYLE_COLORS["Combinator (output)"],
-        # edgecolor="black",
+        hatch="///",
+        edgecolor="black",
     )
     ax.bar(
         summary_i["Type"],
@@ -255,10 +256,20 @@ def stacked_bars(summary, adjective, filename=None):
         bottom=summary_o["Percent"],
         label="Direct (input)",
         color=STYLE_COLORS["Direct (input)"],
-        # edgecolor="black",
+        edgecolor="black",
+        clip_on=False,
     )
     ax.bar_label(
-        o_bars, label_type="center", fmt="{:.0%}", c="white", fontweight="bold"
+        o_bars,
+        label_type="center",
+        fmt="{:.0%}",
+        c="white",
+        fontweight="bold",
+        bbox=dict(
+            boxstyle="square",
+            facecolor=STYLE_COLORS["Combinator (output)"],
+            linewidth=0,
+        ),
     )
 
     ax.set_xlim(-0.5, 2.5)
@@ -371,7 +382,7 @@ qsum["Shrinkage"] = qsum["IChars"] / qsum["OChars"]
 
 
 def shrinkage_plot(prefix, adjective):
-    fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(5, 3))
     for ty in ["Maybe", "Result", "List"]:
         subdata = qsum[qsum.index.str.endswith(f"-{ty[0]}")]
         ax.scatter(
@@ -388,9 +399,11 @@ def shrinkage_plot(prefix, adjective):
             s=15,
         )
     ax.axvline(0, linewidth=1, color="gray", linestyle="--")
-    ax.set_xlabel(r"log2($\bf{Direct}$ chars / $\bf{Combinator}$ chars)")
+    ax.set_xlabel(r"log$_2$($\bf{Direct}$ characters / $\bf{Combinator}$ characters)")
     ax.set_ylabel(r"% $\bf{Combinators}$ " + adjective)
     ax.set_ylim(0, 1)
+    xlim = max(abs(ax.get_xlim()[0]), abs(ax.get_xlim()[1]))
+    ax.set_xlim(-xlim, xlim)
     ax.set_yticks(np.arange(0, 1.1, 0.2))
     ax.yaxis.set_major_formatter(mtick.FuncFormatter("{:.0%}".format))
     ax.spines["top"].set_visible(False)

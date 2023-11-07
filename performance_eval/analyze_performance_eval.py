@@ -274,6 +274,9 @@ def make_plot(column_prefix):
     perf_color = "#BC89C5"
     noperf_color = "#73D8F8"
 
+    perf_hatch = "////"
+    noperf_hatch = None
+
     fig, ax = plt.subplots(1, 1, figsize=(8, 3.5))
 
     for perf in [0, 1]:
@@ -281,7 +284,11 @@ def make_plot(column_prefix):
             vals = data[data["perf"] == perf][f"{column_prefix} speedup {p}"]
             vals = vals[~(vals.isna())]
             log10vals = np.log10(vals)
-            color = perf_color if perf == 1 else noperf_color
+            color = noperf_color
+            hatch = noperf_hatch
+            if perf == 1:
+                color = perf_color
+                hatch = perf_hatch
             ax.boxplot(
                 log10vals,
                 widths=0.3,
@@ -295,6 +302,7 @@ def make_plot(column_prefix):
                 },
                 boxprops={
                     "facecolor": color,
+                    "hatch": hatch,
                 },
                 medianprops={
                     "color": "black",
@@ -330,8 +338,16 @@ def make_plot(column_prefix):
 
     # ax.xaxis.set_ticks_position("none")
 
-    perf_patch = mpt.Patch(color=perf_color)
-    noperf_patch = mpt.Patch(color=noperf_color)
+    perf_patch = mpt.Patch(
+        facecolor=perf_color,
+        edgecolor="black",
+        hatch=perf_hatch,
+    )
+    noperf_patch = mpt.Patch(
+        facecolor=noperf_color,
+        edgecolor="black",
+        hatch=noperf_hatch,
+    )
     ax.legend(
         [
             perf_patch,
