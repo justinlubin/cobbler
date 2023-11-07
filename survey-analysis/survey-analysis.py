@@ -23,6 +23,18 @@ STYLE_COLORS = {
     "Combinator (output)": "#BC89C5",
 }
 
+TYPE_COLORS = {
+    "Maybe": "#73D8F8",
+    "Result": "#BC89C5",
+    "List": "#39B54A",
+}
+
+TYPE_MARKERS = {
+    "Maybe": "o",
+    "Result": "s",
+    "List": "^",
+}
+
 
 # %% Load data files
 
@@ -285,7 +297,9 @@ def exp_scatter(exp_data, adjective, filename=None):
     ax.scatter(
         exp_data["Exp"],
         exp_data["Percent-O"],
-        c=STYLE_COLORS["Combinator (output)"],
+        c="gray",
+        edgecolors="black",
+        linewidths=0.5,
         clip_on=False,
         zorder=10,
     )
@@ -320,3 +334,75 @@ exp_scatter(
     r"$\bf{preferred}$",
     filename="prefer_exp.pdf",
 )
+
+# %% Question summary
+
+
+def option_a(s):
+    return s.split("Option (B)")[0][len("Option (A)") :].strip()
+
+
+def option_b(s):
+    return (
+        s.split("Option (B)")[1]
+        .split(
+            "Which implementation of this function",
+        )[0]
+        .strip()
+    )
+
+
+qsum = pd.DataFrame(index=readdata.columns)
+qsum["Read-I"] = readdata.sum().str.count("I")
+qsum["Read-O"] = readdata.sum().str.count("O")
+qsum["Prefer-I"] = preferdata.sum().str.count("I")
+qsum["Prefer-O"] = preferdata.sum().str.count("O")
+
+for q in qsum.index:
+    qsum.loc[q, "IChars"] = len(option_a(questions[q]))
+    qsum.loc[q, "OChars"] = len(option_b(questions[q]))
+
+qsum["IChars"] = qsum["IChars"].astype(int)
+qsum["OChars"] = qsum["OChars"].astype(int)
+
+qsum["Shrinkage"] = qsum["IChars"] / qsum["OChars"]
+
+# %% Plot summary
+
+
+def shrinkage_plot(prefix, adjective):
+    fig, ax = plt.subplots(1, 1, figsize=(4, 3))
+    for ty in ["Maybe", "Result", "List"]:
+        subdata = qsum[qsum.index.str.endswith(f"-{ty[0]}")]
+        ax.scatter(
+            np.log2(subdata["IChars"] / subdata["OChars"]),
+            subdata[f"{prefix}-O"] / (subdata[f"{prefix}-I"] + subdata[f"{prefix}-O"]),
+            label=ty,
+            color=TYPE_COLORS[ty],
+            marker=TYPE_MARKERS[ty],
+            edgecolors="black",
+            linewidths=0.5,
+            # alpha=0.7,
+            clip_on=False,
+            zorder=10,
+            s=15,
+        )
+    ax.axvline(0, linewidth=1, color="gray", linestyle="--")
+    ax.set_xlabel(r"log2($\bf{Direct}$ chars / $\bf{Combinator}$ chars)")
+    ax.set_ylabel(r"% $\bf{Combinators}$ " + adjective)
+    ax.set_ylim(0, 1)
+    ax.set_yticks(np.arange(0, 1.1, 0.2))
+    ax.yaxis.set_major_formatter(mtick.FuncFormatter("{:.0%}".format))
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(f"output/shrinkage-{prefix}.pdf")
+
+
+shrinkage_plot("Read", "more readable")
+shrinkage_plot("Prefer", "preferred")
+
+# %% Shrinkage summary
+
+# sns.displot(data=qsum, x="Shrinkage")

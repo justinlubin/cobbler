@@ -203,15 +203,21 @@ def make_report_helper(
                     comment + " Synthesis time: " + row["synth time"] + "\n\n"
                 )
                 output_f.write(comment + " Original code:\n\n")
-                output_f.write(
-                    show_code(util.csv_str_decode(row["orig code"])) + "\n\n"
-                )
-                if row["synthed code"]:
-                    output_f.write(comment + " Synthesized code:\n\n")
+                try:
                     output_f.write(
-                        show_synthed_code(util.csv_str_decode(row["synthed code"]))
-                        + "\n\n"
+                        show_code(util.csv_str_decode(row["orig code"])) + "\n\n"
                     )
+                except:
+                    pass
+                try:
+                    if row["synthed code"]:
+                        output_f.write(comment + " Synthesized code:\n\n")
+                        output_f.write(
+                            show_synthed_code(util.csv_str_decode(row["synthed code"]))
+                            + "\n\n"
+                        )
+                except:
+                    pass
                 if row["exec status"]:
                     output_f.write(
                         comment + " Execution status: " + row["exec status"] + "\n"
