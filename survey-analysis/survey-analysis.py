@@ -419,3 +419,14 @@ shrinkage_plot("Prefer", "preferred")
 # %% Shrinkage summary
 
 # sns.displot(data=qsum, x="Shrinkage")
+
+# %% Print survey info
+
+print(
+    "Number of participants:",
+    len(readsums),
+)
+print(
+    "Number of questions answered:",
+    readsums["I Sum"].sum() + readsums["O Sum"].sum(),
+)
