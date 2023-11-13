@@ -237,7 +237,7 @@ def simple_bars(summary, adjective, filename=None):
 
 
 def stacked_bars(summary, adjective, filename=None):
-    fig, ax = plt.subplots(1, 1, figsize=(3.5, 4))
+    fig, ax = plt.subplots(1, 1, figsize=(3, 3))
 
     summary_i = summary[summary["Code Style"] == "Direct (input)"]
     summary_o = summary[summary["Code Style"] == "Combinator (output)"]
@@ -284,13 +284,13 @@ def stacked_bars(summary, adjective, filename=None):
 
     ax.legend(
         loc="upper center",
-        bbox_to_anchor=(0.5, -0.1),
+        bbox_to_anchor=(0.5, -0.15),
         ncols=1,
     )
-    ax.set_title(
-        f"Total code marked as {adjective}",
-        pad=10,
-    )
+    # ax.set_title(
+    #     f"Total code marked as {adjective}",
+    #     pad=10,
+    # )
     fig.tight_layout()
 
     if filename:
@@ -382,7 +382,7 @@ qsum["Shrinkage"] = qsum["IChars"] / qsum["OChars"]
 
 
 def shrinkage_plot(prefix, adjective):
-    fig, ax = plt.subplots(1, 1, figsize=(5, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(5, 2.5))
     for ty in ["Maybe", "Result", "List"]:
         subdata = qsum[qsum.index.str.endswith(f"-{ty[0]}")]
         ax.scatter(
@@ -400,7 +400,7 @@ def shrinkage_plot(prefix, adjective):
         )
     ax.axvline(0, linewidth=1, color="gray", linestyle="--")
     ax.set_xlabel(r"log$_2$($\bf{Direct}$ characters / $\bf{Combinator}$ characters)")
-    ax.set_ylabel(r"% $\bf{Combinators}$ " + adjective)
+    ax.set_ylabel(r"% $\bf{Combinator}$ " + adjective)
     ax.set_ylim(0, 1)
     xlim = max(abs(ax.get_xlim()[0]), abs(ax.get_xlim()[1]))
     ax.set_xlim(-xlim, xlim)

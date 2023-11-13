@@ -189,7 +189,7 @@ def synthtime_vs_astsize_1(data, name):
     )
     b = ax_hist.bar(labels, counts, align="center", width=0.7)
     ax_hist.bar_label(b)
-    ax_hist.set_ylabel(r"$\bf{\#\ Entries}$", fontsize=12)
+    ax_hist.set_ylabel(r"$\bf{\#\ Programs}$", fontsize=12)
 
     fig.align_ylabels()
 
@@ -280,7 +280,7 @@ def astsize_dist(data, name, title):
     max_count = max(counts)
     ystep = 10 if max_count < 500 else 500
     ax.set_yticks(np.arange(0, max_count, ystep))
-    ax.set_ylabel(r"$\bf{\#\ Entries}$", fontsize=12)
+    ax.set_ylabel(r"$\bf{\#\ Programs}$", fontsize=12)
 
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
