@@ -277,7 +277,7 @@ def make_plot(column_prefix):
     perf_hatch = "////"
     noperf_hatch = None
 
-    fig, ax = plt.subplots(1, 1, figsize=(9, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(10, 3))
 
     for perf in [0, 1]:
         for p in DATA_SIZE_POWERS:
