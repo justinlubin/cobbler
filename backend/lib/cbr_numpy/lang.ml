@@ -40,5 +40,5 @@ type program = env * block [@@deriving compare, ord]
 type substitutions = expr String.Map.t [@@deriving compare]
 type exprMap = (expr, expr) Map.Poly.t
 
-type trace_entry = expr * program list
+type trace_entry = program * program list
 type trace = trace_entry list

@@ -7,4 +7,4 @@ open Lang
 open Env
 
 (** [make_trace p] creates the program trace for subexpressions of program [p] *)
-val make_trace : program -> trace option
+val make_trace : program -> trace

@@ -13,18 +13,17 @@ let rec get_candidates : expr -> expr list =
 
 let make_trace_entry : expr -> trace_entry =
  fun e ->
-  e, []
+  let p = Env.np_env, [Return e] in
+  p, []
   
-let make_trace : program -> trace option =(**
+let make_trace : program -> trace =(**
   let rec make_trace' candidates =
     let traces, new_candidates = List.map make_trace_entry candidates |> List.split in
     match new_candidates with
     | [] -> traces
     | _ -> traces @ make_trace' new_candidates
   in *)
- fun p ->
-  match p with
-  | Return e -> List.map make_trace_entry (get_candidates [e])
-  | _ -> None
-
-"""get candidiates from initial expr -> make traces?"""
+ fun (_, block) ->
+  match block with
+  | [Return e] -> List.map make_trace_entry (get_candidates e)
+  | _ -> []
