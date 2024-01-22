@@ -1,5 +1,7 @@
 open Lang
 open Env
+open Partial_eval_trace
+open Inline
 
 let rec get_candidates : expr -> expr list =
  fun e ->
@@ -14,7 +16,8 @@ let rec get_candidates : expr -> expr list =
 let make_trace_entry : expr -> trace_entry =
  fun e ->
   let p = Env.np_env, [Return e] in
-  p, []
+  let _, t = (p, [p]) |> inline_program_with_trace |> partial_eval_program_with_trace in
+  p, t
   
 let make_trace : program -> trace =(**
   let rec make_trace' candidates =

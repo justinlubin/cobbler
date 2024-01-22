@@ -276,9 +276,9 @@ and partial_eval_block_with_trace : block -> block * block list =
     let after = List.filteri ~f:(fun j _ -> j > i) block in
     before @ (stmt :: after)
   in
-  stmts, List.mapi ~f:(fun j stmt_trace -> List.map ~f:(f j) stmt_trace) stmt_traces |> List.concat
+  stmts, block :: (List.mapi ~f:(fun j stmt_trace -> List.map ~f:(f j) (List.tl_exn stmt_trace)) stmt_traces |> List.concat)
 
-let partial_eval_program_with_trace : program -> program * program list =
- fun (env, block) -> 
-  let block', block_traces = partial_eval_block_with_trace block in
-  (env, block'), List.map ~f:(fun x -> (env, x)) block_traces
+let partial_eval_program_with_trace : program * program list -> program * program list =
+ fun ((env, block), t) -> 
+  let block', block_trace = partial_eval_block_with_trace block in
+  (env, block'), t @ List.tl_exn (List.map ~f:(fun x -> (env, x)) block_trace)

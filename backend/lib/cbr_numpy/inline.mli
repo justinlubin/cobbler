@@ -12,3 +12,5 @@ open Lang
     {!val:Lang.expr}'s at the highest level that are calls to
     functions in [env] *)
 val inline_program : program -> program
+
+val inline_program_with_trace : program * program list -> program * program list

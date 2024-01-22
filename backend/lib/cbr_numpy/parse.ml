@@ -155,6 +155,12 @@ let sexp_of_env : env -> Sexp.t =
 let sexp_of_program : program -> Sexp.t =
  fun (env, block) -> Sexp.List [ sexp_of_env env; sexp_of_block block ]
 
+let sexp_of_trace_entry : trace_entry -> Sexp.t =
+ fun (p, p_trace) -> Sexp.List [ sexp_of_program p; Sexp.List (List.map ~f:sexp_of_program p_trace)]
+
+let sexp_of_trace : trace -> Sexp.t =
+ fun entries -> Sexp.List (List.map ~f:sexp_of_trace_entry entries)
+
 let sexp_of_substitutions : substitutions -> Sexp.t =
  fun subs ->
   Map.to_alist subs

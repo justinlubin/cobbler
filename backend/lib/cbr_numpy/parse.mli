@@ -38,3 +38,6 @@ val pp_program : ?channel:Out_channel.t -> program -> unit
 
 (** [py_str_of_program] translates a program back into an s-expression, and then to a Python string. *)
 val py_str_of_program : program -> string
+
+(** [sexp_of_trace] translates a trace into an s-expression *)
+val sexp_of_trace : trace -> Sexp.t

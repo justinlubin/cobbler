@@ -103,3 +103,11 @@ and inline_block : env -> block -> block =
 
 let inline_program : program -> program =
  fun (env, block) -> (env, inline_block env block)
+
+let inline_program_with_trace : program * program list -> program * program list =
+ fun ((env, block), t) -> 
+  let block' = inline_block env block in
+  if block = block' then
+    (env, block'), t
+  else 
+    (env, block'), t @ [(env, block')]
