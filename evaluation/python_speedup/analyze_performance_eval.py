@@ -5,7 +5,7 @@ import matplotlib.patches as mpt
 
 # %% Load metadata
 
-metadata = pd.read_csv("performance_eval/metadata.tsv", sep="\t")
+metadata = pd.read_csv("metadata.tsv", sep="\t")
 metadata["synth time"] = metadata["synth time"].apply(
     lambda row: [float(x) for x in row.split(",")]
 )
@@ -19,7 +19,7 @@ DATA_SIZE_POWERS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 data = (
     pd.read_csv(
-        "performance_eval/output/performance_eval.tsv",
+        "output/performance_eval.tsv",
         sep="\t",
         index_col="program name",
         keep_default_na=False,
@@ -65,7 +65,7 @@ def geo_median(xs):
 # %% Compute summary
 
 
-with open("performance_eval/output/speedup_summary.txt", "w") as f:
+with open("output/speedup_summary.txt", "w") as f:
     f.write(
         "\\newcommand{\\PerformanceEvalCount}{"
         + str((~(data["raw speedup 1"].isna())).sum())
@@ -267,7 +267,7 @@ def make_plot1(column_prefix):
     )
 
     fig.tight_layout()
-    fig.savefig(f"performance_eval/output/speedup-{column_prefix}.pdf")
+    fig.savefig(f"output/speedup-{column_prefix}.pdf")
 
 
 def make_plot(column_prefix):
@@ -361,7 +361,7 @@ def make_plot(column_prefix):
     )
 
     fig.tight_layout()
-    fig.savefig(f"performance_eval/output/speedup-{column_prefix}.pdf")
+    fig.savefig(f"output/speedup-{column_prefix}.pdf")
 
 
 make_plot("raw")

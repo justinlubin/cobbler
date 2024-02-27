@@ -8,8 +8,8 @@ import pandas as pd
 
 np.random.seed(100)
 
-INPUT_DIR = "analysis/"
-OUTPUT_DIR = "analysis/output/"
+INPUT_DIR = ""
+OUTPUT_DIR = "output/"
 
 # %% Load data
 

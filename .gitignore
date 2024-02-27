@@ -18,3 +18,4 @@ survey/survey/*
 survey-analysis/input/*
 survey-analysis/output/*
 explanatory-figures/PDF
+.venv

@@ -40,7 +40,7 @@ def time_entry(subdir):
     )
 
 
-with open("performance_eval/output/performance_eval.tsv", "w", newline="") as f:
+with open("output/performance_eval.tsv", "w", newline="") as f:
     writer = csv.DictWriter(
         f,
         fieldnames=["program name"]
@@ -51,7 +51,7 @@ with open("performance_eval/output/performance_eval.tsv", "w", newline="") as f:
 
     writer.writeheader()
 
-    for subdir in glob.glob("performance_eval/programs/*"):
+    for subdir in glob.glob("programs/*"):
         print(f"Benchmarking {subdir}...")
         writer.writerow(time_entry(subdir))
 
