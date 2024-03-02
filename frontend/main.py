@@ -640,7 +640,7 @@ if __name__ == "__main__":
 
     remove_duplicates_parser = subparsers.add_parser(
         "remove-duplicates",
-        help="ensure that a benchmark run is no worse than a previous one",
+        help="remove duplicates in a benchmark",
     )
     remove_duplicates_parser.add_argument(
         "--input",

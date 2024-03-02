@@ -1,7 +1,0 @@
-function next(x) { return x.parentElement.parentElement.parentElement.parentElement.parentElement.nextSibling.nextSibling.children[0].children[0].children[0].children[0].children[1]; };
-
-function moveUp() { body.dispatchEvent(new KeyboardEvent("keydown", {"key": "ArrowUp", "code": "ArrowUp", "bubbles": true, "cancelable": true, "keyCode": 38, "which": 38})) };
-
-function moveN(n, start) { var x = start; for (var i = 0; i < n; i++) { x.click(); x = next(x); moveUp(); } }
-
-// usage: in DOM inspector, click the InnerView of the block to select, then type moveN(<amount to move up>, $0) in console
