@@ -1,66 +1,19 @@
-# Component-based refactoring
+# Getting Started Guide
 
-[![Tests](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml/badge.svg)](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml)
+To evaluate this artifact, we recommend using the included virtual machine with
+[VirtualBox](https://www.virtualbox.org/) v7.0.14. Other versions will likely
+work, but this is the version that we tested the virtual machine with.
 
-This project contains the source code for the `cobbler` program synthesizer,
-which implements the component-based refactoring algorithm.
+Once opened in VirtualBox, take the following steps to "kick the tire" of this
+artifact:
 
-This repository is split into two main sections: the backend (implemented in
-OCaml and located in the `backend` directory) and the frontend (implemented in
-Python and located in the `frontend` directory).
+1. Sign into the only user
+2. Open the terminal
+3. Run `cd ~/Desktop/cobbler`
+4. Run `./cobbler`
 
-The `cobbler` script at the project's root directory glues everything together
-and provides the user-facing CLI for the synthesizer.
+If you see a welcome message, you should be good to go.
 
-To use the `cobbler` script, you first need to install its dependencies (see
-below).
+# Step-by-Step Instructions
 
-Once that is done, see `./cobbler --help`.
-
-## Installing dependencies
-
-### Installing OCaml dependencies
-
-1. If you haven't already, [install OCaml and opam](https://ocaml.org/docs/up-and-running)
-2. From the project's root directory, run `cd backend`
-3. Run `make switch`
-4. Restart your shell
-5. Run `make dev-deps deps`
-
-### Installing Python dependencies
-
-1. If you haven't already, [install Python](https://www.python.org/) version
-   3.11 or greater
-2. From the project's root directory, run `cd frontend`
-3. *Optional: If you use virtual environments, create a new one for this project
-   now. The next step will use `pip` to install the necessary Python packages.*
-4. Run `make deps` (for convenience, this will also install the dependencies
-   necessary to analyze the evaluation data)
-
-### Additional dependencies
-
-- This project also depends on [elm-format](https://github.com/avh4/elm-format)
-  (tested with version 0.8.7), which is installable via `npm`
-
-### Optional dependencies (to generate Qualtrics survey file)
-
-- [`pandoc`](https://pandoc.org/)
-
-## Running the evaluation
-
-- To run the evaluation described in the paper, run the `run_evaluation.sh`
-  script in the project's root repository
-
-## Running tests
-
-To run the backend tests, run `make test` from the `backend` subdirectory.
-
-To run the frontend tests, run `make test` from the `frontend` subdirectory.
-
-## Acknowledgments
-
-- Thanks to
-  [Patrick Gillespie](http://patorjk.com/)
-  for the
-  [Text to ASCII Art Generator](http://patorjk.com/software/taag)
-  and `myflix` for the "Sweet" ASCII art font.
+TODO
