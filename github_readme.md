@@ -42,15 +42,6 @@ Once that is done, see `./cobbler --help`.
 - This project also depends on [elm-format](https://github.com/avh4/elm-format)
   (tested with version 0.8.7), which is installable via `npm`
 
-### Optional dependencies (to generate Qualtrics survey file)
-
-- [`pandoc`](https://pandoc.org/)
-
-## Running the evaluation
-
-- To run the evaluation described in the paper, run the `run_evaluation.sh`
-  script in the project's root repository
-
 ## Running tests
 
 To run the backend tests, run `make test` from the `backend` subdirectory.
