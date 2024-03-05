@@ -18,3 +18,8 @@ This directory is organized as follows:
   evaluation, as described in Section 8.4
 - `output/analyses`: All analyses of the result data in `output/data`
 - `scripts`: The scripts to run and analyze the evaluation
+    - **Important note:** These scripts should all be run from the _root
+        directory_ of this repository!
+    - *Tip:* To run these scripts in the proper order, run the
+      `run_everything.sh` script from the root directory of this repository. The
+      outputs will all be in the `output` directory.
