@@ -1,7 +1,17 @@
-import subprocess
-import json
-import datasets
 import ast
+import json
+import os
+import subprocess
+
+import datasets
+import huggingface_hub
+
+HF_TOKEN_KEY = "HF_TOKEN"
+
+def login():
+    if HF_TOKEN_KEY not in os.environ:
+        raise ValueError(f"'{HF_TOKEN_KEY}' environment variable not defined")
+    huggingface_hub.login(token=os.environ[HF_TOKEN_KEY])
 
 
 def elm_json(sample_limit=None, start=0):
@@ -9,6 +19,9 @@ def elm_json(sample_limit=None, start=0):
     representations of Elm function/variable definitions from Elm files.
 
     The Elm database has 90,637 samples."""
+
+    login()
+
     ds = datasets.load_dataset(
         "bigcode/the-stack",
         data_dir="data/elm",
@@ -41,6 +54,9 @@ def python(sample_limit=None):
     Jupyter Notebook cells.
 
     The Python database has between 1,450,000 and 1,460,000 samples."""
+
+    login()
+
     ds = datasets.load_dataset(
         "bigcode/the-stack",
         data_dir="data/jupyter-notebook",

@@ -31,8 +31,8 @@ def load_data(filename):
     return df
 
 
-data_elm = load_data("elm-test.tsv")
-data_python = load_data("python-test.tsv")
+data_elm = load_data("elm_test.tsv")
+data_python = load_data("python_test.tsv")
 
 # %% Handle Python bug
 

@@ -15,8 +15,8 @@ warnings.simplefilter(
 
 # %% Config
 
-INPUT_FILE = "evaluation/input/survey_results.tsv"
-OUTPUT_DIR = "evaluation/output"
+INPUT_FILE = "evaluation/input/survey_results/survey_results.tsv"
+OUTPUT_DIR = "evaluation/output/analyses"
 
 STYLE_COLORS = {
     "Direct (input)": "#73D8F8",
@@ -410,7 +410,7 @@ def shrinkage_plot(prefix, adjective):
     ax.spines["right"].set_visible(False)
     ax.legend()
     fig.tight_layout()
-    fig.savefig(f"output/shrinkage-{prefix}.pdf")
+    fig.savefig(f"{OUTPUT_DIR}/shrinkage-{prefix}.pdf")
 
 
 shrinkage_plot("Read", "more readable")
@@ -422,11 +422,12 @@ shrinkage_plot("Prefer", "preferred")
 
 # %% Print survey info
 
-print(
-    "Number of participants:",
-    len(readsums),
-)
-print(
-    "Number of questions answered:",
-    readsums["I Sum"].sum() + readsums["O Sum"].sum(),
-)
+with open(f"{OUTPUT_DIR}/survey_stats.txt", "w") as f:
+    f.write(
+        "Number of participants: " + str(len(readsums)) + "\n"
+    )
+    f.write(
+        "Number of questions answered: " + str(
+            readsums["I Sum"].sum() + readsums["O Sum"].sum()
+        ) + "\n"
+    )

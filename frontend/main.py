@@ -15,7 +15,7 @@ import util
 
 import numpy as np
 
-BENCHMARK_REPLICATES = 1
+BENCHMARK_REPLICATES = 10
 
 
 def refresh_binary():
@@ -24,6 +24,7 @@ def refresh_binary():
             ["make", "regen-stdlib"],
             cwd=util.path_from_root("backend"),
             check=True,
+            stdout=open(os.devnull, 'wb'),
         )
     except subprocess.CalledProcessError:
         sys.exit(1)
@@ -33,6 +34,7 @@ def refresh_binary():
             ["make", "build"],
             cwd=util.path_from_root("backend"),
             check=True,
+            stdout=open(os.devnull, 'wb'),
         )
     except subprocess.CalledProcessError:
         sys.exit(1)
@@ -115,7 +117,6 @@ def benchmark_helper(
     generator=None,
     benchmarker=None,
     sample_limit=100,
-    unsafe_eval=None,
     dry_run=None,
 ):
     with open(path, "w", newline="") as f:
@@ -134,13 +135,11 @@ def benchmark_helper(
                     sample_num += 1
                     print(f"Completed '{previous_path}' ({sample_num}/{sample_limit})")
                 previous_path = sample_path
-            stats = benchmarker(block, dry_run=dry_run, toggle_eval=unsafe_eval)
+            stats = benchmarker(block, dry_run=dry_run)
             if stats["status"] in ["Success", "SynthFail"]:
                 times = []
                 for _ in range(BENCHMARK_REPLICATES):
-                    stats_tmp = benchmarker(
-                        block, dry_run=dry_run, toggle_eval=unsafe_eval
-                    )
+                    stats_tmp = benchmarker(block, dry_run=dry_run)
                     assert stats_tmp["status"] == stats["status"]
                     times.append(str(stats_tmp["synth time"]))
                 stats["synth time"] = ",".join(times)
@@ -274,7 +273,6 @@ def rerun_benchmarks_helper(
     input_path=None,
     output_path=None,
     language=None,
-    unsafe_eval=None,
 ):
     if language == "elm":
         benchmarker = lambda s, **kwargs: benchmark.elm_json(json.loads(s), **kwargs)
@@ -291,7 +289,6 @@ def rerun_benchmarks_helper(
         generator=generator,
         benchmarker=benchmarker,
         sample_limit=None,
-        unsafe_eval=unsafe_eval,
     )
 
 
@@ -414,118 +411,82 @@ if __name__ == "__main__":
         print(f"For help: {sys.argv[0]} --help")
         sys.exit(0)
 
-    parser = argparse.ArgumentParser(description="The cobbler program synthesizer.")
+    parser = argparse.ArgumentParser(
+        description="hint: try cobbler out with `cat FILE.{elm,py} | ./cobbler refactor --language={elm,python}`"
+    )
 
     subparsers = parser.add_subparsers(
         title="subcommands",
         dest="subcommand",
+        metavar="SUBCMD",
         required=True,
     )
 
-    # Refactor code subcommand
+    ###
 
-    refactor_parser = subparsers.add_parser(
-        "refactor",
-        help="refactor a snippet of code from stdin, printing to stdout",
+    check_no_worse_parser = subparsers.add_parser(
+        "check-no-worse",
+        help="ensure that a benchmark run is no worse than a previous one",
     )
-    refactor_parser.add_argument(
+    check_no_worse_parser.add_argument(
+        "path_to_before_tsv",
+        type=pathlib.Path,
+        help='the path of the "before" benchmarking tsv',
+    )
+    check_no_worse_parser.add_argument(
+        "path_to_after_tsv",
+        type=pathlib.Path,
+        help='the path of the "after" benchmarking tsv',
+    )
+
+    ###
+
+    remove_duplicates_parser = subparsers.add_parser(
+        "deduplicate",
+        help="remove duplicates in a benchmark",
+    )
+    remove_duplicates_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path of the benchmarking tsv to remove duplicates from",
+    )
+    remove_duplicates_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the new benchmarking tsv",
+    )
+
+
+    ###
+
+    download_parser = subparsers.add_parser(
+        "download",
+        help="download data from The Stack",
+    )
+    download_parser.add_argument(
         "--language",
         choices=["elm", "python"],
         required=True,
-        help="the language of the code to refactor",
+        help="the language to download",
     )
-    refactor_parser.add_argument(
-        "--prettify-input",
-        action=argparse.BooleanOptionalAction,
-        help="also prettify (and print) the input",
-    )
-
-    # Run benchmark suite subcommand
-
-    benchmark_parser = subparsers.add_parser(
-        "benchmark",
-        help="run a benchmarking suite",
-    )
-    benchmark_parser.add_argument(
-        "--language",
-        choices=["elm", "python"],
-        required=True,
-        help="the language of the synthesizer to benchmark",
-    )
-    benchmark_parser.add_argument(
+    download_parser.add_argument(
         "--sample-limit",
         type=int,
         default=20,
         help="the maximum number of samples (files) to draw from the database (default: 20)",
     )
-    benchmark_parser.add_argument(
-        "--unsafe-eval",
-        action=argparse.BooleanOptionalAction,
-        help="evaluate benchmarking code from the database (WARNING: this will run arbitrary code, which is highly unsafe)",
-    )
-    benchmark_parser.add_argument(
+    download_parser.add_argument(
         "path_to_tsv",
         type=pathlib.Path,
-        help="the path to write the benchmarking tsv to",
-    )
-    benchmark_parser.add_argument(
-        "--dry-run",
-        action=argparse.BooleanOptionalAction,
-        help="do not run the synthesizer on the benchmarks, only emit TSV",
+        help="the path download the data to",
     )
 
-    # View benchmark result subcommand
-
-    view_benchmark_parser = subparsers.add_parser(
-        "view-benchmark",
-        help="view a benchmark result",
-    )
-    view_benchmark_parser.add_argument(
-        "--language",
-        choices=["elm", "python"],
-        required=True,
-        help="the language of the synthesizer to benchmark",
-    )
-    view_benchmark_parser.add_argument(
-        "path_to_tsv",
-        type=pathlib.Path,
-        help="the path of the benchmarking tsv to view",
-    )
-    view_benchmark_parser.add_argument(
-        "line_number",
-        type=int,
-        help="the line number of the benchmark entry to view",
-    )
-
-    # Make benchmark report subcommand
-
-    make_report_parser = subparsers.add_parser(
-        "make-report",
-        help="make a nicely-formatted report from a benchmark result",
-    )
-    make_report_parser.add_argument(
-        "--language",
-        choices=["elm", "python"],
-        required=True,
-        help="the language of the benchmark",
-    )
-    make_report_parser.add_argument(
-        "--input",
-        type=pathlib.Path,
-        required=True,
-        help="the path of the benchmarking tsv to make a report of",
-    )
-    make_report_parser.add_argument(
-        "--output",
-        type=pathlib.Path,
-        required=True,
-        help="the path to output the report",
-    )
-
-    # Filter benchmark results subcommand
+    ###
 
     filter_benchmarks_parser = subparsers.add_parser(
-        "filter-benchmarks",
+        "filter",
         help="view a benchmark result",
     )
     filter_benchmarks_parser.add_argument(
@@ -552,110 +513,8 @@ if __name__ == "__main__":
         help="the statuses to filter",
     )
 
-    # Subtract benchmark results subcommand
 
-    subtract_benchmarks_parser = subparsers.add_parser(
-        "subtract",
-        help="subtract out parts of a benchmark",
-    )
-    subtract_benchmarks_parser.add_argument(
-        "--superset",
-        type=pathlib.Path,
-        required=True,
-        help="the path of superset benchmarking tsv",
-    )
-    subtract_benchmarks_parser.add_argument(
-        "--subset",
-        type=pathlib.Path,
-        required=True,
-        help="the path of subset benchmarking tsv to subtract out",
-    )
-    subtract_benchmarks_parser.add_argument(
-        "--output",
-        type=pathlib.Path,
-        required=True,
-        help="the path to output the new benchmarking tsv",
-    )
-
-    # Re-run benchmark suite subcommand
-
-    rerun_benchmark_parser = subparsers.add_parser(
-        "rerun-benchmarks",
-        help="run a benchmarking suite",
-    )
-    rerun_benchmark_parser.add_argument(
-        "--language",
-        choices=["elm", "python"],
-        required=True,
-        help="the language of the synthesizer to benchmark",
-    )
-    rerun_benchmark_parser.add_argument(
-        "--unsafe-eval",
-        action=argparse.BooleanOptionalAction,
-        help="evaluate benchmarking code from the database (WARNING: this will run arbitrary code, which is highly unsafe)",
-    )
-    rerun_benchmark_parser.add_argument(
-        "--input",
-        type=pathlib.Path,
-        required=True,
-        help="the path of the benchmarking tsv to re-run",
-    )
-    rerun_benchmark_parser.add_argument(
-        "--output",
-        type=pathlib.Path,
-        required=True,
-        help="the path to output the new benchmarking tsv",
-    )
-
-    # Summarize benchmark suite subcommand
-
-    summarize_parser = subparsers.add_parser(
-        "summarize",
-        help="summarize a benchmarking suite",
-    )
-    summarize_parser.add_argument(
-        "path_to_tsv",
-        type=pathlib.Path,
-        help="the path of the benchmarking tsv to summarize",
-    )
-
-    # Benchmark suite regression test subcommand
-
-    check_no_worse_parser = subparsers.add_parser(
-        "check-no-worse",
-        help="ensure that a benchmark run is no worse than a previous one",
-    )
-    check_no_worse_parser.add_argument(
-        "path_to_before_tsv",
-        type=pathlib.Path,
-        help='the path of the "before" benchmarking tsv',
-    )
-    check_no_worse_parser.add_argument(
-        "path_to_after_tsv",
-        type=pathlib.Path,
-        help='the path of the "after" benchmarking tsv',
-    )
-
-    # Remove duplicates subcommand
-
-    remove_duplicates_parser = subparsers.add_parser(
-        "remove-duplicates",
-        help="remove duplicates in a benchmark",
-    )
-    remove_duplicates_parser.add_argument(
-        "--input",
-        type=pathlib.Path,
-        required=True,
-        help="the path of the benchmarking tsv to remove duplicates from",
-    )
-    remove_duplicates_parser.add_argument(
-        "--output",
-        type=pathlib.Path,
-        required=True,
-        help="the path to output the new benchmarking tsv",
-    )
-
-    # Dump successes to folder subcommand
+    ###
 
     gen_survey_code_parser = subparsers.add_parser(
         "gen-survey-code",
@@ -680,6 +539,135 @@ if __name__ == "__main__":
         help="the path of the output directory",
     )
 
+    ###
+
+    make_report_parser = subparsers.add_parser(
+        "make-report",
+        help="make a nicely-formatted report from a benchmark result",
+    )
+    make_report_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the benchmark",
+    )
+    make_report_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path of the benchmarking tsv to make a report of",
+    )
+    make_report_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the report",
+    )
+
+    ###
+
+    refactor_parser = subparsers.add_parser(
+        "refactor",
+        help="refactor a snippet of code from stdin, printing to stdout",
+    )
+    refactor_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the code to refactor",
+    )
+    refactor_parser.add_argument(
+        "--prettify-input",
+        action=argparse.BooleanOptionalAction,
+        help="also prettify (and print) the input",
+    )
+
+    ###
+
+    refactor_many_parser = subparsers.add_parser(
+        "refactor-many",
+        help="run the synthesizer on a TSV of input programs",
+    )
+    refactor_many_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language to synthesize",
+    )
+    refactor_many_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the input TSV",
+    )
+    refactor_many_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the output TSV",
+    )
+
+    ###
+
+    subtract_benchmarks_parser = subparsers.add_parser(
+        "subtract",
+        help="subtract out parts of a benchmark",
+    )
+    subtract_benchmarks_parser.add_argument(
+        "--superset",
+        type=pathlib.Path,
+        required=True,
+        help="the path of superset benchmarking tsv",
+    )
+    subtract_benchmarks_parser.add_argument(
+        "--subset",
+        type=pathlib.Path,
+        required=True,
+        help="the path of subset benchmarking tsv to subtract out",
+    )
+    subtract_benchmarks_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the new benchmarking tsv",
+    )
+
+    ###
+
+    summarize_parser = subparsers.add_parser(
+        "summarize",
+        help="summarize a benchmarking suite",
+    )
+    summarize_parser.add_argument(
+        "path_to_tsv",
+        type=pathlib.Path,
+        help="the path of the benchmarking tsv to summarize",
+    )
+
+
+    ###
+
+    view_benchmark_parser = subparsers.add_parser(
+        "view-benchmark",
+        help="view a benchmark result",
+    )
+    view_benchmark_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the synthesizer to benchmark",
+    )
+    view_benchmark_parser.add_argument(
+        "path_to_tsv",
+        type=pathlib.Path,
+        help="the path of the benchmarking tsv to view",
+    )
+    view_benchmark_parser.add_argument(
+        "line_number",
+        type=int,
+        help="the line number of the benchmark entry to view",
+    )
+
     # Setup
 
     csv.field_size_limit(sys.maxsize)
@@ -694,26 +682,31 @@ if __name__ == "__main__":
             language=args.language,
             show_input=args.prettify_input
         )
-    elif args.subcommand == "benchmark":
+    elif args.subcommand == "download":
         refresh_binary()
         if args.language == "elm":
             benchmark_helper(
                 path=args.path_to_tsv,
                 generator=db_iter.elm_json,
                 benchmarker=benchmark.elm_json,
-                unsafe_eval=args.unsafe_eval,
                 sample_limit=args.sample_limit,
-                dry_run=args.dry_run,
+                dry_run=True,
             )
         if args.language == "python":
             benchmark_helper(
                 path=args.path_to_tsv,
                 generator=db_iter.python,
                 benchmarker=benchmark.python,
-                unsafe_eval=args.unsafe_eval,
                 sample_limit=args.sample_limit,
-                dry_run=args.dry_run,
+                dry_run=True,
             )
+    elif args.subcommand == "refactor-many":
+        refresh_binary()
+        rerun_benchmarks_helper(
+            input_path=args.input,
+            output_path=args.output,
+            language=args.language,
+        )
     elif args.subcommand == "view-benchmark":
         refresh_binary()
         view_benchmark_helper(
@@ -729,7 +722,7 @@ if __name__ == "__main__":
             output_path=args.output,
             language=args.language,
         )
-    elif args.subcommand == "filter-benchmarks":
+    elif args.subcommand == "filter":
         filter_benchmarks_helper(
             input_path=args.input,
             output_path=args.output,
@@ -742,14 +735,6 @@ if __name__ == "__main__":
             subset_path=args.subset,
             output_path=args.output,
         )
-    elif args.subcommand == "rerun-benchmarks":
-        refresh_binary()
-        rerun_benchmarks_helper(
-            input_path=args.input,
-            output_path=args.output,
-            language=args.language,
-            unsafe_eval=args.unsafe_eval,
-        )
     elif args.subcommand == "summarize":
         summarize_helper(
             path=args.path_to_tsv,
@@ -759,7 +744,7 @@ if __name__ == "__main__":
             before_path=args.path_to_before_tsv,
             after_path=args.path_to_after_tsv,
         )
-    elif args.subcommand == "remove-duplicates":
+    elif args.subcommand == "deduplicate":
         remove_duplicates_helper(
             input_path=args.input,
             output_path=args.output,
@@ -771,3 +756,5 @@ if __name__ == "__main__":
             output_path=args.output,
             language=args.language
         )
+    else:
+        sys.exit(1)

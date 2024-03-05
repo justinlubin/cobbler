@@ -9,7 +9,7 @@ ANALYSIS_DIR = "evaluation/output/analyses"
 
 # %% Load metadata
 
-metadata = pd.read_csv("metadata.tsv", sep="\t")
+metadata = pd.read_csv(f"{INPUT_DIR}/metadata.tsv", sep="\t")
 metadata["synth time"] = metadata["synth time"].apply(
     lambda row: [float(x) for x in row.split(",")]
 )
@@ -23,7 +23,7 @@ DATA_SIZE_POWERS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
 data = (
     pd.read_csv(
-        f"{DATA_DIR}/performance_eval.tsv",
+        f"{DATA_DIR}/numpy_perf_eval.tsv",
         sep="\t",
         index_col="program name",
         keep_default_na=False,
