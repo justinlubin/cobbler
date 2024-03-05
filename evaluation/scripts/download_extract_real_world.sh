@@ -16,7 +16,7 @@ BASE_DIR="evaluation/input/real_world_programs"
 
 # Remove any duplicates
 ./cobbler deduplicate --input="$BASE_DIR/elm_all_extracted.tsv" --output="$BASE_DIR/elm_all.tsv"
-./cobbler deduplicate--input="$BASE_DIR/python_all_extracted.tsv" --output="$BASE_DIR/python_all.tsv"
+./cobbler deduplicate --input="$BASE_DIR/python_all_extracted.tsv" --output="$BASE_DIR/python_all.tsv"
 
 # Remove training input data from all input data, leaving test input data
 ./cobbler subtract --superset="$BASE_DIR/elm_all.tsv" --subset="$BASE_DIR/elm_train_raw.tsv" --output="$BASE_DIR/elm_test.tsv"
