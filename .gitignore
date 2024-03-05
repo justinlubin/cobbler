@@ -10,7 +10,9 @@ elm-stuff
 backend/after_eqsat.txt
 backend/before_eqsat.txt
 evaluation/input/real_world_programs/*.tsv
-evaluation/output/*
+evaluation/output/analyses/*.txt
+evaluation/output/analyses/*.pdf
+evaluation/output/data/*.tsv
 survey/code/*
 survey/split-code/*
 survey/survey/*
