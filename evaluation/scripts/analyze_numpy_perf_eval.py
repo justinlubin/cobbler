@@ -3,6 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpt
 
+import util
+
 INPUT_DIR = "evaluation/input/manually_modified_numpy"
 DATA_DIR = "evaluation/output/data"
 ANALYSIS_DIR = "evaluation/output/analyses"
@@ -19,8 +21,6 @@ metadata.index = np.char.add("row", (metadata.index.values + 2).astype(str))
 
 # %% Load data
 
-DATA_SIZE_POWERS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-
 data = (
     pd.read_csv(
         f"{DATA_DIR}/numpy_perf_eval.tsv",
@@ -32,7 +32,7 @@ data = (
     .sort_index()
 )
 
-for p in DATA_SIZE_POWERS:
+for p in util.DATA_SIZE_POWERS:
     data[f"original {p}"] = data[f"original {p}"].apply(
         lambda row: [float(x) for x in row.split(",") if x != ""]
     )
@@ -88,7 +88,7 @@ with open(f"{ANALYSIS_DIR}/speedup_summary.txt", "w") as f:
 
     fmt = "{0:.2f}"
 
-    for p, alpha in zip(DATA_SIZE_POWERS, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
+    for p, alpha in zip(util.DATA_SIZE_POWERS, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
         # Combined
 
         f.write(
@@ -203,8 +203,8 @@ def make_plot1(column_prefix):
     fig, ax = plt.subplots(1, 1, figsize=(12, 6))
     for _, row in data.iterrows():
         ax.plot(
-            DATA_SIZE_POWERS,
-            [np.log10(row[f"{column_prefix} speedup {p}"]) for p in DATA_SIZE_POWERS],
+            util.DATA_SIZE_POWERS,
+            [np.log10(row[f"{column_prefix} speedup {p}"]) for p in util.DATA_SIZE_POWERS],
             marker="o",
             markersize=2,
             color=perf_color if row["perf"] == 1 else noperf_color,
@@ -212,7 +212,7 @@ def make_plot1(column_prefix):
         )
 
     for perf in [0, 1]:
-        for p in DATA_SIZE_POWERS:
+        for p in util.DATA_SIZE_POWERS:
             vals = data[data["perf"] == perf][f"{column_prefix} speedup {p}"]
             vals = vals[~(vals.isna())]
             log10vals = np.log10(vals)
@@ -253,8 +253,8 @@ def make_plot1(column_prefix):
             )
 
     ax.set_xticks(
-        DATA_SIZE_POWERS,
-        # labels=[rf"$10^{p}$" for p in DATA_SIZE_POWERS],
+        util.DATA_SIZE_POWERS,
+        # labels=[rf"$10^{p}$" for p in util.DATA_SIZE_POWERS],
     )
 
     ax.axhline(0, linewidth=1, color="black", linestyle="--")
@@ -284,7 +284,7 @@ def make_plot(column_prefix):
     fig, ax = plt.subplots(1, 1, figsize=(10, 3))
 
     for perf in [0, 1]:
-        for p in DATA_SIZE_POWERS:
+        for p in util.DATA_SIZE_POWERS:
             vals = data[data["perf"] == perf][f"{column_prefix} speedup {p}"]
             vals = vals[~(vals.isna())]
             log10vals = np.log10(vals)
@@ -324,8 +324,8 @@ def make_plot(column_prefix):
         # bp["boxes"][0].set_facecolor(color)
 
     ax.set_xticks(
-        DATA_SIZE_POWERS,
-        labels=DATA_SIZE_POWERS,
+        util.DATA_SIZE_POWERS,
+        labels=util.DATA_SIZE_POWERS,
     )
 
     ax.set_ylim(-6.5, 1.5)

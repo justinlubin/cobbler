@@ -15,7 +15,14 @@ import util
 
 import numpy as np
 
-BENCHMARK_REPLICATES = 10
+def use_quick_eval():
+    return (
+        "COBBLER_QUICK_EVAL" in os.environ and
+        os.environ["COBBLER_QUICK_EVAL"] == "1"
+    )
+
+
+BENCHMARK_REPLICATES = 2 if use_quick_eval() else 10
 
 
 def refresh_binary():

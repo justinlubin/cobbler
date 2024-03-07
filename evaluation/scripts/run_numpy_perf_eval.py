@@ -3,11 +3,13 @@ import glob
 import os
 import timeit
 
+import util
+
 INPUT_DIR = "evaluation/input/manually_modified_numpy"
 OUTPUT_DIR = "evaluation/output/data"
 
 
-DATA_SIZE_POWERS = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+REPEAT_COUNT = 2 if util.use_quick_eval() else 10
 
 
 def time_program(program_name, program, N):
@@ -18,7 +20,7 @@ def time_program(program_name, program, N):
     full_program = f"import numpy as np\nN = {N}\n{program}"
     try:
         return ",".join(
-            [str(r) for r in timeit.repeat(stmt=full_program, repeat=10, number=1)]
+            [str(r) for r in timeit.repeat(stmt=full_program, repeat=REPEAT_COUNT, number=1)]
         )
     except:
         return ""
@@ -34,11 +36,11 @@ def time_entry(subdir):
         {"program name": program_name}
         | {
             f"original {p}": time_program(program_name, original_program, 10**p)
-            for p in DATA_SIZE_POWERS
+            for p in util.DATA_SIZE_POWERS
         }
         | {
             f"refactored {p}": time_program(program_name, refactored_program, 10**p)
-            for p in DATA_SIZE_POWERS
+            for p in util.DATA_SIZE_POWERS
         }
     )
 
@@ -47,8 +49,8 @@ with open(f"{OUTPUT_DIR}/numpy_perf_eval.tsv", "w", newline="") as f:
     writer = csv.DictWriter(
         f,
         fieldnames=["program name"]
-        + [f"original {p}" for p in DATA_SIZE_POWERS]
-        + [f"refactored {p}" for p in DATA_SIZE_POWERS],
+        + [f"original {p}" for p in util.DATA_SIZE_POWERS]
+        + [f"refactored {p}" for p in util.DATA_SIZE_POWERS],
         delimiter="\t",
     )
 
