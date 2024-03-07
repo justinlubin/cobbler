@@ -150,18 +150,7 @@ let target8 : program =
               ] ) )
     ; For
         ( PName "i"
-        , Call
-            ( Name "range"
-            , [ Call
-                  ( Name "+"
-                  , [ Call
-                        ( Name "-"
-                        , [ Call (Name "len", [ Name "x" ])
-                          ; Name "window_size"
-                          ] )
-                    ; Num 1
-                    ] )
-              ] )
+        , Call (Name "range", [ Call (Name "len", [ Name "y" ]) ])
         , [ Assign (PName "s", Num 0)
           ; For
               ( PName "j"

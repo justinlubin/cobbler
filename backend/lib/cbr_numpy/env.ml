@@ -400,16 +400,7 @@ let convolve_valid_defn =
         ( PHole (Number, "conv_i")
         , Call
             ( Name "range"
-            , [ Call
-                  ( Name "+"
-                  , [ Call
-                        ( Name "-"
-                        , [ Call (Name "len", [ Name "x" ])
-                          ; Call (Name "len", [ Name "h" ])
-                          ] )
-                    ; Num 1
-                    ] )
-              ] )
+            , [ Call (Name "len", [ Hole (Array, "conv_result") ]) ] )
         , [ Assign (PHole (Number, "conv_sum"), Num 0)
           ; For
               ( PHole (Number, "conv_j")
