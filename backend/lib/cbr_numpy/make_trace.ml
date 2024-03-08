@@ -1,7 +1,9 @@
 open Lang
 open Env
+open Parse
 open Partial_eval_trace
 open Inline
+open Yojson.Basic
 
 let rec get_candidates : expr -> expr list =
  fun e ->
@@ -30,3 +32,16 @@ let make_trace : program -> trace =(**
   match block with
   | [Return e] -> List.map make_trace_entry (get_candidates e)
   | _ -> []
+
+let make_json_of_trace_entry : trace_entry -> Yojson.Basic.t =
+ fun (p, p_trace) ->
+  `Assoc [ ("expr", `String (py_str_of_program p)) 
+         ; ("trace", `List (List.map (fun s -> `String s) (List.map py_str_of_program p_trace))) ]
+
+let make_json_of_trace : trace -> Yojson.Basic.t =
+ fun t ->
+  `List (List.map make_json_of_trace_entry t)
+
+let make_json_trace_of_program : program -> Yojson.Basic.t =
+ fun p ->
+  p |> make_trace |> make_json_of_trace
