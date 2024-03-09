@@ -61,7 +61,7 @@ Other files of note include:
 
 - `db_iter.py` (downloads input programs from The Stack),
 - `extract.py` (extracts synthesis problems from input programs), and
-- `benchmark.py` (actually calls the backend to perform synthesis).
+- `run_backend.py` (actually calls the backend to perform synthesis).
 
 Lastly, tests are included in the `test` subdirectory.
 

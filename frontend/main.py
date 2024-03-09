@@ -9,16 +9,16 @@ import subprocess
 import sys
 import os
 
-import benchmark
+import run_backend
 import db_iter
 import util
 
 import numpy as np
 
+
 def use_quick_eval():
     return (
-        "COBBLER_QUICK_EVAL" in os.environ and
-        os.environ["COBBLER_QUICK_EVAL"] == "1"
+        "COBBLER_QUICK_EVAL" in os.environ and os.environ["COBBLER_QUICK_EVAL"] == "1"
     )
 
 
@@ -31,7 +31,7 @@ def refresh_binary():
             ["make", "regen-stdlib"],
             cwd=util.path_from_root("backend"),
             check=True,
-            stdout=open(os.devnull, 'wb'),
+            stdout=open(os.devnull, "wb"),
         )
     except subprocess.CalledProcessError:
         sys.exit(1)
@@ -41,12 +41,10 @@ def refresh_binary():
             ["make", "build"],
             cwd=util.path_from_root("backend"),
             check=True,
-            stdout=open(os.devnull, 'wb'),
+            stdout=open(os.devnull, "wb"),
         )
     except subprocess.CalledProcessError:
         sys.exit(1)
-
-
 
 
 def show_elm(s):
@@ -63,6 +61,7 @@ def show_elm(s):
     except subprocess.CalledProcessError as e:
         return "elm-format error: " + e.stderr.decode("utf8") + "\n\n" + s
 
+
 def prettify_elm_json(js):
     prettify_output = subprocess.check_output(
         [util.path_from_root("backend/_build/default/bin/main.exe"), "elm-prettify"],
@@ -70,6 +69,7 @@ def prettify_elm_json(js):
         text=True,
     )
     return show_elm(json.loads(prettify_output))
+
 
 def prettify_elm(code):
     elm_format_output = subprocess.check_output(
@@ -96,9 +96,9 @@ def refactor_helper(language=None, show_input=None):
             ["elm-format", "--stdin", "--json"],
             input=code.encode("utf-8"),
         )
-        stats = benchmark.elm_json(json.loads(elm_format_output)["body"][0])
+        stats = run_backend.elm_json(json.loads(elm_format_output)["body"][0])
     elif language == "python":
-        stats = benchmark.python(ast.parse(code))
+        stats = run_backend.python(ast.parse(code))
 
     if stats["status"] == "Success":
         decoded_data = util.csv_str_decode(stats["synthed code"])
@@ -119,17 +119,17 @@ def refactor_helper(language=None, show_input=None):
         sys.exit(1)
 
 
-def benchmark_helper(
+def run_many_helper(
     path=None,
     generator=None,
-    benchmarker=None,
+    runner=None,
     sample_limit=100,
     dry_run=None,
 ):
     with open(path, "w", newline="") as f:
         writer = csv.DictWriter(
             f,
-            fieldnames=benchmark.CSV_FIELDS,
+            fieldnames=run_backend.CSV_FIELDS,
             delimiter="\t",
         )
         writer.writeheader()
@@ -142,11 +142,11 @@ def benchmark_helper(
                     sample_num += 1
                     print(f"Completed '{previous_path}' ({sample_num}/{sample_limit})")
                 previous_path = sample_path
-            stats = benchmarker(block, dry_run=dry_run)
+            stats = runner(block, dry_run=dry_run)
             if stats["status"] in ["Success", "SynthFail"]:
                 times = []
                 for _ in range(BENCHMARK_REPLICATES):
-                    stats_tmp = benchmarker(block, dry_run=dry_run)
+                    stats_tmp = runner(block, dry_run=dry_run)
                     assert stats_tmp["status"] == stats["status"]
                     times.append(str(stats_tmp["synth time"]))
                 stats["synth time"] = ",".join(times)
@@ -154,7 +154,7 @@ def benchmark_helper(
         print(f"Completed '{previous_path}' ({sample_num+1}/{sample_limit})")
 
 
-def view_benchmark_helper(
+def view_result_helper(
     path=None,
     line_number=None,
     show_code=None,
@@ -166,17 +166,13 @@ def view_benchmark_helper(
                 print("status:", row["status"])
                 print("reason:", row["reason"])
                 print("synth time:", row["synth time"])
-                print(
-                    "------------------------------------------------------------------------------------------------"
-                )
+                print("-" * 80)
                 print(
                     "orig code:",
                     show_code(util.csv_str_decode(row["orig code"])),
                     sep="\n",
                 )
-                print(
-                    "------------------------------------------------------------------------------------------------"
-                )
+                print("-" * 80)
                 print(
                     "synthed code:",
                     show_synthed_code(util.csv_str_decode(row["synthed code"])),
@@ -198,10 +194,7 @@ def make_report_helper(
     with open(input_path, "r", newline="") as input_f:
         with open(output_path, "w") as output_f:
             for row in csv.DictReader(input_f, delimiter="\t"):
-                output_f.write(
-                    comment
-                    + " =============================================================================\n"
-                )
+                output_f.write(comment + " " + "=" * 80 + "\n")
                 output_f.write(comment + " Synthesis status: " + row["status"] + "\n")
                 if row["reason"]:
                     output_f.write(comment + " Reason: " + row["reason"] + "\n")
@@ -232,7 +225,7 @@ def make_report_helper(
                     output_f.write(comment + " Reason: " + row["exec reason"] + "\n")
 
 
-def filter_benchmarks_helper(
+def filter_helper(
     input_path=None,
     output_path=None,
     invert=None,
@@ -242,7 +235,7 @@ def filter_benchmarks_helper(
         with open(output_path, "w", newline="") as output_f:
             writer = csv.DictWriter(
                 output_f,
-                fieldnames=benchmark.CSV_FIELDS,
+                fieldnames=run_backend.CSV_FIELDS,
                 delimiter="\t",
             )
             writer.writeheader()
@@ -252,7 +245,7 @@ def filter_benchmarks_helper(
                     writer.writerow(row)
 
 
-def subtract_benchmarks_helper(
+def subtract_helper(
     superset_path=None,
     subset_path=None,
     output_path=None,
@@ -266,7 +259,7 @@ def subtract_benchmarks_helper(
         with open(output_path, "w", newline="") as output_f:
             writer = csv.DictWriter(
                 output_f,
-                fieldnames=benchmark.CSV_FIELDS,
+                fieldnames=run_backend.CSV_FIELDS,
                 delimiter="\t",
             )
             writer.writeheader()
@@ -276,25 +269,25 @@ def subtract_benchmarks_helper(
                 writer.writerow(row)
 
 
-def rerun_benchmarks_helper(
+def rerun_many_helper(
     input_path=None,
     output_path=None,
     language=None,
 ):
     if language == "elm":
-        benchmarker = lambda s, **kwargs: benchmark.elm_json(json.loads(s), **kwargs)
+        runner = lambda s, **kwargs: run_backend.elm_json(json.loads(s), **kwargs)
     elif language == "python":
-        benchmarker = lambda s, **kwargs: benchmark.python(ast.parse(s), **kwargs)
+        runner = lambda s, **kwargs: run_backend.python(ast.parse(s), **kwargs)
 
     def generator(sample_limit=None):
         with open(input_path, "r", newline="") as input_f:
             for i, row in enumerate(csv.DictReader(input_f, delimiter="\t")):
                 yield f"Row {i + 2}", util.csv_str_decode(row["orig code"])
 
-    benchmark_helper(
+    run_many_helper(
         path=output_path,
         generator=generator,
-        benchmarker=benchmarker,
+        runner=runner,
         sample_limit=None,
     )
 
@@ -358,7 +351,7 @@ def remove_duplicates_helper(
         with open(output_path, "w", newline="") as output_f:
             writer = csv.DictWriter(
                 output_f,
-                fieldnames=benchmark.CSV_FIELDS,
+                fieldnames=run_backend.CSV_FIELDS,
                 delimiter="\t",
             )
             writer.writeheader()
@@ -368,6 +361,7 @@ def remove_duplicates_helper(
                     continue
                 writer.writerow(row)
                 seen.add(orig_code)
+
 
 def gen_survey_code_helper(
     input_path=None,
@@ -419,13 +413,15 @@ if __name__ == "__main__":
         sys.exit(0)
 
     parser = argparse.ArgumentParser(
-        description="hint: try cobbler out with `cat FILE.{elm,py} | ./cobbler refactor --language={elm,python}`"
+        description="hint: try cobbler out with\n  cat FILE.{elm,py} | ./cobbler refactor --language={elm,python}",
+        usage="./cobbler [--help] SUBCOMMAND ...",
+        formatter_class=argparse.RawTextHelpFormatter,
     )
 
     subparsers = parser.add_subparsers(
-        title="subcommands",
         dest="subcommand",
         metavar="SUBCOMMAND",
+        help="for more help, run ./cobbler SUBCOMMAND --help",
         required=True,
     )
 
@@ -433,38 +429,37 @@ if __name__ == "__main__":
 
     check_no_worse_parser = subparsers.add_parser(
         "check-no-worse",
-        help="ensure that a benchmark run is no worse than a previous one",
+        help="ensure that a set of results is no worse than a previous one",
     )
     check_no_worse_parser.add_argument(
-        "path_to_before_tsv",
+        "previous_results",
         type=pathlib.Path,
-        help='the path of the "before" benchmarking tsv',
+        help="the path to the previous results (in tsv format)",
     )
     check_no_worse_parser.add_argument(
-        "path_to_after_tsv",
+        "new_results",
         type=pathlib.Path,
-        help='the path of the "after" benchmarking tsv',
+        help="the path to the new results (in tsv format)",
     )
 
     ###
 
     remove_duplicates_parser = subparsers.add_parser(
         "deduplicate",
-        help="remove duplicates in a benchmark",
+        help="remove duplicates in a set of results",
     )
     remove_duplicates_parser.add_argument(
         "--input",
         type=pathlib.Path,
         required=True,
-        help="the path of the benchmarking tsv to remove duplicates from",
+        help="the path to the results (in tsv format)",
     )
     remove_duplicates_parser.add_argument(
         "--output",
         type=pathlib.Path,
         required=True,
-        help="the path to output the new benchmarking tsv",
+        help="the path to output the new results (in tsv format)",
     )
-
 
     ###
 
@@ -485,97 +480,96 @@ if __name__ == "__main__":
         help="the maximum number of samples (files) to draw from the database (default: 20)",
     )
     download_parser.add_argument(
-        "path_to_tsv",
+        "path",
         type=pathlib.Path,
-        help="the path download the data to",
+        help="the path download the data to (in tsv format)",
     )
 
     ###
 
-    filter_benchmarks_parser = subparsers.add_parser(
+    filter_parser = subparsers.add_parser(
         "filter",
-        help="view a benchmark result",
+        help="filter a set of results by status",
     )
-    filter_benchmarks_parser.add_argument(
+    filter_parser.add_argument(
         "--input",
         type=pathlib.Path,
         required=True,
-        help="the path of the benchmarking tsv to filter",
+        help="the path to the results to filter (in tsv format)",
     )
-    filter_benchmarks_parser.add_argument(
+    filter_parser.add_argument(
         "--output",
         type=pathlib.Path,
         required=True,
-        help="the path to output the new benchmarking tsv",
+        help="the path to output the filtered results (in tsv format)",
     )
-    filter_benchmarks_parser.add_argument(
+    filter_parser.add_argument(
         "--invert",
         action=argparse.BooleanOptionalAction,
         help="exclude given statuses rather than include",
     )
-    filter_benchmarks_parser.add_argument(
+    filter_parser.add_argument(
         "statuses",
         type=str,
         nargs="+",
         help="the statuses to filter",
     )
 
-
     ###
 
     gen_survey_code_parser = subparsers.add_parser(
         "gen-survey-code",
-        help="extract a benchmarking tsv to individual files in a directory for survey processing",
+        help="generate code files for the survey from a set of results",
     )
     gen_survey_code_parser.add_argument(
         "--language",
         choices=["elm", "python"],
         required=True,
-        help="the language of the benchmark",
+        help="the language of the results",
     )
     gen_survey_code_parser.add_argument(
         "--input",
         type=pathlib.Path,
         required=True,
-        help="the path of the benchmarking tsv",
+        help="the path to the set of results (in tsv format)",
     )
     gen_survey_code_parser.add_argument(
         "--output",
         type=pathlib.Path,
         required=True,
-        help="the path of the output directory",
+        help="the path to the directory that should contain the output",
     )
 
     ###
 
     make_report_parser = subparsers.add_parser(
         "make-report",
-        help="make a nicely-formatted report from a benchmark result",
+        help="make a human-readable report of a set of results",
     )
     make_report_parser.add_argument(
         "--language",
         choices=["elm", "python"],
         required=True,
-        help="the language of the benchmark",
+        help="the language of the results",
     )
     make_report_parser.add_argument(
         "--input",
         type=pathlib.Path,
         required=True,
-        help="the path of the benchmarking tsv to make a report of",
+        help="the path to the set of results (in tsv format)",
     )
     make_report_parser.add_argument(
         "--output",
         type=pathlib.Path,
         required=True,
-        help="the path to output the report",
+        help="the path to output the report (in .elm or .py format)",
     )
 
     ###
 
     refactor_parser = subparsers.add_parser(
         "refactor",
-        help="refactor a snippet of code from stdin, printing to stdout",
+        help="refactor code from stdin, printing to stdout",
     )
     refactor_parser.add_argument(
         "--language",
@@ -593,86 +587,85 @@ if __name__ == "__main__":
 
     refactor_many_parser = subparsers.add_parser(
         "refactor-many",
-        help="run the synthesizer on a TSV of input programs",
+        help="run the synthesizer on a set of input programs",
     )
     refactor_many_parser.add_argument(
         "--language",
         choices=["elm", "python"],
         required=True,
-        help="the language to synthesize",
+        help="the language of the input programs",
     )
     refactor_many_parser.add_argument(
         "--input",
         type=pathlib.Path,
         required=True,
-        help="the input TSV",
+        help="the path to the set of input programs (in tsv format)",
     )
     refactor_many_parser.add_argument(
         "--output",
         type=pathlib.Path,
         required=True,
-        help="the output TSV",
+        help="the path to output the results (in tsv format)",
     )
 
     ###
 
-    subtract_benchmarks_parser = subparsers.add_parser(
+    subtract_parser = subparsers.add_parser(
         "subtract",
-        help="subtract out parts of a benchmark",
+        help="remove entries from a set of results",
     )
-    subtract_benchmarks_parser.add_argument(
+    subtract_parser.add_argument(
         "--superset",
         type=pathlib.Path,
         required=True,
-        help="the path of superset benchmarking tsv",
+        help="the path to the superset of results (in tsv format)",
     )
-    subtract_benchmarks_parser.add_argument(
+    subtract_parser.add_argument(
         "--subset",
         type=pathlib.Path,
         required=True,
-        help="the path of subset benchmarking tsv to subtract out",
+        help="the path to the subset of results to remove (in tsv format)",
     )
-    subtract_benchmarks_parser.add_argument(
+    subtract_parser.add_argument(
         "--output",
         type=pathlib.Path,
         required=True,
-        help="the path to output the new benchmarking tsv",
+        help="the path to output the new set of results (in tsv format)",
     )
 
     ###
 
     summarize_parser = subparsers.add_parser(
         "summarize",
-        help="summarize a benchmarking suite",
+        help="summarize a set of results",
     )
     summarize_parser.add_argument(
-        "path_to_tsv",
+        "path",
         type=pathlib.Path,
-        help="the path of the benchmarking tsv to summarize",
+        help="the path to the set of results (in tsv format)",
     )
-
 
     ###
 
-    view_benchmark_parser = subparsers.add_parser(
-        "view-benchmark",
-        help="view a benchmark result",
+    view_result_parser = subparsers.add_parser(
+        "view-result",
+        help="view one result of a set of results",
     )
-    view_benchmark_parser.add_argument(
+    view_result_parser.add_argument(
         "--language",
         choices=["elm", "python"],
         required=True,
-        help="the language of the synthesizer to benchmark",
+        help="the language of the result",
     )
-    view_benchmark_parser.add_argument(
-        "path_to_tsv",
+    view_result_parser.add_argument(
+        "path",
         type=pathlib.Path,
-        help="the path of the benchmarking tsv to view",
+        help="the path to the set of results (in tsv format)",
     )
-    view_benchmark_parser.add_argument(
+    view_result_parser.add_argument(
         "line_number",
         type=int,
-        help="the line number of the benchmark entry to view",
+        help="the line number of the result to view",
     )
 
     # Setup
@@ -683,44 +676,47 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.subcommand == "refactor":
-        refresh_binary()
-        refactor_helper(
-            language=args.language,
-            show_input=args.prettify_input
+    if args.subcommand == "check-no-worse":
+        check_no_worse_helper(
+            before_path=args.previous_results,
+            after_path=args.new_results,
+        )
+    elif args.subcommand == "deduplicate":
+        remove_duplicates_helper(
+            input_path=args.input,
+            output_path=args.output,
         )
     elif args.subcommand == "download":
         refresh_binary()
         if args.language == "elm":
-            benchmark_helper(
-                path=args.path_to_tsv,
+            run_many_helper(
+                path=args.path,
                 generator=db_iter.elm_json,
-                benchmarker=benchmark.elm_json,
+                runner=run_backend.elm_json,
                 sample_limit=args.sample_limit,
                 dry_run=True,
             )
         if args.language == "python":
-            benchmark_helper(
-                path=args.path_to_tsv,
+            run_many_helper(
+                path=args.path,
                 generator=db_iter.python,
-                benchmarker=benchmark.python,
+                runner=run_backend.python,
                 sample_limit=args.sample_limit,
                 dry_run=True,
             )
-    elif args.subcommand == "refactor-many":
+    elif args.subcommand == "filter":
+        filter_helper(
+            input_path=args.input,
+            output_path=args.output,
+            invert=args.invert,
+            statuses=args.statuses,
+        )
+    elif args.subcommand == "gen-survey-code":
         refresh_binary()
-        rerun_benchmarks_helper(
+        gen_survey_code_helper(
             input_path=args.input,
             output_path=args.output,
             language=args.language,
-        )
-    elif args.subcommand == "view-benchmark":
-        refresh_binary()
-        view_benchmark_helper(
-            path=args.path_to_tsv,
-            line_number=args.line_number,
-            show_code=prettify_elm_json if args.language == "elm" else show_python,
-            show_synthed_code=prettify_elm if args.language == "elm" else show_python,
         )
     elif args.subcommand == "make-report":
         refresh_binary()
@@ -729,39 +725,36 @@ if __name__ == "__main__":
             output_path=args.output,
             language=args.language,
         )
-    elif args.subcommand == "filter":
-        filter_benchmarks_helper(
+    elif args.subcommand == "refactor":
+        refresh_binary()
+        refactor_helper(
+            language=args.language,
+            show_input=args.prettify_input,
+        )
+    elif args.subcommand == "refactor-many":
+        refresh_binary()
+        rerun_many_helper(
             input_path=args.input,
             output_path=args.output,
-            invert=args.invert,
-            statuses=args.statuses,
+            language=args.language,
         )
     elif args.subcommand == "subtract":
-        subtract_benchmarks_helper(
+        subtract_helper(
             superset_path=args.superset,
             subset_path=args.subset,
             output_path=args.output,
         )
     elif args.subcommand == "summarize":
         summarize_helper(
-            path=args.path_to_tsv,
+            path=args.path,
         )
-    elif args.subcommand == "check-no-worse":
-        check_no_worse_helper(
-            before_path=args.path_to_before_tsv,
-            after_path=args.path_to_after_tsv,
-        )
-    elif args.subcommand == "deduplicate":
-        remove_duplicates_helper(
-            input_path=args.input,
-            output_path=args.output,
-        )
-    elif args.subcommand == "gen-survey-code":
+    elif args.subcommand == "view-result":
         refresh_binary()
-        gen_survey_code_helper(
-            input_path=args.input,
-            output_path=args.output,
-            language=args.language
+        view_result_helper(
+            path=args.path,
+            line_number=args.line_number,
+            show_code=prettify_elm_json if args.language == "elm" else show_python,
+            show_synthed_code=prettify_elm if args.language == "elm" else show_python,
         )
     else:
         sys.exit(1)
