@@ -5,7 +5,10 @@ documentation can be found in the code modules themselves as interface comments.
 
 This repository is split into two main sections: the backend (implemented in
 OCaml and located in the `backend` directory) and the frontend (implemented in
-Python and located in the `frontend` directory).
+Python and located in the `frontend` directory). The `evaluation` directory
+contains evaluation materials for the paper associated with this tool; further
+information about the evaluation can be found in that directory and in the
+artifact evaluation README.
 
 The `cobbler` script at the project's root directory glues everything together
 and provides the user-facing CLI for the synthesizer.
