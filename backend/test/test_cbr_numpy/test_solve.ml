@@ -236,7 +236,7 @@ let%test_unit "np_solve 1" =
          match solve 1 ~debug:false target1 use_egraphs with
          | Some p -> p
          | None -> failwith "no solution"))
-    ~expect:(repeat solution1 (List.length egraph_bools))
+    ~expect:(repeat (List.length egraph_bools) solution1)
 
 let%test_unit "np_solve 1'" =
   [%test_result: program list]
@@ -244,7 +244,7 @@ let%test_unit "np_solve 1'" =
          match solve 1 target1' use_egraphs with
          | Some p -> p
          | None -> failwith "no solution"))
-    ~expect:(repeat solution1 (List.length egraph_bools))
+    ~expect:(repeat (List.length egraph_bools) solution1)
 
 let%test_unit "np_solve 2" =
   [%test_result: program list]
@@ -252,12 +252,12 @@ let%test_unit "np_solve 2" =
          match solve 2 target2 use_egraphs with
          | Some p -> p
          | None -> failwith "no solution"))
-    ~expect:(repeat solution2 (List.length egraph_bools))
+    ~expect:(repeat (List.length egraph_bools) solution2)
 
 let%test_unit "np_solve 2: not enough depth" =
   [%test_result: program option list]
     (List.map egraph_bools ~f:(fun use_egraphs -> solve 1 target2 use_egraphs))
-    ~expect:(repeat None (List.length egraph_bools))
+    ~expect:(repeat (List.length egraph_bools) None)
 
 let%test_unit "np_solve 3" =
   [%test_result: program list]
@@ -265,19 +265,19 @@ let%test_unit "np_solve 3" =
          match solve 1 ~debug:false target3 use_egraphs with
          | Some p -> p
          | None -> failwith "no solution"))
-    ~expect:(repeat solution3 (List.length egraph_bools))
+    ~expect:(repeat (List.length egraph_bools) solution3)
 
 let%test_unit "np_solve no solution" =
   [%test_result: program option list]
     (List.map egraph_bools ~f:(fun use_egraphs ->
          solve 3 no_sol_target use_egraphs))
-    ~expect:(repeat None (List.length egraph_bools))
+    ~expect:(repeat (List.length egraph_bools) None)
 
 let%test_unit "np_solve no solution" =
   [%test_result: program option list]
     (List.map egraph_bools ~f:(fun use_egraphs ->
          solve 1 ~debug:false target4 use_egraphs))
-    ~expect:(repeat None (List.length egraph_bools))
+    ~expect:(repeat (List.length egraph_bools) None)
 
 let%test_unit "np_solve 2 muls" =
   [%test_result: program option list]

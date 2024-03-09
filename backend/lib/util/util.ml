@@ -42,3 +42,5 @@ let unembed_name : string -> (string * string) option =
   match String.split ~on:'$' name with
   | [ gensymed_prefix; metadata ] -> Some (ungensym gensymed_prefix, metadata)
   | _ -> None
+
+let repeat : 'a. int -> 'a -> 'a list = fun n x -> List.init n ~f:(fun _ -> x)

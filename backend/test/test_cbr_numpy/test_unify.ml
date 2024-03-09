@@ -261,13 +261,13 @@ let%test_unit "simple hole substitution" =
   [%test_result: substitutions option list]
     (List.map unify_funcs ~f:(fun unify ->
          unify ~debug:false ~target:reference1 ~pattern:candidate1 ()))
-    ~expect:(repeat expect (List.length unify_funcs))
+    ~expect:(repeat (List.length unify_funcs) expect)
 
 let%test_unit "no substitution possible" =
   [%test_result: substitutions option list]
     (List.map unify_funcs ~f:(fun unify ->
          unify ~debug:false ~target:reference1 ~pattern:candidate2 ()))
-    ~expect:(repeat None (List.length unify_funcs))
+    ~expect:(repeat (List.length unify_funcs) None)
 
 let%test_unit "2 hole substitutions" =
   let expect = Some (String.Map.of_alist_exn [ ("1", Num 1); ("2", Num 2) ]) in
@@ -288,7 +288,7 @@ let%test_unit "duplicate hole substitution" =
   [%test_result: substitutions option list]
     (List.map unify_funcs ~f:(fun unify ->
          unify ~debug:false ~target:reference4 ~pattern:candidate4 ()))
-    ~expect:(repeat expect (List.length unify_funcs))
+    ~expect:(repeat (List.length unify_funcs) expect)
 
 let%test_unit "duplicate hole substitution with complex expr" =
   let expect =
@@ -297,13 +297,13 @@ let%test_unit "duplicate hole substitution with complex expr" =
   [%test_result: substitutions option list]
     (List.map unify_funcs ~f:(fun unify ->
          unify ~debug:false ~target:reference4' ~pattern:candidate4 ()))
-    ~expect:(repeat expect (List.length unify_funcs))
+    ~expect:(repeat (List.length unify_funcs) expect)
 
 let%test_unit "duplicate hole substitution fail for unmatching exprs" =
   [%test_result: substitutions option list]
     (List.map unify_funcs ~f:(fun unify ->
          unify ~debug:false ~target:reference4'' ~pattern:candidate4 ()))
-    ~expect:(repeat None (List.length unify_funcs))
+    ~expect:(repeat (List.length unify_funcs) None)
 
 let%test_unit "unify sum" =
   let expect =
@@ -314,21 +314,21 @@ let%test_unit "unify sum" =
   [%test_result: substitutions option list]
     (List.map unify_funcs ~f:(fun unify ->
          unify ~debug:false ~target:reference5 ~pattern:candidate5 ()))
-    ~expect:(repeat expect (List.length unify_funcs))
+    ~expect:(repeat (List.length unify_funcs) expect)
 
 let%test_unit "self assign" =
   let expect = Some (String.Map.of_alist_exn [ ("a", Name "c") ]) in
   [%test_result: substitutions option list]
     (List.map unify_funcs ~f:(fun unify ->
          unify ~debug:false ~target:reference6 ~pattern:candidate6 ()))
-    ~expect:(repeat expect (List.length unify_funcs))
+    ~expect:(repeat (List.length unify_funcs) expect)
 
 let%test_unit "index hole" =
   let expect = Some (String.Map.of_alist_exn [ ("a", Name "x") ]) in
   [%test_result: substitutions option list]
     (List.map unify_funcs ~f:(fun unify ->
          unify ~debug:false ~target:reference7 ~pattern:candidate7 ()))
-    ~expect:(repeat expect (List.length unify_funcs))
+    ~expect:(repeat (List.length unify_funcs) expect)
 
 let%test_unit "unify mul" =
   let expect =
@@ -339,7 +339,7 @@ let%test_unit "unify mul" =
   [%test_result: substitutions option list]
     (List.map unify_funcs ~f:(fun unify ->
          unify ~debug:false ~target:reference8 ~pattern:candidate8 ()))
-    ~expect:(repeat expect (List.length unify_funcs))
+    ~expect:(repeat (List.length unify_funcs) expect)
 
 let%test_unit "unify mul commutative" =
   let expect =

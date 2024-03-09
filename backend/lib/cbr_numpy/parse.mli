@@ -38,3 +38,6 @@ val py_str_of_program : program -> string
 
 (** Pretty-prints a program **)
 val pp_program : ?channel:Out_channel.t -> program -> unit
+
+(** Unparses a set of hole substitutions to an s-expression *)
+val sexp_of_substitutions : substitutions -> Sexp.t

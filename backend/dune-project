@@ -1,21 +1,25 @@
 (lang dune 3.0)
 
-(name component_based_refactoring)
+(name cobbler)
 
 (generate_opam_files true)
 
 (source
- (github justinlubin/component-based-refactoring))
+ (github justinlubin/cobbler))
 
-(authors "Justin Lubin")
+(authors
+  "Justin Lubin"
+  "Jeremy Ferguson"
+  "Kevin Ye"
+  "Jacob Yim")
 
 (maintainers "justinlubin@berkeley.edu")
 
 (license BSD-3-Clause)
 
 (package
- (name component_based_refactoring)
- (synopsis "Refactoring with component-based synthesis")
+ (name cobbler)
+ (synopsis "The Cobbler program synthesizer for refactoring using libraries")
  (depends
   (ocaml
    (>= 4.14.0))
