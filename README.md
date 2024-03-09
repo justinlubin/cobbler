@@ -7,7 +7,7 @@ work, but this is the version that we tested the virtual machine with.
 Once opened in VirtualBox, take the following steps to "kick the tire" of this
 artifact:
 
-1. Sign into the only user
+1. Sign into the user "cobbler" with password "cobbler" (no quotes)
 2. Open the terminal
 3. Run `cd ~/Desktop/cobbler`
 4. Run `./cobbler`
