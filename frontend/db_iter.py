@@ -8,6 +8,7 @@ import huggingface_hub
 
 HF_TOKEN_KEY = "HF_TOKEN"
 
+
 def login():
     if HF_TOKEN_KEY not in os.environ:
         raise ValueError(f"'{HF_TOKEN_KEY}' environment variable not defined")

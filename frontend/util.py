@@ -43,11 +43,18 @@ def exec_eval(tree):
 
 
 def is_num(x):
-    return isinstance(x, int) or isinstance(x, float) or type(x) == np.dtype(int) or type(x) == np.dtype(float)
+    return (
+        isinstance(x, int)
+        or isinstance(x, float)
+        or type(x) == np.dtype(int)
+        or type(x) == np.dtype(float)
+    )
 
 
 def is_num_array(x):
-    return isinstance(x, np.ndarray) and (x.dtype == np.dtype(int) or x.dtype == np.dtype(float))
+    return isinstance(x, np.ndarray) and (
+        x.dtype == np.dtype(int) or x.dtype == np.dtype(float)
+    )
 
 
 class NodeCounter(ast.NodeVisitor):
