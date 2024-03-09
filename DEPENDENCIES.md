@@ -2,7 +2,9 @@
 
 ## Installing OCaml dependencies
 
-1. If you haven't already, [install OCaml and opam](https://ocaml.org/docs/up-and-running)
+1. If you haven't already,
+   [install OCaml and opam](https://ocaml.org/docs/up-and-running), with OCaml
+   being version 4.14 or greater
 2. From the project's root directory, run `cd backend`
 3. Run `make switch`
 4. Restart your shell
@@ -13,8 +15,8 @@ directory. The actual dependencies are listed in the `dune-project` file.
 
 ## Installing Python dependencies
 
-1. If you haven't already, [install Python](https://www.python.org/) version
-   3.11 or greater
+1. If you haven't already,
+   [install Python](https://www.python.org/) version 3.11 or greater
 2. From the project's root directory, run `cd frontend`
 3. *Optional: If you use virtual environments, create a new one for this project
    now. The next step will use `pip` to install the necessary Python packages.*
