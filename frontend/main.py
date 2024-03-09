@@ -425,7 +425,7 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(
         title="subcommands",
         dest="subcommand",
-        metavar="SUBCMD",
+        metavar="SUBCOMMAND",
         required=True,
     )
 

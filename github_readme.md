@@ -1,54 +1,28 @@
-# Component-based refactoring
+# Cobbler
 
 [![Tests](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml/badge.svg)](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml)
 
-This project contains the source code for the `cobbler` program synthesizer,
-which implements the component-based refactoring algorithm.
+This project contains the source code for the Cobbler program synthesizer.
+Cobbler refactors programs to use library functions. It currently supports:
 
-This repository is split into two main sections: the backend (implemented in
-OCaml and located in the `backend` directory) and the frontend (implemented in
-Python and located in the `frontend` directory).
+- Refactoring [Elm](https://elm-lang.org/) programs to use functions like those
+  found in the Elm Standard Library (e.g. functional combinators like `map` and
+  `filter`), and
+- Refactoring Python programs to use the [NumPy](https://numpy.org/)
+  high-performance computing library.
 
-The `cobbler` script at the project's root directory glues everything together
-and provides the user-facing CLI for the synthesizer.
+For information about how this project is structured, please see
+`ARCHITECTURE.md`.
 
-To use the `cobbler` script, you first need to install its dependencies (see
-below).
+For information about how to install the dependencies for this project, please
+see `DEPENDENCIES.md`.
 
-Once that is done, see `./cobbler --help`.
+Once depencies are installed, you can run Cobbler via the `cobbler` script in
+the root of this repository.
 
-## Installing dependencies
+For help, run `./cobbler --help`.
 
-### Installing OCaml dependencies
-
-1. If you haven't already, [install OCaml and opam](https://ocaml.org/docs/up-and-running)
-2. From the project's root directory, run `cd backend`
-3. Run `make switch`
-4. Restart your shell
-5. Run `make dev-deps deps`
-
-### Installing Python dependencies
-
-1. If you haven't already, [install Python](https://www.python.org/) version
-   3.11 or greater
-2. From the project's root directory, run `cd frontend`
-3. *Optional: If you use virtual environments, create a new one for this project
-   now. The next step will use `pip` to install the necessary Python packages.*
-4. Run `make deps` (for convenience, this will also install the dependencies
-   necessary to analyze the evaluation data)
-
-### Additional dependencies
-
-- This project also depends on [elm-format](https://github.com/avh4/elm-format)
-  (tested with version 0.8.7), which is installable via `npm`
-
-## Running tests
-
-To run the backend tests, run `make test` from the `backend` subdirectory.
-
-To run the frontend tests, run `make test` from the `frontend` subdirectory.
-
-## Acknowledgments
+## Resource acknowledgments
 
 - Thanks to
   [Patrick Gillespie](http://patorjk.com/)

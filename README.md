@@ -205,3 +205,8 @@ taking into consideration the **Important note** at the start of this section.
   is >1×), data size 10^8."
 
 And that's it! Thank you so much for your service as an artifact evaluator!
+
+# Optional: Looking at the Cobbler codebase
+
+If you would like to take a look at implementation of Cobbler, please refer to
+the file `ARCHITECTURE.md` for how to dive in.
