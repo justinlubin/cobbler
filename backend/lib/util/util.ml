@@ -42,10 +42,3 @@ let unembed_name : string -> (string * string) option =
   match String.split ~on:'$' name with
   | [ gensymed_prefix; metadata ] -> Some (ungensym gensymed_prefix, metadata)
   | _ -> None
-
-let repeat : 'a -> int -> 'a list =
- fun el n ->
-  let rec repeat_helper el n l =
-    if Int.equal n 0 then l else repeat_helper el (n - 1) (l @ [ el ])
-  in
-  repeat_helper el n []

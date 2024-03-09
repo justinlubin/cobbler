@@ -1,7 +1,10 @@
 (** Program parsing
-    
-    This module parses strings into programs (values using types in the
-    [!module:Lang] module). *)
+
+    This module parses strings of s-expressions into programs (values using
+    types in the [!module:Lang] module).
+
+    **Note**: The more useful and feature-complete module is
+    [!module:Parse_json], which parses JSON strings. *)
 
 open Lang
 

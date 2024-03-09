@@ -4,12 +4,14 @@ open Lang
 
 (** [norm sigma gamma env e] returns a program [e'] that is semantically
     equivalent to [e] under [sigma], [gamma], and [env] but is defined in a
-    restricted subset of the lambda calculus.  This means that The equivalence
+    restricted subset of the lambda calculus. This means that the equivalence
     classes of [norm] therefore conservatively underapproximate semantic
     equality, which means that to check whether a candidate program is
     semantically equal to a reference program, we can check whether their
     [norm]s are {i syntactically} equal (modulo alpha conversion); such a check
-    is sound but not complete. *)
+    is sound but not complete.
+
+    **Note**: This is the *canonicalization function*. *)
 val norm : datatype_env -> typ_env -> env -> exp -> exp
 
 (* Specification for a synthesis problem. A solution to a synthesis problem
