@@ -8,6 +8,9 @@
 4. Restart your shell
 5. Run `make dev-deps deps`
 
+The developer dependencies are listed in the `Makefile` in the `backend`
+directory. The actual dependencies are listed in the `dune-project` file.
+
 ## Installing Python dependencies
 
 1. If you haven't already, [install Python](https://www.python.org/) version
@@ -17,6 +20,9 @@
    now. The next step will use `pip` to install the necessary Python packages.*
 4. Run `make deps` (for convenience, this will also install the dependencies
    necessary to analyze the evaluation data)
+
+The actual dependencies are listed in the `requirements.txt` file in the
+`frontend` directory.
 
 ## Additional dependencies
 

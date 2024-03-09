@@ -209,4 +209,6 @@ And that's it! Thank you so much for your service as an artifact evaluator!
 # Optional: Looking at the Cobbler codebase
 
 If you would like to take a look at implementation of Cobbler, please refer to
-the file `ARCHITECTURE.md` for how to dive in.
+the file `ARCHITECTURE.md` for how to dive in. You can also take a look at the
+file `GITHUB_README.md`, which contains a README more typical of open-source
+projects.
