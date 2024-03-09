@@ -1,4 +1,8 @@
-(** Top-level synthesis algorithm *)
+(** Top-level Elm synthesis algorithm
+
+    This module contains the [solve] function which uses top down enumeration
+    to find compositions of Elm Standard Library functions that are equivalent
+    to the given Elm program input. *)
 
 open Lang
 

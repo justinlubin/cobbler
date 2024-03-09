@@ -143,7 +143,7 @@ let main_python : string -> Yojson.Basic.t =
  fun input ->
   let open Cbr_numpy in
   try
-    let target = input |> Sexp.of_string |> Parse.program_of_sexp in
+    let target = input |> Parse.program_of_str in
     (* let () =
       failwith
         (target |> Np_synthesis.canonicalize |> snd |> [%show: Lang.block])

@@ -1,12 +1,6 @@
-(** Env
-
-    This module contains an env for numpy functions.
-*)
+(** NumPy function definitions *)
 
 open Lang
 
-(** [np_env] contains definitions of the following numpy functions:
-    
-    - sum(x)
-*)
+(* An environment of the definitions of the supported NumPy functions *)
 val np_env : env

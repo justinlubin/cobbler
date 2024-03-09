@@ -1,40 +1,40 @@
-(** Program parsing: 
- * This module parses strings into IIR programs (using types from the [!module:Lang] module), 
- * using s-expressions as an intermediate representation. Also implements translation of
- * programs back into strings for printing and testing.
+(** Program parsing:
 
- Upon parse failure, this module throws the [ParseFail] exception. *)
+    This module parses strings [!module:Lang] programs , using s-expressions as
+    an intermediate representation.
+
+    This module also implements translation of programs back into strings
+    (unparsing) for printing and testing.
+
+     Upon parse failure, this module throws the [ParseFail] exception. *)
 
 open Lang
 open Core
 
+(** Raised on parse failure *)
 exception ParseFail of string
 
-val sexp_of_expr : expr -> Sexp.t
+(** Parse an s-expression to an expression *)
 val expr_of_sexp : Sexp.t -> expr
-val sexp_of_pat : pat -> Sexp.t
-val sexp_of_block : block -> Sexp.t
 
-(** [str_of_program] translates a program back into an s-expression, and then to a string. *)
-val str_of_program : program -> string
+(** Unparse an expression to an s-expressions *)
+val sexp_of_expr : expr -> Sexp.t
 
-(** [sexp_of_program] translates a program back into an s-expression **)
-val sexp_of_program : program -> Sexp.t
-
-(** [program_of_sexp] translates an s-expression into a program**)
+(** Parse an s-expression to a program *)
 val program_of_sexp : Sexp.t -> program
 
-(** [sexp_of_substitions] translates a list of hole substitions back into an s-expression **)
-val sexp_of_substitutions : substitutions -> Sexp.t
+(* Unparse a program to an s-expression *)
+val sexp_of_program : program -> Sexp.t
 
-(** [substitions_of_sexp] translates an s-expression into a list of hole substitutions**)
-val substitutions_of_sexp : Sexp.t -> substitutions
-
-(** [program_of_str] translates an s-expression string into a program. **)
+(** Parse an s-expression string into a program **)
 val program_of_str : string -> program
 
-(** [pp_program] pretty-prints a program **)
-val pp_program : ?channel:Out_channel.t -> program -> unit
+(** Unparse a program to an s-expression string (see also
+    [py_str_of_program]) *)
+val str_of_program : program -> string
 
-(** [py_str_of_program] translates a program back into an s-expression, and then to a Python string. *)
+(** Unparse a program to a Python string *)
 val py_str_of_program : program -> string
+
+(** Pretty-prints a program **)
+val pp_program : ?channel:Out_channel.t -> program -> unit

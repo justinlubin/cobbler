@@ -49,6 +49,9 @@ synthesis algorithm for NumPy. Additionally of note, the file
 `partial_eval.ml(i)` implements our partial evaluator and serves a similar role
 to catamorphism fusion for Elm.
 
+Most types relating to the languages that these two instantiations work with are
+in their corresponding `lang.ml` files.
+
 ## The frontend
 
 The frontend is relatively simple, with a main entry point of `main.py`. The

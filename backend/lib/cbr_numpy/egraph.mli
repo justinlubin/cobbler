@@ -1,3 +1,8 @@
+(** Ego e-graph glue code
+
+   This module provides the boilerplate glue code for working with the Ego
+   library. *)
+
 open Ego.Generic
 module L : LANGUAGE
 module A : ANALYSIS
