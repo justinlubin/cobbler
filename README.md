@@ -139,7 +139,7 @@ The first two files contain the results of running Cobbler on the test set
 from the previous step. The last file contains the results of the NumPy
 performance evaluation.
 
-_Optional_: If you're curious to see what the results from the first two files
+_Optional:_ If you're curious to see what the results from the first two files
 above look like, you can run the following commands to generate human-readable
 versions of these files:
 
