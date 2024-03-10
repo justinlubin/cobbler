@@ -10,6 +10,7 @@ HF_TOKEN_KEY = "HF_TOKEN"
 
 
 def login():
+    """Log into Hugging Face"""
     if HF_TOKEN_KEY not in os.environ:
         raise ValueError(f"'{HF_TOKEN_KEY}' environment variable not defined")
     huggingface_hub.login(token=os.environ[HF_TOKEN_KEY])

@@ -20,7 +20,14 @@ def time_program(program_name, program, N):
     full_program = f"import numpy as np\nN = {N}\n{program}"
     try:
         return ",".join(
-            [str(r) for r in timeit.repeat(stmt=full_program, repeat=REPEAT_COUNT, number=1)]
+            [
+                str(r)
+                for r in timeit.repeat(
+                    stmt=full_program,
+                    repeat=REPEAT_COUNT,
+                    number=1,
+                )
+            ]
         )
     except:
         return ""
@@ -35,11 +42,19 @@ def time_entry(subdir):
     return (
         {"program name": program_name}
         | {
-            f"original {p}": time_program(program_name, original_program, 10**p)
+            f"original {p}": time_program(
+                program_name,
+                original_program,
+                10**p,
+            )
             for p in util.DATA_SIZE_POWERS
         }
         | {
-            f"refactored {p}": time_program(program_name, refactored_program, 10**p)
+            f"refactored {p}": time_program(
+                program_name,
+                refactored_program,
+                10**p,
+            )
             for p in util.DATA_SIZE_POWERS
         }
     )
@@ -57,7 +72,7 @@ with open(f"{OUTPUT_DIR}/numpy_perf_eval.tsv", "w", newline="") as f:
     writer.writeheader()
 
     for subdir in glob.glob(f"{INPUT_DIR}/programs/*"):
-        print(f"Benchmarking {subdir}...")
+        print(f"Running {subdir}...")
         writer.writerow(time_entry(subdir))
 
 print("All done!")

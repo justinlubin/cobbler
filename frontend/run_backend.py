@@ -30,7 +30,7 @@ CSV_FIELDS = [
 def elm_json(
     js, dry_run=False, toggle_eval=False
 ):  # TODO: deal with toggle_eval somehow
-    """Benchmarks a single Elm function/variable definition, assuming that it is
+    """Runs a single Elm function/variable definition, assuming that it is
     represented as an elm-format JSON object"""
     stats = {}
     stats["orig code"] = util.csv_str_encode(json.dumps(js))
@@ -72,8 +72,8 @@ def elm_json(
 
 
 def python_helper(tree, dry_run=False, rewrite_for=None, toggle_eval=False):
-    """Benchmarks a Python script, assuming that it is represented as a Python
-    AST object"""
+    """Runs a Python script, assuming that it is represented as a Python AST
+    object"""
     assert rewrite_for is not None
 
     stats = {}
@@ -158,8 +158,8 @@ def python_helper(tree, dry_run=False, rewrite_for=None, toggle_eval=False):
 
 
 def python(tree, dry_run=False, toggle_eval=False):
-    """Benchmarks a Python script, assuming that it is represented as a Python
-    AST object"""
+    """Runs a Python script, assuming that it is represented as a Python AST
+    object (tries not rewriting and rewriting the for statement)"""
     stats = python_helper(
         tree, dry_run=dry_run, rewrite_for=False, toggle_eval=toggle_eval
     )

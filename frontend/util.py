@@ -43,6 +43,7 @@ def exec_eval(tree):
 
 
 def is_num(x):
+    """Returns whether or not x is a number"""
     return (
         isinstance(x, int)
         or isinstance(x, float)
@@ -52,6 +53,7 @@ def is_num(x):
 
 
 def is_num_array(x):
+    """Returns whether or not x is an array of numbers"""
     return isinstance(x, np.ndarray) and (
         x.dtype == np.dtype(int) or x.dtype == np.dtype(float)
     )
