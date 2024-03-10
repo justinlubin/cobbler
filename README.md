@@ -8,7 +8,7 @@ Once opened in VirtualBox, take the following steps to "kick the tire" of this
 artifact:
 
 1. Sign into the user "cobbler" with password "cobbler" (no quotes)
-2. Open the terminal
+2. Open the terminal via the dock on the left side of the screen
 3. Run `cd ~/Desktop/cobbler`
 4. Run `./cobbler`
 
