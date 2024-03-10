@@ -140,6 +140,12 @@ The first two files contain the results of running Cobbler on the test set
 from the previous step. The last file contains the results of the NumPy
 performance evaluation.
 
+We also provide the results of running this step on our machine ahead of time in
+the provided `<CACHE_DIR>/output/data/` directory, which you can also copy into
+the corresponding `evaluation/output/data/` directory, if desired (this will
+overwrite the results generated in this step). The `<CACHE_DIR>` on the virtual
+machine image is located at `~/Desktop/cache/`.
+
 _Optional:_ If you're curious to see what the results from the first two files
 above look like, you can run the following commands to generate human-readable
 versions of these files:
