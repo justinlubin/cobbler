@@ -145,6 +145,13 @@ The first two files contain the results of running Cobbler on the test set
 from the previous step. The last file contains the results of the NumPy
 performance evaluation.
 
+Because the NumPy performance evaluation involved us manually modifying programs
+to operate on different data sizes (Section 8.4.1 of the paper), we include
+those fixed inputs and outputs in `evaluation/input/manually_modified_numpy`;
+thus, the results of the NumPy performance evaluation (`numpy_perf_eval.tsv`)
+do _not_ depend on the results from the synthesis evaluation (`elm_test.tsv` and
+`python_test.tsv`).
+
 We also provide the results of running this step on our machine ahead of time in
 the provided `<CACHE_DIR>/output/data/` directory, which you can also copy into
 the corresponding `evaluation/output/data/` directory, if desired (this will
@@ -169,9 +176,11 @@ validate the performance claims, we do not expect that these claims will be
 exactly reproducible**._
 
 The previous step also produces summaries/analyses/graphs of the data files in
-the `evaluation/output/data/` directory described above. These analyses get
-stored in the `evaluation/output/analyses` directory and can be used to validate
-the claims in our evaluation.
+the `evaluation/output/data/` directory described above. These analyses (which
+also take in the survey data described in Section 8.3.1 and located in
+`evaluation/input/survey_results/`) get stored in the
+`evaluation/output/analyses` directory and can be used to validate the claims in
+our evaluation.
 
 Most of our claims are descriptive results of graphs in our evaluation.
 Validating these claims amounts to validating that the graphs produced by the
