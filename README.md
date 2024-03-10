@@ -63,7 +63,8 @@ a dataset on
 **Action:** We provide two options to obtain these programs; please follow the
 steps for exactly one of these. Option 1 is what we actually did to download the
 programs originally. We obtained the data files in Option 2 by following the
-exact steps from Option 1 ahead of time and caching the results.
+exact steps from Option 1 ahead of time and caching the results. We recommend
+Option 2 for the artifact evaluation.
 
 - **Option 1** (**~4 hours** on ~50 Mbps internet): Create a
   [HuggingFace user access token](https://huggingface.co/docs/hub/security-tokens),
@@ -93,8 +94,8 @@ The evaluation, among other steps, include the following components that
 - **Component 2:** NumPy performance evaluation with 10 replicates (**~14 hours**)
 
 These times were taken on a 2020 MacBook Pro with a 2.3 GHz Quad-Core Intel Core
-i7 processor and 32 GB of RAM. It is likely that in the virtual machine on your
-computer, these times might be even larger.
+i7 processor and 32 GB of RAM (not on the virtual machine). It is likely that in
+the virtual machine on your computer, these times might be even larger.
 
 To speed up the evaluation, we also provide a "quick mode" evaluation that
 **differs from the full evaluation (as described in the paper)** in the
@@ -111,7 +112,8 @@ of **Component 1** above to **~25 minutes** and the running time of
 
 **Action:** We provide two options for running the evaluation; please follow the
 steps for exactly one of these. Option 1 is the full evaluation as described in
-the paper, and Option 2 is the "quick mode" evaluation described above.
+the paper, and Option 2 is the "quick mode" evaluation described above. We
+recommend Option 2 for the artifact evaluation.
 
 - **Option 1 (full evaluation):** Run the following command from the root of
   the repository:
@@ -208,7 +210,7 @@ taking into consideration the **Important note** at the start of this section.
   `PenalizedPerfSpeedupGMI`: "penalized speedup, performant NumPy functions,
   geometric median, data size 10^8" ("I" is the eighth letter of the alphabet).
   The second number is found in the variable `PenalizedPerfActualSpeedupCountI`:
-  "penalized speedup, performany NumPy functions, actual speedup (i.e., speedup
+  "penalized speedup, performant NumPy functions, actual speedup (i.e., speedup
   is >1×), data size 10^8."
 
 And that's it! Thank you so much for your service as an artifact evaluator!
