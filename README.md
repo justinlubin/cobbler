@@ -16,6 +16,9 @@ If you see a welcome message, you should be good to go.
 
 # Step-by-Step Instructions
 
+_Total time estimate for evaluating this artifact:_ 1-2 hours using the
+recommended strategies.
+
 ## Reproducing the examples in the paper
 
 First, open up the provided virtual machine in VirtualBox and `cd` into the
