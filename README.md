@@ -233,3 +233,6 @@ If you would like to take a look at implementation of Cobbler, please refer to
 the file `ARCHITECTURE.md` for how to dive in. You can also take a look at the
 file `GITHUB_README.md`, which contains a README more typical of open-source
 projects.
+
+Lastly, the structure of the `evaluation/` directory is detailed in
+`evaluation/README.md`.
