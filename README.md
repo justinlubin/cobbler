@@ -70,8 +70,9 @@ exact steps from Option 1 ahead of time and caching the results.
   set the environment variable `HF_TOKEN` to the value of this token (e.g.
   `export HF_TOKEN=<TOKEN STRING HERE>`), then run `bash
   evaluation/scripts/download_extract_real_world.sh`.
-- **Option 2**: Copy the provided cached `cached/input/real_world_programs/`
-  directory to `evaluation/input/real_world_programs/`.
+- **Option 2**: Copy the provided `<CACHE_DIR>/input/real_world_programs/`
+  directory to `evaluation/input/real_world_programs/`. The `<CACHE_DIR>` on
+  the virtual machine image is located at `~/Desktop/cache/`.
 
 #### Checking that this step worked properly
 
