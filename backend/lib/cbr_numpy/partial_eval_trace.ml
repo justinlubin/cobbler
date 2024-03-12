@@ -78,6 +78,7 @@ let rec partial_eval_expr_with_trace : expr -> expr * expr list =
               e', old_call_trace @ e'_trace
           | Call (Name "np.ones", args)
           | Call (Name "np.zeros", args)
+          | Call (Name "np.square", args)
           | Call (Name "broadcast", args)
           | Call (Name "np.full", args) -> let e' = List.hd_exn args in e', old_call_trace @ [e']
           | Call (Name "np.random.randint_size", [ _; _; s ]) ->
@@ -146,6 +147,9 @@ let rec partial_eval_expr_with_trace : expr -> expr * expr list =
       | Call (Name "np.zeros", _), _ -> Num 0, old_index_trace @ [Num 0]
       | Call (Name "np.full", [ _; v ]), _ -> v, old_index_trace @ [v]
       | Call (Name "range", [ _ ]), i -> i, old_index_trace @ [i]
+      | Call (Name "np.square", [e]), i -> 
+          let e', e'_trace = partial_eval_expr_with_trace (Call (Name "**", [Index (e, i); Num 2])) in
+          e', old_index_trace @ e'_trace
       | Call (Name "np.random.randint_size", [ low; high; _ ]), i ->
           let e', e'_trace = partial_eval_expr_with_trace (Call (Name "np.random.randint", [ low; high ])) in
           e', old_index_trace @ e'_trace

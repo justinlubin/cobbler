@@ -546,6 +546,26 @@ let filter_defn =
     ; Return (Hole (Array, "xs"))
     ] )
 
+let square_defn =
+  ( ["array"]
+  , [ Assign 
+      ( PHole (Array, "square_result")
+      , Call (Name "np.zeros", [ Call (Name "len", [ Name "array" ]) ])
+      )
+    ; For
+      ( PHole (Number, "square_i")
+      , Call (Name "range", [ Call (Name "len", [ Name "array" ]) ])
+      , [ Assign 
+          ( PIndex (PHole (Array, "square_result"), Hole (Number, "square_i"))
+          , Call
+              ( Name "**"
+              , [ Index (Name "array", Hole (Number, "square_i"))
+                ; Num 2
+                ] ) )
+        ] )
+    ; Return (Hole (Array, "square_result"))
+  ])
+
 let np_env : env =
   String.Map.of_alist_exn
     [ ("np.sum", sum_defn)
@@ -569,4 +589,5 @@ let np_env : env =
     ; ("np.tolist", tolist_defn) (* ; ("np.arange", arange_defn) *)
     ; ("np.copy", copy_defn)
     ; ("np.filter", filter_defn)
+    ; ("np.square", square_defn)
     ]

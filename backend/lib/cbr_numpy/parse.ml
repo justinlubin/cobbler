@@ -275,7 +275,7 @@ let rec py_str_of_sexp : int -> Sexp.t -> string =
       | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.tolist"; p1 ] ->
           "list(" ^ py_str_of_sexp tabs p1 ^ ")"
       | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.filter"; p1; p2 ] ->
-          "list(np.array(" ^ py_str_of_sexp tabs p1 ^ ")[" ^ py_str_of_sexp tabs p2 ^ "])"
+          py_str_of_sexp tabs p1 ^ "[" ^ py_str_of_sexp tabs p2 ^ "]"
       | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.sum_string"; p1 ] ->
           "np.sum(np.array(" ^ py_str_of_sexp tabs p1 ^ ", dtype=\"object\"))"
       | Sexp.List [ Sexp.Atom "Call"; Sexp.Atom "np.full"; size; value ] ->
@@ -301,11 +301,19 @@ let rec py_str_of_sexp : int -> Sexp.t -> string =
           ^ (List.map ~f:(py_str_of_sexp tabs) args |> String.concat ~sep:", ")
           ^ ")"
       | Sexp.List [ Sexp.Atom "Return"; right ] -> py_str_of_sexp tabs right
-      | Sexp.List [ Sexp.Atom "Assign"; left; right] -> py_str_of_sexp tabs left ^ " = " ^ py_str_of_sexp tabs right
-      | Sexp.List [ Sexp.Atom "For"; left; middle; right] -> "for " ^ py_str_of_sexp tabs left ^ " in " ^ py_str_of_sexp tabs middle ^ ":" ^ ("\n" ^ String.make tabs '\t') ^
+      | Sexp.List [ Sexp.Atom "Assign"; left; right ] -> py_str_of_sexp tabs left ^ " = " ^ py_str_of_sexp tabs right
+      | Sexp.List [ Sexp.Atom "For"; left; middle; right ] -> "for " ^ py_str_of_sexp tabs left ^ " in " ^ py_str_of_sexp tabs middle ^ ":" ^ ("\n" ^ String.make tabs '\t') ^
           (let block = block_of_sexp right in
-           let block_string = py_str_list_of_block tabs block in
-            String.concat ~sep:("\n" ^ String.make tabs '\t') block_string)
+           let block_strings = py_str_list_of_block tabs block in
+            String.concat ~sep:("\n" ^ String.make tabs '\t') block_strings)
+      | Sexp.List [ Sexp.Atom "If"; left; middle; right ] -> "if " ^ py_str_of_sexp tabs left ^ ":" ^ ("\n" ^ String.make tabs '\t') ^
+          (let middle_block = block_of_sexp middle in
+           let middle_strings = py_str_list_of_block tabs middle_block in
+            String.concat ~sep:("\n" ^ String.make tabs '\t') middle_strings)
+           ^ "\nelse:" ^ ("\n" ^ String.make tabs '\t') ^
+          (let right_block = block_of_sexp right in
+           let right_strings = py_str_list_of_block tabs right_block in
+            String.concat ~sep:("\n" ^ String.make tabs '\t') right_strings)
       | Sexp.List [ right ] -> py_str_of_sexp tabs right
       | Sexp.List [ Sexp.Atom "Num"; Sexp.Atom n ] -> n
       | Sexp.List [ Sexp.Atom "Str"; Sexp.Atom s ] ->
