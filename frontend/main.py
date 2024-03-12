@@ -145,11 +145,16 @@ def run_many_helper(
             stats = runner(block, dry_run=dry_run)
             if stats["status"] in ["Success", "SynthFail"]:
                 times = []
+                ocaml_times = {key: [] for key in run_backend.OCAML_TIME_FIELDS}
                 for _ in range(BENCHMARK_REPLICATES):
                     stats_tmp = runner(block, dry_run=dry_run)
                     assert stats_tmp["status"] == stats["status"]
                     times.append(str(stats_tmp["synth time"]))
+                    for key in run_backend.OCAML_TIME_FIELDS:
+                        ocaml_times[key].append(str(stats_tmp[key]))
                 stats["synth time"] = ",".join(times)
+                for key in run_backend.OCAML_TIME_FIELDS:
+                    stats[key] = ",".join(ocaml_times[key])
             writer.writerow(stats)
         print(f"Completed '{previous_path}' ({sample_num+1}/{sample_limit})")
 

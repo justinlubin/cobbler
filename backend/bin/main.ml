@@ -1,5 +1,18 @@
 open Core
 
+let time_info () =
+  [ ( "ocaml_synthesis_time"
+    , `Float (Util.Timing_breakdown.time_taken Util.Timing_breakdown.Synthesis)
+    )
+  ; ( "ocaml_canonicalization_time"
+    , `Float
+        (Util.Timing_breakdown.time_taken
+           Util.Timing_breakdown.Canonicalization) )
+  ; ( "ocaml_unification_time"
+    , `Float
+        (Util.Timing_breakdown.time_taken Util.Timing_breakdown.Unification) )
+  ]
+
 let elm_stdlib_fname : string = "backend/bin/Stdlib.json"
 
 let main_elm : string -> Yojson.Basic.t =
@@ -59,7 +72,7 @@ let main_elm : string -> Yojson.Basic.t =
       Synthesis.problem_of_definitions (stdlib_sigma, gamma, env) name
     in
     match Synthesis.solve ~use_unification:true ~depth:3 problem with
-    | None -> `Assoc [ ("status", `String "SynthFail") ]
+    | None -> `Assoc ([ ("status", `String "SynthFail") ] @ time_info ())
     | Some (expansions, wrapped_solution) ->
         (try
            Type_system.check
@@ -79,28 +92,17 @@ let main_elm : string -> Yojson.Basic.t =
              Exp.build_abs (List.drop params (List.length fvs)) inside
            in
            `Assoc
-             [ ("status", `String "Success")
-             ; ( "solution"
-               , `String
-                   (Unparse_elm.definition
-                      stdlib_sigma
-                      name
-                      (orig_typ_binders, orig_typ)
-                      solution) )
-             ; ("size", `Int expansions)
-             ; ( "synthesis_time"
-               , `Float
-                   (Util.Timing_breakdown.time_taken
-                      Util.Timing_breakdown.Synthesis) )
-             ; ( "canonicalization_time"
-               , `Float
-                   (Util.Timing_breakdown.time_taken
-                      Util.Timing_breakdown.Canonicalization) )
-             ; ( "unification_time"
-               , `Float
-                   (Util.Timing_breakdown.time_taken
-                      Util.Timing_breakdown.Canonicalization) )
-             ]
+             ([ ("status", `String "Success")
+              ; ( "solution"
+                , `String
+                    (Unparse_elm.definition
+                       stdlib_sigma
+                       name
+                       (orig_typ_binders, orig_typ)
+                       solution) )
+              ; ("size", `Int expansions)
+              ]
+             @ time_info ())
          with
         | Type_system.IllTyped e ->
             `Assoc
@@ -161,25 +163,14 @@ let main_python : string -> Yojson.Basic.t =
         (target |> Np_synthesis.canonicalize |> snd |> [%show: Lang.block])
     in *)
     match Np_synthesis.solve 4 ~debug:false target true with
-    | None -> `Assoc [ ("status", `String "SynthFail") ]
+    | None -> `Assoc ([ ("status", `String "SynthFail") ] @ time_info ())
     | Some (expansions, p) ->
         `Assoc
-          [ ("status", `String "Success")
-          ; ("solution", `String (Parse.py_str_of_program p))
-          ; ("size", `Int expansions)
-          ; ( "synthesis_time"
-            , `Float
-                (Util.Timing_breakdown.time_taken
-                   Util.Timing_breakdown.Synthesis) )
-          ; ( "canonicalization_time"
-            , `Float
-                (Util.Timing_breakdown.time_taken
-                   Util.Timing_breakdown.Canonicalization) )
-          ; ( "unification_time"
-            , `Float
-                (Util.Timing_breakdown.time_taken
-                   Util.Timing_breakdown.Canonicalization) )
-          ]
+          ([ ("status", `String "Success")
+           ; ("solution", `String (Parse.py_str_of_program p))
+           ; ("size", `Int expansions)
+           ]
+          @ time_info ())
   with
   | Parse.ParseFail s ->
       `Assoc [ ("status", `String "IRParseFail"); ("reason", `String s) ]

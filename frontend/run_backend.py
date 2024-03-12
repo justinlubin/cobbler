@@ -8,6 +8,12 @@ import python_to_ir
 import extract
 import util
 
+OCAML_TIME_FIELDS = [
+    "ocaml_synthesis_time",
+    "ocaml_canonicalization_time",
+    "ocaml_unification_time",
+]
+
 
 CSV_FIELDS = [
     "orig code",
@@ -24,7 +30,7 @@ CSV_FIELDS = [
     "exec status",
     "exec reason",
     "kind",
-]
+] + OCAML_TIME_FIELDS
 
 
 def elm_json(
@@ -63,6 +69,10 @@ def elm_json(
     stats["status"] = synthesis_result["status"]
     if "reason" in synthesis_result:
         stats["reason"] = synthesis_result["reason"]
+
+    for key in OCAML_TIME_FIELDS:
+        if key in synthesis_result:
+            stats[key] = synthesis_result[key]
 
     if synthesis_result["status"] == "Success":
         stats["synthed code"] = util.csv_str_encode(synthesis_result["solution"])
@@ -113,6 +123,10 @@ def python_helper(tree, dry_run=False, rewrite_for=None, toggle_eval=False):
     stats["status"] = synthesis_result["status"]
     if "reason" in synthesis_result:
         stats["reason"] = synthesis_result["reason"]
+
+    for key in OCAML_TIME_FIELDS:
+        if key in synthesis_result:
+            stats[key] = synthesis_result[key]
 
     if synthesis_result["status"] == "Success":
         synthed_code = (
