@@ -182,6 +182,18 @@ let main_python : string -> Yojson.Basic.t =
 
 let () =
   let input = In_channel.input_all In_channel.stdin in
+  let () =
+    match Array.get (Sys.get_argv ()) 2 with
+    | "--timing_breakdown=true" -> failwith "TODO"
+    | "--timing_breakdown=false" -> failwith "TODO"
+    | _ -> failwith "unknown timing breakdown argument"
+  in
+  let () =
+    match Array.get (Sys.get_argv ()) 3 with
+    | "--ablation=true" -> failwith "TODO"
+    | "--ablation=false" -> failwith "TODO"
+    | _ -> failwith "unknown ablation argument"
+  in
   let result =
     match Array.get (Sys.get_argv ()) 1 with
     | "elm" -> main_elm input

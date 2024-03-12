@@ -34,7 +34,11 @@ CSV_FIELDS = [
 
 
 def elm_json(
-    js, dry_run=False, toggle_eval=False
+    js,
+    dry_run=False,
+    toggle_eval=False,
+    timing_breakdown=False,
+    ablation=False,
 ):  # TODO: deal with toggle_eval somehow
     """Runs a single Elm function/variable definition, assuming that it is
     represented as an elm-format JSON object"""
@@ -55,7 +59,12 @@ def elm_json(
         start = timer()
 
         synthesis_result = subprocess.check_output(
-            [util.path_from_root("backend/_build/default/bin/main.exe"), "elm"],
+            [
+                util.path_from_root("backend/_build/default/bin/main.exe"),
+                "elm",
+                "--timing_breakdown=" + str(timing_breakdown).lower(),
+                "--ablation=" + str(ablation).lower(),
+            ],
             input=json.dumps(block),
             text=True,
         )
@@ -81,7 +90,14 @@ def elm_json(
     return stats
 
 
-def python_helper(tree, dry_run=False, rewrite_for=None, toggle_eval=False):
+def python_helper(
+    tree,
+    dry_run=False,
+    rewrite_for=None,
+    toggle_eval=False,
+    timing_breakdown=None,
+    ablation=None,
+):
     """Runs a Python script, assuming that it is represented as a Python AST
     object"""
     assert rewrite_for is not None
@@ -109,7 +125,12 @@ def python_helper(tree, dry_run=False, rewrite_for=None, toggle_eval=False):
         start = timer()
 
         synthesis_result = subprocess.check_output(
-            [util.path_from_root("backend/_build/default/bin/main.exe"), "python"],
+            [
+                util.path_from_root("backend/_build/default/bin/main.exe"),
+                "python",
+                "--timing_breakdown=" + str(timing_breakdown).lower(),
+                "--ablation=" + str(ablation).lower(),
+            ],
             input=str(sexp),
             text=True,
         )
@@ -171,7 +192,13 @@ def python_helper(tree, dry_run=False, rewrite_for=None, toggle_eval=False):
     return stats
 
 
-def python(tree, dry_run=False, toggle_eval=False):
+def python(
+    tree,
+    dry_run=False,
+    toggle_eval=False,
+    timing_breakdown=False,
+    ablation=False,
+):
     """Runs a Python script, assuming that it is represented as a Python AST
     object (tries not rewriting and rewriting the for statement)"""
     stats = python_helper(

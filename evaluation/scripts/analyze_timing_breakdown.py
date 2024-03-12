@@ -49,8 +49,8 @@ def load_data(filename):
     return df
 
 
-data_elm = load_data("elm_test.tsv")
-data_python = load_data("python_test.tsv")
+data_elm = load_data("elm_test_timing_breakdown.tsv")
+data_python = load_data("python_test_timing_breakdown.tsv")
 
 # %% Plot data
 
@@ -61,13 +61,13 @@ def plot(df, title, subtitle):
     fig, ax = plt.subplots(
         3,
         1,
-        figsize=(2.5, 3),
+        figsize=(3, 3),
         layout="constrained",
     )
     fig.get_layout_engine().set(hspace=0.05)
 
     yticks = [0, 0.33, 0.67, 1]
-    yticklabels = [str(round(y * 100)) for y in yticks]
+    yticklabels = [str(round(y * 100)) + "%" for y in yticks]
 
     for i, (cat, nice_cat) in enumerate(
         [
@@ -85,10 +85,10 @@ def plot(df, title, subtitle):
             weights=np.ones_like(vals) / len(vals),
         )
 
-        ax[i].set_xlim(-0.00, 1.00)
+        ax[i].set_xlim(-0.01, 1.01)
         ax[i].set_xticks(
             BINS[::2],
-            labels=[str(round(b * 100)) for b in BINS[::2]],
+            labels=[str(round(b * 100)) + "%" for b in BINS[::2]],
         )
 
         ax[i].set_ylim(0, 1)
@@ -106,8 +106,8 @@ def plot(df, title, subtitle):
             transform=ax[i].transAxes,
         )
 
-    ax[2].set_xlabel(r"$\bf{Time\ taken}$ (%)", fontsize=10)
-    ax[1].set_ylabel(r"$\bf Relative\ frequency$ (%)", fontsize=10)
+    ax[2].set_xlabel(r"$\bf{Time\ taken}$", fontsize=10)
+    ax[1].set_ylabel(r"$\bf Relative\ frequency$", fontsize=10)
 
     fig.suptitle(f"$\\bf {title}$ ({subtitle})")
     fig.savefig(f"{OUTPUT_DIR}/{title}-{subtitle}-timing_breakdown.pdf")
@@ -116,5 +116,5 @@ def plot(df, title, subtitle):
 plot(data_elm[data_elm["status"] == "Success"], "Elm", "Successful")
 plot(data_elm[data_elm["status"] == "SynthFail"], "Elm", "Unsuccessful")
 
-plot(data_elm[data_python["status"] == "Success"], "Python", "Successful")
-plot(data_elm[data_python["status"] == "SynthFail"], "Python", "Unsuccessful")
+plot(data_python[data_python["status"] == "Success"], "Python", "Successful")
+plot(data_python[data_python["status"] == "SynthFail"], "Python", "Unsuccessful")

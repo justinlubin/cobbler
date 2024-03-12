@@ -278,11 +278,23 @@ def rerun_many_helper(
     input_path=None,
     output_path=None,
     language=None,
+    timing_breakdown=None,
+    ablation=None,
 ):
     if language == "elm":
-        runner = lambda s, **kwargs: run_backend.elm_json(json.loads(s), **kwargs)
+        runner = lambda s, **kwargs: run_backend.elm_json(
+            json.loads(s),
+            timing_breakdown=timing_breakdown,
+            ablation=ablation,
+            **kwargs,
+        )
     elif language == "python":
-        runner = lambda s, **kwargs: run_backend.python(ast.parse(s), **kwargs)
+        runner = lambda s, **kwargs: run_backend.python(
+            ast.parse(s),
+            timing_breakdown=timing_breakdown,
+            ablation=ablation,
+            **kwargs,
+        )
 
     def generator(sample_limit=None):
         with open(input_path, "r", newline="") as input_f:
@@ -612,6 +624,16 @@ if __name__ == "__main__":
         required=True,
         help="the path to output the results (in tsv format)",
     )
+    refactor_parser.add_argument(
+        "--timing-breakdown",
+        action=argparse.BooleanOptionalAction,
+        help="also track timing breakdown",
+    )
+    refactor_parser.add_argument(
+        "--ablation",
+        action=argparse.BooleanOptionalAction,
+        help="only perform syntactic unification",
+    )
 
     ###
 
@@ -742,6 +764,8 @@ if __name__ == "__main__":
             input_path=args.input,
             output_path=args.output,
             language=args.language,
+            timing_breakdown=args.timing_breakdown,
+            ablation=args.ablation,
         )
     elif args.subcommand == "subtract":
         subtract_helper(
