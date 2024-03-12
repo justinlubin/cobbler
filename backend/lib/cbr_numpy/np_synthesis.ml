@@ -152,7 +152,8 @@ let substitute_expr : expr -> substitutions -> expr option =
   | IncorrectSubstitutionType (tau, binding) -> None
 
 let canonicalize : program -> program =
- fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
+  Util.Timing_breakdown.record1 Util.Timing_breakdown.Canonicalization
+  @@ fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
 
 let rec fix_filter : expr -> expr =
   let fix_filter_pred array pred =
@@ -473,17 +474,22 @@ let infer : program -> string * hole_type list =
         | Hole (_, _) -> failwith "user input has a hole") )
   | _ -> raise (EarlyCutoff "last statement not a variable return")
 
-let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
- fun depth ?(debug = false) target use_egraphs ->
+let solve' : int -> bool -> program -> bool -> (int * program) option =
+  Util.Timing_breakdown.record4 Util.Timing_breakdown.Synthesis
+  @@ fun depth debug target use_egraphs ->
   let target = canonicalize target in
   let target_var, target_possible_types = infer target in
   let target_loop_vars = loop_vars target in
-  let unify : pattern:program -> substitutions option =
+  let unify : program -> substitutions option =
     if use_egraphs
-    then (
+    then
+      Util.Timing_breakdown.record1 Util.Timing_breakdown.Unification
+      @@ fun pattern ->
       let graph = Unification.construct_egraph ~target ~debug () in
-      Unification.unify_egraph ~graph ~debug ())
-    else Unification.unify_naive ~target ~debug ()
+      Unification.unify_egraph ~graph ~debug ~pattern ()
+    else
+      Util.Timing_breakdown.record1 Util.Timing_breakdown.Unification
+      @@ fun pattern -> Unification.unify_naive ~target ~debug ~pattern ()
   in
   let correct : expr -> expr option =
    fun e ->
@@ -495,7 +501,7 @@ let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
       Printf.eprintf "%s\n" (target |> snd |> [%show: block]);
       Printf.eprintf "-------------------------\n")
     else (); *)
-    match unify ~pattern:canonical with
+    match unify canonical with
     | Some sub ->
         (match substitute_expr e sub with
         | Some possible_solution ->
@@ -520,3 +526,7 @@ let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
   with
   | Some (expansions, ans) -> Some (expansions, (np_env, [ Return (clean ans) ]))
   | None -> None
+
+let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
+ fun depth ?(debug = false) target use_egraphs ->
+  solve' depth debug target use_egraphs

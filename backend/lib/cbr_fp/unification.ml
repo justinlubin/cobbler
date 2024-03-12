@@ -447,4 +447,5 @@ let rec search_and_grow : int -> matching_tree -> unification_result =
         if saturated m then Impossible else search_and_grow (fuel - 1) (grow m))
 
 let unify : int -> term -> term -> unification_result =
- fun fuel e0 e0' -> search_and_grow fuel (simpl [ (e0, e0') ])
+  Util.Timing_breakdown.record3 Util.Timing_breakdown.Unification
+  @@ fun fuel e0 e0' -> search_and_grow fuel (simpl [ (e0, e0') ])

@@ -88,6 +88,18 @@ let main_elm : string -> Yojson.Basic.t =
                       (orig_typ_binders, orig_typ)
                       solution) )
              ; ("size", `Int expansions)
+             ; ( "synthesis_time"
+               , `Float
+                   (Util.Timing_breakdown.time_taken
+                      Util.Timing_breakdown.Synthesis) )
+             ; ( "canonicalization_time"
+               , `Float
+                   (Util.Timing_breakdown.time_taken
+                      Util.Timing_breakdown.Canonicalization) )
+             ; ( "unification_time"
+               , `Float
+                   (Util.Timing_breakdown.time_taken
+                      Util.Timing_breakdown.Canonicalization) )
              ]
          with
         | Type_system.IllTyped e ->
@@ -155,6 +167,18 @@ let main_python : string -> Yojson.Basic.t =
           [ ("status", `String "Success")
           ; ("solution", `String (Parse.py_str_of_program p))
           ; ("size", `Int expansions)
+          ; ( "synthesis_time"
+            , `Float
+                (Util.Timing_breakdown.time_taken
+                   Util.Timing_breakdown.Synthesis) )
+          ; ( "canonicalization_time"
+            , `Float
+                (Util.Timing_breakdown.time_taken
+                   Util.Timing_breakdown.Canonicalization) )
+          ; ( "unification_time"
+            , `Float
+                (Util.Timing_breakdown.time_taken
+                   Util.Timing_breakdown.Canonicalization) )
           ]
   with
   | Parse.ParseFail s ->

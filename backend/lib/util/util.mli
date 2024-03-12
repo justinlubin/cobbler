@@ -28,3 +28,7 @@ val unembed_name : string -> (string * string) option
 
 (** [repeat n x] returns a list of length [n] consisting solely of [x]. *)
 val repeat : int -> 'a -> 'a list
+
+(* Exports *)
+
+module Timing_breakdown = Timing_breakdown

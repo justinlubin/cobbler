@@ -11,7 +11,8 @@ let inline : env -> exp -> exp =
       else Exp.substitute (lhs, rhs) acc)
 
 let norm : datatype_env -> typ_env -> env -> exp -> exp =
- fun sigma gamma env e ->
+  Util.Timing_breakdown.record4 Util.Timing_breakdown.Canonicalization
+  @@ fun sigma gamma env e ->
   e
   |> inline env
   |> Exp.normalize sigma
@@ -93,8 +94,9 @@ let problem_of_definitions : datatype_env * typ_env * env -> string -> problem =
 
 (* Synthesis *)
 
-let solve : use_unification:bool -> depth:int -> problem -> (int * exp) option =
- fun ~use_unification ~depth { sigma; gamma; env; name } ->
+let solve' : bool -> int -> problem -> (int * exp) option =
+  Util.Timing_breakdown.record3 Util.Timing_breakdown.Synthesis
+  @@ fun use_unification depth { sigma; gamma; env; name } ->
   let reference = Map.find_exn env name in
   let reference_domain, reference_codomain =
     Typ.decompose_arr (Typ.instantiate (Map.find_exn gamma name))
@@ -208,3 +210,6 @@ let solve : use_unification:bool -> depth:int -> problem -> (int * exp) option =
              (Exp.build_app
                 messy_solution
                 (List.map ~f:(fun x -> EVar x) reference_params))) ))
+
+let solve : use_unification:bool -> depth:int -> problem -> (int * exp) option =
+ fun ~use_unification ~depth prob -> solve' use_unification depth prob

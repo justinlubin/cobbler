@@ -1,4 +1,5 @@
 open Core
+module Timing_breakdown = Timing_breakdown
 
 let dedup_by : 'a. 'a list -> f:('a -> 'a -> bool) -> 'a list =
  fun xs ~f ->
