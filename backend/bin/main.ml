@@ -15,8 +15,8 @@ let time_info () =
 
 let elm_stdlib_fname : string = "backend/bin/Stdlib.json"
 
-let main_elm : string -> Yojson.Basic.t =
- fun input ->
+let main_elm : bool -> string -> Yojson.Basic.t =
+ fun ablation input ->
   let open Cbr_fp in
   let stdlib_sigma, stdlib_gamma, stdlib_env =
     In_channel.with_file elm_stdlib_fname ~f:(fun file ->
@@ -71,7 +71,7 @@ let main_elm : string -> Yojson.Basic.t =
     let problem =
       Synthesis.problem_of_definitions (stdlib_sigma, gamma, env) name
     in
-    match Synthesis.solve ~use_unification:true ~depth:3 problem with
+    match Synthesis.solve ~use_unification:(not ablation) ~depth:3 problem with
     | None -> `Assoc ([ ("status", `String "SynthFail") ] @ time_info ())
     | Some (expansions, wrapped_solution) ->
         (try
@@ -153,8 +153,8 @@ let main_elm_prettify : string -> Yojson.Basic.t =
   | Yojson.Json_error s ->
       `Assoc [ ("status", `String "Yojson.Json_error"); ("reason", `String s) ]
 
-let main_python : string -> Yojson.Basic.t =
- fun input ->
+let main_python : bool -> string -> Yojson.Basic.t =
+ fun ablation input ->
   let open Cbr_numpy in
   try
     let target = input |> Parse.program_of_str in
@@ -162,7 +162,9 @@ let main_python : string -> Yojson.Basic.t =
       failwith
         (target |> Np_synthesis.canonicalize |> snd |> [%show: Lang.block])
     in *)
-    match Np_synthesis.solve 4 ~debug:false target true with
+    match
+      Np_synthesis.solve 4 ~debug:false ~use_egraphs:(not ablation) target
+    with
     | None -> `Assoc ([ ("status", `String "SynthFail") ] @ time_info ())
     | Some (expansions, p) ->
         `Assoc
@@ -182,23 +184,25 @@ let main_python : string -> Yojson.Basic.t =
 
 let () =
   let input = In_channel.input_all In_channel.stdin in
-  let () =
-    match Array.get (Sys.get_argv ()) 2 with
-    | "--timing_breakdown=true" -> failwith "TODO"
-    | "--timing_breakdown=false" -> failwith "TODO"
-    | _ -> failwith "unknown timing breakdown argument"
-  in
-  let () =
-    match Array.get (Sys.get_argv ()) 3 with
-    | "--ablation=true" -> failwith "TODO"
-    | "--ablation=false" -> failwith "TODO"
-    | _ -> failwith "unknown ablation argument"
-  in
   let result =
     match Array.get (Sys.get_argv ()) 1 with
-    | "elm" -> main_elm input
     | "elm-prettify" -> main_elm_prettify input
-    | "python" -> main_python input
-    | lang -> failwith (sprintf "unknown language '%s'" lang)
+    | lang ->
+        let () =
+          match Array.get (Sys.get_argv ()) 2 with
+          | "--timing_breakdown=true" -> Util.Timing_breakdown.enable ()
+          | "--timing_breakdown=false" -> ()
+          | _ -> failwith "unknown timing breakdown argument"
+        in
+        let ablation =
+          match Array.get (Sys.get_argv ()) 3 with
+          | "--ablation=true" -> true
+          | "--ablation=false" -> false
+          | _ -> failwith "unknown ablation argument"
+        in
+        (match lang with
+        | "elm" -> main_elm ablation input
+        | "python" -> main_python ablation input
+        | _ -> failwith (sprintf "unknown language '%s'" lang))
   in
   Yojson.Basic.to_channel Out_channel.stdout result

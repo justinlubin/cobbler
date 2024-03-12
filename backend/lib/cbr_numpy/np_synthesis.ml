@@ -474,9 +474,9 @@ let infer : program -> string * hole_type list =
         | Hole (_, _) -> failwith "user input has a hole") )
   | _ -> raise (EarlyCutoff "last statement not a variable return")
 
-let solve' : int -> bool -> program -> bool -> (int * program) option =
+let solve' : int -> bool -> bool -> program -> (int * program) option =
   Util.Timing_breakdown.record4 Util.Timing_breakdown.Synthesis
-  @@ fun depth debug target use_egraphs ->
+  @@ fun depth debug use_egraphs target ->
   let target = canonicalize target in
   let target_var, target_possible_types = infer target in
   let target_loop_vars = loop_vars target in
@@ -527,6 +527,9 @@ let solve' : int -> bool -> program -> bool -> (int * program) option =
   | Some (expansions, ans) -> Some (expansions, (np_env, [ Return (clean ans) ]))
   | None -> None
 
-let solve : int -> ?debug:bool -> program -> bool -> (int * program) option =
- fun depth ?(debug = false) target use_egraphs ->
-  solve' depth debug target use_egraphs
+let solve
+    :  int -> ?debug:bool -> use_egraphs:bool -> program
+    -> (int * program) option
+  =
+ fun depth ?(debug = false) ~use_egraphs target ->
+  solve' depth debug use_egraphs target
