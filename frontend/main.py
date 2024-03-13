@@ -3,6 +3,7 @@
 import argparse
 import ast
 import csv
+import glob
 import json
 import pathlib
 import subprocess
@@ -228,6 +229,44 @@ def make_report_helper(
                     )
                 if row["exec reason"]:
                     output_f.write(comment + " Reason: " + row["exec reason"] + "\n")
+
+
+def make_tsv_helper(
+    input_path=None,
+    output_path=None,
+    language=None,
+):
+    if language == "elm":
+        runner = run_backend.elm_json
+        ext = "elm"
+
+        def process(code):
+            elm_format_output = subprocess.check_output(
+                ["elm-format", "--stdin", "--json"],
+                input=code.encode("utf-8"),
+            )
+            return json.loads(elm_format_output)["body"][0]
+
+    elif language == "python":
+        runner = run_backend.python
+        ext = "py"
+
+        def process(code):
+            return ast.parse(code)
+
+    def generator(sample_limit=None):
+        for program_path in sorted(glob.glob(f"{input_path}/*.{ext}")):
+            print(program_path)
+            with open(program_path, "r") as f:
+                yield program_path, process(f.read())
+
+    run_many_helper(
+        path=output_path,
+        generator=generator,
+        runner=runner,
+        sample_limit=None,
+        dry_run=True,
+    )
 
 
 def filter_helper(
@@ -587,6 +626,31 @@ if __name__ == "__main__":
 
     ###
 
+    make_tsv_parser = subparsers.add_parser(
+        "make-tsv",
+        help="make dry run tsv from a directory of programs",
+    )
+    make_tsv_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the programs",
+    )
+    make_tsv_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path to directory of programs",
+    )
+    make_tsv_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the tsv",
+    )
+
+    ###
+
     refactor_parser = subparsers.add_parser(
         "refactor",
         help="refactor code from stdin, printing to stdout",
@@ -757,6 +821,13 @@ if __name__ == "__main__":
     elif args.subcommand == "make-report":
         refresh_binary()
         make_report_helper(
+            input_path=args.input,
+            output_path=args.output,
+            language=args.language,
+        )
+    elif args.subcommand == "make-tsv":
+        refresh_binary()
+        make_tsv_helper(
             input_path=args.input,
             output_path=args.output,
             language=args.language,
