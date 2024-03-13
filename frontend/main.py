@@ -89,7 +89,11 @@ def show_python(s):
     return s
 
 
-def refactor_helper(language=None, show_input=None):
+def refactor_helper(
+    language=None,
+    depth=None,
+    show_input=None,
+):
     code = sys.stdin.read()
 
     if language == "elm":
@@ -97,9 +101,15 @@ def refactor_helper(language=None, show_input=None):
             ["elm-format", "--stdin", "--json"],
             input=code.encode("utf-8"),
         )
-        stats = run_backend.elm_json(json.loads(elm_format_output)["body"][0])
+        stats = run_backend.elm_json(
+            json.loads(elm_format_output)["body"][0],
+            depth=depth,
+        )
     elif language == "python":
-        stats = run_backend.python(ast.parse(code))
+        stats = run_backend.python(
+            ast.parse(code),
+            depth=depth,
+        )
 
     if stats["status"] == "Success":
         decoded_data = util.csv_str_decode(stats["synthed code"])
@@ -321,6 +331,9 @@ def rerun_many_helper(
     timing_breakdown=None,
     ablation=None,
 ):
+    timing_breakdown = bool(timing_breakdown)
+    ablation = bool(ablation)
+
     if language == "elm":
         runner = lambda s, **kwargs: run_backend.elm_json(
             json.loads(s),
@@ -662,6 +675,12 @@ if __name__ == "__main__":
         help="the language of the code to refactor",
     )
     refactor_parser.add_argument(
+        "--depth",
+        type=int,
+        required=False,
+        help="how deep to search for solutions",
+    )
+    refactor_parser.add_argument(
         "--prettify-input",
         action=argparse.BooleanOptionalAction,
         help="also prettify (and print) the input",
@@ -836,6 +855,7 @@ if __name__ == "__main__":
         refresh_binary()
         refactor_helper(
             language=args.language,
+            depth=args.depth,
             show_input=args.prettify_input,
         )
     elif args.subcommand == "refactor-many":

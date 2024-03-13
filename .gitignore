@@ -10,6 +10,9 @@ elm-stuff
 backend/after_eqsat.txt
 backend/before_eqsat.txt
 evaluation/input/real_world_programs/*.tsv
+evaluation/input/synthetic_programs/*.tsv
+evaluation/input/synthetic_programs/*.elm
+evaluation/input/synthetic_programs/*.py
 evaluation/output/analyses/*.txt
 evaluation/output/analyses/*.pdf
 evaluation/output/data/*.tsv

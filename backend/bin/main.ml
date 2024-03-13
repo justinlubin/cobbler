@@ -198,8 +198,8 @@ let () =
         in
         let () =
           match Array.get (Sys.get_argv ()) 3 with
-          | "--timing_breakdown=true" -> Util.Timing_breakdown.enable ()
-          | "--timing_breakdown=false" -> ()
+          | "--timing-breakdown=true" -> Util.Timing_breakdown.enable ()
+          | "--timing-breakdown=false" -> ()
           | _ -> failwith "unknown timing breakdown argument"
         in
         let ablation =

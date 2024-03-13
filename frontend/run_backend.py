@@ -67,7 +67,7 @@ def elm_json(
                 util.path_from_root("backend/_build/default/bin/main.exe"),
                 "elm",
                 "--depth=" + str(depth),
-                "--timing_breakdown=" + str(timing_breakdown).lower(),
+                "--timing-breakdown=" + str(timing_breakdown).lower(),
                 "--ablation=" + str(ablation).lower(),
             ],
             input=json.dumps(block),
@@ -101,8 +101,8 @@ def python_helper(
     rewrite_for=None,
     toggle_eval=False,
     depth=None,
-    timing_breakdown=None,
-    ablation=None,
+    timing_breakdown=False,
+    ablation=False,
 ):
     """Runs a Python script, assuming that it is represented as a Python AST
     object"""
@@ -138,7 +138,7 @@ def python_helper(
                 util.path_from_root("backend/_build/default/bin/main.exe"),
                 "python",
                 "--depth=" + str(depth),
-                "--timing_breakdown=" + str(timing_breakdown).lower(),
+                "--timing-breakdown=" + str(timing_breakdown).lower(),
                 "--ablation=" + str(ablation).lower(),
             ],
             input=str(sexp),
