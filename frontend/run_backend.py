@@ -37,11 +37,15 @@ def elm_json(
     js,
     dry_run=False,
     toggle_eval=False,
+    depth=None,
     timing_breakdown=False,
     ablation=False,
 ):  # TODO: deal with toggle_eval somehow
     """Runs a single Elm function/variable definition, assuming that it is
     represented as an elm-format JSON object"""
+    if not depth:
+        depth = 3
+
     stats = {}
     stats["orig code"] = util.csv_str_encode(json.dumps(js))
 
@@ -62,6 +66,7 @@ def elm_json(
             [
                 util.path_from_root("backend/_build/default/bin/main.exe"),
                 "elm",
+                "--depth=" + str(depth),
                 "--timing_breakdown=" + str(timing_breakdown).lower(),
                 "--ablation=" + str(ablation).lower(),
             ],
@@ -95,12 +100,16 @@ def python_helper(
     dry_run=False,
     rewrite_for=None,
     toggle_eval=False,
+    depth=None,
     timing_breakdown=None,
     ablation=None,
 ):
     """Runs a Python script, assuming that it is represented as a Python AST
     object"""
     assert rewrite_for is not None
+
+    if not depth:
+        depth = 4
 
     stats = {}
     stats["orig code"] = util.csv_str_encode(ast.unparse(tree))
@@ -128,6 +137,7 @@ def python_helper(
             [
                 util.path_from_root("backend/_build/default/bin/main.exe"),
                 "python",
+                "--depth=" + str(depth),
                 "--timing_breakdown=" + str(timing_breakdown).lower(),
                 "--ablation=" + str(ablation).lower(),
             ],
@@ -196,6 +206,7 @@ def python(
     tree,
     dry_run=False,
     toggle_eval=False,
+    depth=None,
     timing_breakdown=False,
     ablation=False,
 ):

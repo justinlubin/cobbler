@@ -278,12 +278,14 @@ def rerun_many_helper(
     input_path=None,
     output_path=None,
     language=None,
+    depth=None,
     timing_breakdown=None,
     ablation=None,
 ):
     if language == "elm":
         runner = lambda s, **kwargs: run_backend.elm_json(
             json.loads(s),
+            depth=depth,
             timing_breakdown=timing_breakdown,
             ablation=ablation,
             **kwargs,
@@ -291,6 +293,7 @@ def rerun_many_helper(
     elif language == "python":
         runner = lambda s, **kwargs: run_backend.python(
             ast.parse(s),
+            depth=depth,
             timing_breakdown=timing_breakdown,
             ablation=ablation,
             **kwargs,
@@ -624,12 +627,18 @@ if __name__ == "__main__":
         required=True,
         help="the path to output the results (in tsv format)",
     )
-    refactor_parser.add_argument(
+    refactor_many_parser.add_argument(
+        "--depth",
+        type=int,
+        required=False,
+        help="how deep to search for solutions",
+    )
+    refactor_many_parser.add_argument(
         "--timing-breakdown",
         action=argparse.BooleanOptionalAction,
         help="also track timing breakdown",
     )
-    refactor_parser.add_argument(
+    refactor_many_parser.add_argument(
         "--ablation",
         action=argparse.BooleanOptionalAction,
         help="only perform syntactic unification",
@@ -764,6 +773,7 @@ if __name__ == "__main__":
             input_path=args.input,
             output_path=args.output,
             language=args.language,
+            depth=args.depth,
             timing_breakdown=args.timing_breakdown,
             ablation=args.ablation,
         )
