@@ -3,6 +3,9 @@
 INPUT_DIR="evaluation/input/synthetic_programs"
 OUTPUT_DIR="evaluation/output/data"
 
+rm $INPUT_DIR/*.elm
+rm $INPUT_DIR/*.py
+
 python evaluation/scripts/generate_synthetic_programs.py
 
 ./cobbler make-tsv --language=elm --input=$INPUT_DIR --output="$INPUT_DIR/elm.tsv"

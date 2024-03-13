@@ -1,7 +1,7 @@
 # %% Setup
 
 BASE_DIR = "evaluation/input/synthetic_programs"
-MAX_N = 6
+MAX_N = 5
 
 
 def make_elm(N):

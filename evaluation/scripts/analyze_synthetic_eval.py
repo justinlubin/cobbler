@@ -10,8 +10,6 @@ OUTPUT_DIR = "evaluation/output/analyses"
 
 # %% Load data
 
-import numpy.random as r
-
 
 def summarize(filename):
     df = pd.read_csv(f"{INPUT_DIR}/{filename}", sep="\t")[

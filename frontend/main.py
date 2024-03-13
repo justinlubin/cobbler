@@ -162,7 +162,8 @@ def run_many_helper(
                     assert stats_tmp["status"] == stats["status"]
                     times.append(str(stats_tmp["synth time"]))
                     for key in run_backend.OCAML_TIME_FIELDS:
-                        ocaml_times[key].append(str(stats_tmp[key]))
+                        if key in stats_tmp:
+                            ocaml_times[key].append(str(stats_tmp[key]))
                 stats["synth time"] = ",".join(times)
                 for key in run_backend.OCAML_TIME_FIELDS:
                     stats[key] = ",".join(ocaml_times[key])

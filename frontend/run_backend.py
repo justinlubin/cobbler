@@ -213,7 +213,11 @@ def python(
     """Runs a Python script, assuming that it is represented as a Python AST
     object (tries not rewriting and rewriting the for statement)"""
     stats = python_helper(
-        tree, dry_run=dry_run, rewrite_for=False, toggle_eval=toggle_eval
+        tree,
+        dry_run=dry_run,
+        rewrite_for=False,
+        toggle_eval=toggle_eval,
+        depth=depth,
     )
     if stats["status"] != "Success":
         stats2 = python_helper(
