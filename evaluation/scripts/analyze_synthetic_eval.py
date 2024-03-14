@@ -24,11 +24,11 @@ def summarize(filename):
         lambda row: [float(x) for x in row.split(",")]
     )
 
-    df["synth time 25"] = df["synth time"].apply(lambda r: np.percentile(r, 25))
+    df["synth time min"] = df["synth time"].apply(lambda r: np.min(r))
     df["synth time med"] = df["synth time"].apply(lambda r: np.median(r))
-    df["synth time 75"] = df["synth time"].apply(lambda r: np.percentile(r, 75))
+    df["synth time max"] = df["synth time"].apply(lambda r: np.max(r))
 
-    return df[["synthed ast size", "synth time 25", "synth time med", "synth time 75"]]
+    return df[["synthed ast size", "synth time min", "synth time med", "synth time max"]]
 
 
 elm = summarize("elm_synthetic.tsv")
@@ -36,37 +36,39 @@ python = summarize("python_synthetic.tsv")
 
 # %% Plot data
 
+fig, ax = plt.subplots(1, 1, figsize=(2.7, 3))
 
-def plot(data, title):
-    fig, ax = plt.subplots(1, 1, figsize=(3, 3.5))
+DATAS = [elm, python]
+NAMES = ["Elm", "Python"]
+MARKERS = ["o", "s"]
+COLORS = ["#73D8F8", "#BC89C5"]
 
+for i, data in enumerate(DATAS):
     x = data["synthed ast size"]
     y = np.log10(data["synth time med"])
-    lo = np.log10(data["synth time 25"])
-    hi = np.log10(data["synth time 75"])
+    lo = np.log10(data["synth time min"])
+    hi = np.log10(data["synth time max"])
 
     ax.errorbar(
         x,
         y,
         [y - lo, hi - y],
-        marker="o",
-        c="black",
+        markeredgecolor="black",
+        marker=MARKERS[i],
+        c=COLORS[i],
+        label=NAMES[i],
     )
 
-    ax.set_xticks(x)
-    ax.set_yticks(np.arange(-2, 2.1, 0.5))
+ax.set_xticks(x)
+ax.set_yticks(np.arange(-2, 4.1, 1.0))
 
-    ax.set_ylabel(r"log$_{10}$($\bf{Synthesis\ time}$ in seconds)")
-    ax.set_xlabel(r"$\bf{\#\ Components}$ in solution")
+ax.set_ylabel(r"log$_{10}$($\bf{Synthesis\ time}$ in seconds)")
+ax.set_xlabel(r"$\bf{\#\ Components}$ in solution")
 
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+ax.spines["top"].set_visible(False)
+ax.spines["right"].set_visible(False)
 
-    ax.set_title(title, fontweight="bold", pad=0)
+ax.legend()
 
-    fig.tight_layout()
-    fig.savefig(f"{OUTPUT_DIR}/{title}-synthetic.pdf")
-
-
-plot(elm, "Elm")
-plot(python, "Python")
+fig.tight_layout()
+fig.savefig(f"{OUTPUT_DIR}/synthetic-scalability.pdf")
