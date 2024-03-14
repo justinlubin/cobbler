@@ -66,8 +66,8 @@ def plot(df, title, subtitle):
     )
     fig.get_layout_engine().set(hspace=0.05)
 
-    yticks = [0, 0.33, 0.67, 1]
-    yticklabels = [str(round(y * 100)) + "%" for y in yticks]
+    yticks = [0, 0.25, 0.5, 0.75, 1]
+    yticklabels = ["0%", "", "50%", "", "100%"]
 
     for i, (cat, nice_cat) in enumerate(
         [
@@ -85,10 +85,13 @@ def plot(df, title, subtitle):
             weights=np.ones_like(vals) / len(vals),
         )
 
+        median = vals.median()
+        ax[i].axvline(x=median, c="#DD0000", lw=1.5)
+
         ax[i].set_xlim(-0.01, 1.01)
         ax[i].set_xticks(
-            BINS[::2],
-            labels=[str(round(b * 100)) + "%" for b in BINS[::2]],
+            BINS,
+            labels=[str(round(b * 100)) + "%" if i % 2 == 0 else "" for i, b in enumerate(BINS)],
         )
 
         ax[i].set_ylim(0, 1)

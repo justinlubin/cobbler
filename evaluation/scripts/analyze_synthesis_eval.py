@@ -36,10 +36,7 @@ data_python = load_data("python_test.tsv")
 
 # %% Handle Python bug
 
-# These count as failures
-PYTHON_SUCCESS_ROWS_TO_DROP = set([24, 29, 43, 44, 53, 87])
-
-for row in PYTHON_SUCCESS_ROWS_TO_DROP:
+for row in util.PYTHON_SUCCESS_ROWS_TO_DROP:
     i = data_python[data_python["status"] == "Success"].index[row - 2]
     data_python.drop(labels=i, inplace=True)
 

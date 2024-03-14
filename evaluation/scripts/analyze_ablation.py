@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+import util
+
 INPUT_DIR = "evaluation/output/data"
 OUTPUT_DIR = "evaluation/output/analyses"
 
@@ -29,6 +31,9 @@ elm = summarize("elm_test.tsv")
 elm_ablation = summarize("elm_test_ablation.tsv")
 python = summarize("python_test.tsv")
 python_ablation = summarize("python_test_ablation.tsv")
+
+python -= len(util.PYTHON_SUCCESS_ROWS_TO_DROP)
+python_ablation -= len(util.PYTHON_SUCCESS_ROWS_TO_DROP)
 
 # %% Plot data
 
@@ -91,7 +96,7 @@ def plot(data, data_ablation, title):
     ax.set_xticks([0, 1], labels=["Full", "Ablated"])
 
     max_count = max(data, data_ablation)
-    ystep = 50 if max_count < 300 else 500
+    ystep = 20 if max_count < 300 else 500
     ax.set_ylim(0, max_count * 1.1)
     ax.set_yticks(np.arange(0, max_count, ystep))
     ax.set_ylabel(r"$\bf{\#\ Successes}$")

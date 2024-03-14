@@ -11,6 +11,8 @@ def use_quick_eval():
 
 DATA_SIZE_POWERS = [0, 1, 2, 3, 4, 5, 6] if use_quick_eval() else [0, 1, 2, 3, 4, 5, 6, 7, 8]
 
+# Handle Python bug: these count as failures
+PYTHON_SUCCESS_ROWS_TO_DROP = set([24, 29, 43, 44, 53, 87])
 
 def bar_plot(
     ax,
