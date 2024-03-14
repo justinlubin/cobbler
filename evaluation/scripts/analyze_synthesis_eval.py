@@ -6,6 +6,8 @@ from matplotlib.gridspec import GridSpec
 import numpy as np
 import pandas as pd
 
+import util
+
 np.random.seed(100)
 
 INPUT_DIR = "evaluation/output/data"
@@ -138,7 +140,7 @@ with open(f"{OUTPUT_DIR}/applicability-summary.txt", "w") as f:
         data_python,
         "Python",
         write,
-        dropped=len(PYTHON_SUCCESS_ROWS_TO_DROP),
+        dropped=len(util.PYTHON_SUCCESS_ROWS_TO_DROP),
     )
 
 
@@ -438,10 +440,10 @@ p = ax.boxplot(
         np.log10(data_elm[data_elm["status"] == "Success"]["synth time med"]),
     ],
     labels=[
-        r"$\bf{Python}$ (unsuccessful)",
-        r"$\bf{Elm}$ (unsuccessful)",
-        r"$\bf{Python}$ (successful)",
-        r"$\bf{Elm}$ (successful)",
+        r"$\bf{Python}$ (Unsuccessful)",
+        r"$\bf{Elm}$ (Unsuccessful)",
+        r"$\bf{Python}$ (Successful)",
+        r"$\bf{Elm}$ (Successful)",
     ],
     vert=False,
     # showmedians=True,
