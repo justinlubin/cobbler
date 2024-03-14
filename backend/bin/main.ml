@@ -197,8 +197,9 @@ let () =
           | _ -> failwith "unknown depth argument"
         in
         let () =
+          (* Workaround: This gets handled in Util.Timing_breakdown *)
           match Array.get (Sys.get_argv ()) 3 with
-          | "--timing-breakdown=true" -> Util.Timing_breakdown.enable ()
+          | "--timing-breakdown=true" -> ()
           | "--timing-breakdown=false" -> ()
           | _ -> failwith "unknown timing breakdown argument"
         in

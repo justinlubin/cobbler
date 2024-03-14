@@ -1,5 +1,8 @@
-let enabled : bool ref = ref false
-let enable () = enabled := true
+let enabled : bool =
+  Core.Array.mem
+    ~equal:Core.String.equal
+    (Core.Sys.get_argv ())
+    "--timing-breakdown=true"
 
 type category =
   | Synthesis
@@ -25,7 +28,7 @@ let time_taken : category -> float =
   | Canonicalization -> !canon
 
 let record1 cat f =
-  if !enabled
+  if enabled
   then
     fun a ->
     let start = Unix.gettimeofday () in
@@ -36,7 +39,7 @@ let record1 cat f =
   else f
 
 let record3 cat f =
-  if !enabled
+  if enabled
   then
     fun a b c ->
     let start = Unix.gettimeofday () in
@@ -47,7 +50,7 @@ let record3 cat f =
   else f
 
 let record4 cat f =
-  if !enabled
+  if enabled
   then
     fun a b c d ->
     let start = Unix.gettimeofday () in

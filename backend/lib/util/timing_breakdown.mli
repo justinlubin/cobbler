@@ -1,12 +1,9 @@
 (** Record the timing breakdown of various components of the algorithm
 
-    **Note**: This module will only record time breakdowns if the [enable]
-    function is called (once at the start of the program). Otherwise, this
+    **Workaround note**: This module will only record timing breakdowns if the
+    flag [--timing-breakdown=true] is passed to the executable. Otherwise, this
     module will simply do nothing (the [recordN] functions will be the identity
     and have no side effects). *)
-
-(** Enables this module *)
-val enable : unit -> unit
 
 (** The component categories to time *)
 type category =

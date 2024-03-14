@@ -38,7 +38,7 @@ python = summarize("python_synthetic.tsv")
 
 
 def plot(data, title):
-    fig, ax = plt.subplots(1, 1, figsize=(4, 3.5))
+    fig, ax = plt.subplots(1, 1, figsize=(3, 3.5))
 
     x = data["synthed ast size"]
     y = np.log10(data["synth time med"])
