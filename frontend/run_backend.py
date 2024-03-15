@@ -218,6 +218,8 @@ def python(
         rewrite_for=False,
         toggle_eval=toggle_eval,
         depth=depth,
+        timing_breakdown=timing_breakdown,
+        ablation=ablation,
     )
     if stats["status"] != "Success":
         stats2 = python_helper(

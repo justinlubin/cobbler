@@ -6,6 +6,7 @@ import csv
 import glob
 import json
 import pathlib
+import random
 import subprocess
 import sys
 import os
@@ -15,6 +16,8 @@ import db_iter
 import util
 
 import numpy as np
+
+from collections import OrderedDict
 
 
 def use_quick_eval():
@@ -300,6 +303,52 @@ def filter_helper(
                     writer.writerow(row)
 
 
+def subsample_helper(
+    seed=None,
+    size=None,
+    input_path=None,
+    output_path=None,
+):
+    random.seed(seed)
+
+    rows = OrderedDict()
+
+    with open(input_path, "r", newline="") as input_f:
+        for row in csv.DictReader(input_f, delimiter="\t"):
+            kind = row["kind"]
+            if kind in rows:
+                rows[kind].append(row)
+            else:
+                rows[kind] = [row]
+
+    kind_count = len(rows)
+
+    if size % kind_count != 0:
+        print("[ERROR] size not divisible by number of kinds")
+        sys.exit(1)
+
+    size_per_kind = size // kind_count
+
+    subsampled_rows = OrderedDict()
+
+    for kind in rows:
+        subsampled_rows[kind] = random.sample(
+            rows[kind],
+            k=len(rows[kind]),
+        )[:size_per_kind]
+
+    with open(output_path, "w", newline="") as output_f:
+        writer = csv.DictWriter(
+            output_f,
+            fieldnames=run_backend.CSV_FIELDS,
+            delimiter="\t",
+        )
+        writer.writeheader()
+        for kind in subsampled_rows:
+            for row in subsampled_rows[kind]:
+                writer.writerow(row)
+
+
 def subtract_helper(
     superset_path=None,
     subset_path=None,
@@ -466,6 +515,25 @@ def gen_survey_code_helper(
                     )
 
 
+def inputs_helper(
+    input_path=None,
+    output_path=None,
+    language=None,
+):
+    show_code = prettify_elm_json if language == "elm" else show_python
+    ext = "elm" if language == "elm" else "py"
+    with open(input_path, "r", newline="") as input_f:
+        for i, row in enumerate(csv.DictReader(input_f, delimiter="\t")):
+            suffix = f"-{row['kind']}" if row["kind"] else ""
+            with open(f"{output_path}/row{i + 2:02d}{suffix}.{ext}", "w") as output_f:
+                try:
+                    output_f.write(
+                        show_code(util.csv_str_decode(row["orig code"])) + "\n"
+                    )
+                except:
+                    output_f.write("<show_code failure>")
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 1:
         print(
@@ -615,6 +683,31 @@ if __name__ == "__main__":
 
     ###
 
+    inputs_parser = subparsers.add_parser(
+        "inputs",
+        help="save all input code from a tsv in separate files",
+    )
+    inputs_parser.add_argument(
+        "--language",
+        choices=["elm", "python"],
+        required=True,
+        help="the language of the code",
+    )
+    inputs_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path to the tsv",
+    )
+    inputs_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to the directory that should contain the input code",
+    )
+
+    ###
+
     make_report_parser = subparsers.add_parser(
         "make-report",
         help="make a human-readable report of a set of results",
@@ -730,6 +823,37 @@ if __name__ == "__main__":
 
     ###
 
+    subsample_parser = subparsers.add_parser(
+        "subsample",
+        help="take a random subsample (without replacement) of a result tsv",
+    )
+    subsample_parser.add_argument(
+        "--seed",
+        type=int,
+        required=True,
+        help="the random seed to use",
+    )
+    subsample_parser.add_argument(
+        "--size",
+        type=int,
+        required=True,
+        help="the size of the subsample",
+    )
+    subsample_parser.add_argument(
+        "--input",
+        type=pathlib.Path,
+        required=True,
+        help="the path to the set of results (in tsv format)",
+    )
+    subsample_parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        required=True,
+        help="the path to output the subsampled results (in tsv format)",
+    )
+
+    ###
+
     subtract_parser = subparsers.add_parser(
         "subtract",
         help="remove entries from a set of results",
@@ -838,6 +962,13 @@ if __name__ == "__main__":
             output_path=args.output,
             language=args.language,
         )
+    elif args.subcommand == "inputs":
+        refresh_binary()
+        inputs_helper(
+            language=args.language,
+            input_path=args.input,
+            output_path=args.output,
+        )
     elif args.subcommand == "make-report":
         refresh_binary()
         make_report_helper(
@@ -868,6 +999,13 @@ if __name__ == "__main__":
             depth=args.depth,
             timing_breakdown=args.timing_breakdown,
             ablation=args.ablation,
+        )
+    elif args.subcommand == "subsample":
+        subsample_helper(
+            seed=args.seed,
+            size=args.size,
+            input_path=args.input,
+            output_path=args.output,
         )
     elif args.subcommand == "subtract":
         subtract_helper(

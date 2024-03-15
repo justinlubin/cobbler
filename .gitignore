@@ -16,6 +16,7 @@ evaluation/input/synthetic_programs/*.py
 evaluation/output/analyses/*.txt
 evaluation/output/analyses/*.pdf
 evaluation/output/data/*.tsv
+evaluation/failures/*.tsv
 survey/code/*
 survey/split-code/*
 survey/survey/*
