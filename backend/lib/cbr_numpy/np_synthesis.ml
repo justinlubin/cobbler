@@ -482,11 +482,15 @@ let solve' : int -> bool -> bool -> program -> (int * program) option =
   let target_loop_vars = loop_vars target in
   let unify : program -> substitutions option =
     if use_egraphs
-    then
+    then (
+      let graph =
+        Util.Timing_breakdown.record1
+          Util.Timing_breakdown.Unification
+          (Unification.construct_egraph ~target ~debug)
+          ()
+      in
       Util.Timing_breakdown.record1 Util.Timing_breakdown.Unification
-      @@ fun pattern ->
-      let graph = Unification.construct_egraph ~target ~debug () in
-      Unification.unify_egraph ~graph ~debug ~pattern ()
+      @@ fun pattern -> Unification.unify_egraph ~graph ~debug ~pattern ())
     else
       Util.Timing_breakdown.record1 Util.Timing_breakdown.Unification
       @@ fun pattern -> Unification.unify_naive ~target ~debug ~pattern ()
@@ -527,18 +531,9 @@ let solve' : int -> bool -> bool -> program -> (int * program) option =
   | Some (expansions, ans) -> Some (expansions, (np_env, [ Return (clean ans) ]))
   | None -> None
 
-let print_debug () =
-  Printf.eprintf
-    "syn: %f; can: %f; uni: %f\n"
-    (Util.Timing_breakdown.time_taken Util.Timing_breakdown.Synthesis)
-    (Util.Timing_breakdown.time_taken Util.Timing_breakdown.Canonicalization)
-    (Util.Timing_breakdown.time_taken Util.Timing_breakdown.Unification)
-
 let solve
     :  int -> ?debug:bool -> use_egraphs:bool -> program
     -> (int * program) option
   =
  fun depth ?(debug = false) ~use_egraphs target ->
-  let res = solve' depth debug use_egraphs target in
-  print_debug ();
-  res
+  solve' depth debug use_egraphs target
