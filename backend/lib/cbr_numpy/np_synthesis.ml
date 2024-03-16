@@ -527,9 +527,18 @@ let solve' : int -> bool -> bool -> program -> (int * program) option =
   | Some (expansions, ans) -> Some (expansions, (np_env, [ Return (clean ans) ]))
   | None -> None
 
+let print_debug () =
+  Printf.eprintf
+    "syn: %f; can: %f; uni: %f\n"
+    (Util.Timing_breakdown.time_taken Util.Timing_breakdown.Synthesis)
+    (Util.Timing_breakdown.time_taken Util.Timing_breakdown.Canonicalization)
+    (Util.Timing_breakdown.time_taken Util.Timing_breakdown.Unification)
+
 let solve
     :  int -> ?debug:bool -> use_egraphs:bool -> program
     -> (int * program) option
   =
  fun depth ?(debug = false) ~use_egraphs target ->
-  solve' depth debug use_egraphs target
+  let res = solve' depth debug use_egraphs target in
+  print_debug ();
+  res

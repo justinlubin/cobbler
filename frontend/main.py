@@ -26,7 +26,7 @@ def use_quick_eval():
     )
 
 
-BENCHMARK_REPLICATES = 2 if use_quick_eval() else 10
+REPLICATES = 2 if use_quick_eval() else 10
 
 
 def refresh_binary():
@@ -160,7 +160,7 @@ def run_many_helper(
             if stats["status"] in ["Success", "SynthFail"]:
                 times = []
                 ocaml_times = {key: [] for key in run_backend.OCAML_TIME_FIELDS}
-                for _ in range(BENCHMARK_REPLICATES):
+                for _ in range(REPLICATES):
                     stats_tmp = runner(block, dry_run=dry_run)
                     assert stats_tmp["status"] == stats["status"]
                     times.append(str(stats_tmp["synth time"]))
