@@ -473,6 +473,19 @@ let pattern_match : reference:exp -> sketch:exp -> (string * exp) list option =
           ~f:(fun map rarg sarg -> recurse rarg sarg map)
           rargs
           sargs
+    (* Allow this to be fair to the semantics that constructors are curried *)
+    | ECtor (rhead, rargs), EApp (_, _) ->
+        let shead, sargs = decompose_app s in
+        let new_params =
+          List.mapi ~f:(fun i _ -> "c" ^ Int.to_string i) rargs
+        in
+        let new_args = List.map ~f:(fun p -> EVar p) new_params in
+        List.fold2_exn
+          ~init:
+            (recurse (build_abs new_params (ECtor (rhead, new_args))) shead map)
+          ~f:(fun map rarg sarg -> recurse rarg sarg map)
+          rargs
+          sargs
     | EBase rbase, EBase sbase when [%eq: base_exp] rbase sbase -> map
     | ERScheme (rrs, rdt, rargs), ERScheme (srs, sdt, sargs)
       when [%eq: rscheme] rrs srs && String.equal rdt sdt ->
