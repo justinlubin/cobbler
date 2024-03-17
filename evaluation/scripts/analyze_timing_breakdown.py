@@ -40,9 +40,9 @@ def load_data(filename):
 
     # Percents
 
-    df["enum % med"] = (enum / total).median(axis=1)
-    df["canon % med"] = (canon / total).median(axis=1)
-    df["unif % med"] = (unif / total).median(axis=1)
+    df["enum % med"] = (enum / total).median(axis=1, skipna=True)
+    df["canon % med"] = (canon / total).median(axis=1, skipna=True)
+    df["unif % med"] = (unif / total).median(axis=1, skipna=True)
 
     df.drop(columns=OCAML_TIME_FIELDS, inplace=True)
     return df

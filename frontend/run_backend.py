@@ -227,5 +227,8 @@ def python(
         )
         if "synth time" in stats2 and "synth time" in stats:
             stats2["synth time"] += stats["synth time"]
+        for key in OCAML_TIME_FIELDS:
+            if key in stats and key in stats2:
+                stats2[key] += stats[key]
         stats = stats2
     return stats
