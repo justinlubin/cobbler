@@ -185,8 +185,8 @@ let solve
                  Option.map
                    ~f:(fun filling ->
                      candidate_body
-                     |> Exp.build_abs normalized_reference_params
-                     |> Exp.fill_holes filling)
+                     |> Exp.fill_holes filling
+                     |> Exp.build_abs normalized_reference_params)
                    (unify normalized_candidate_body)))))
     ~f:(fun (expansions, messy_solution) ->
       ( expansions

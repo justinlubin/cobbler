@@ -225,7 +225,11 @@ let rec exp'' : ?in_pipeline:bool -> int -> exp -> string =
       | EBase (BEString s) -> sprintf "\"%s\"" (escape s)
       | EBase (BEFloat f) -> string_of_float f
       | EHole (_, _) -> failwith "Cannot unparse hole"
-      | ERScheme _ -> failwith "Cannot unparse recursion scheme")
+      | ERScheme _ ->
+          failwith
+            (Printf.sprintf
+               "Cannot unparse recursion scheme: %s"
+               (Exp.show_single e)))
 
 let exp' : datatype_env -> int -> exp -> string =
  fun sigma depth e -> exp'' depth (prettify_exp sigma (Exp.freshen_univars e))

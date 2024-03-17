@@ -494,6 +494,7 @@ let pattern_match : reference:exp -> sketch:exp -> (string * exp) list option =
           ~f:(fun map rarg sarg -> recurse rarg sarg map)
           rargs
           sargs
+    | ERScheme _, EHole _ -> failwith "cannot match recursion scheme"
     | _, EHole (name, _) ->
         (match List.Assoc.find (fst map) name ~equal:String.equal with
         | Some binding ->
