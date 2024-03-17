@@ -1,5 +1,6 @@
 open Core
 open Lang
+module T = Util.Timing_breakdown
 
 (* Normalization *)
 
@@ -11,8 +12,7 @@ let inline : env -> exp -> exp =
       else Exp.substitute (lhs, rhs) acc)
 
 let norm : datatype_env -> typ_env -> env -> exp -> exp =
-  Util.Timing_breakdown.record4 Util.Timing_breakdown.Canonicalization
-  @@ fun sigma gamma env e ->
+ fun sigma gamma env e ->
   e
   |> inline env
   |> Exp.normalize sigma
@@ -94,15 +94,20 @@ let problem_of_definitions : datatype_env * typ_env * env -> string -> problem =
 
 (* Synthesis *)
 
-let solve' : bool -> int -> problem -> (int * exp) option =
-  Util.Timing_breakdown.record3 Util.Timing_breakdown.Synthesis
-  @@ fun use_unification depth { sigma; gamma; env; name } ->
+let solve
+    :  use_semantic_unification:bool -> depth:int -> problem
+    -> (int * exp) option
+  =
+ fun ~use_semantic_unification ~depth { sigma; gamma; env; name } ->
   let reference = Map.find_exn env name in
   let reference_domain, reference_codomain =
     Typ.decompose_arr (Typ.instantiate (Map.find_exn gamma name))
   in
   let reference_params, _ = Exp.decompose_abs reference in
-  let normalized_reference = norm sigma gamma env reference in
+  let normalized_reference =
+    T.record_thunk T.CanonicalizationOutsideEnumeration (fun () ->
+        norm sigma gamma env reference)
+  in
   let normalized_reference_params, normalized_reference_body =
     Exp.decompose_abs normalized_reference
   in
@@ -113,94 +118,76 @@ let solve' : bool -> int -> problem -> (int * exp) option =
       ~init:gamma
       ~f:(fun acc x tau -> Map.update acc x ~f:(fun _ -> ([], tau)))
   in
-  let normalized_reference_body_uniterm =
-    Unification_adapter.to_unification_term
-      sigma
-      stdlib
-      normalized_reference_body
-  in
-  let grammar =
-    make_grammar
-      (Map.remove gamma name)
-      (if use_unification
-      then []
-      else List.zip_exn reference_params reference_domain)
-  in
+  let grammar = make_grammar (Map.remove gamma name) [] in
+  let canon = T.record4 T.CanonicalizationInsideEnumeration norm in
   Option.map
-    (Cbr_framework.Enumerative_search.top_down
-       ~max_iterations:depth
-       ~start:[ EHole (Util.gensym "start", reference_codomain) ]
-       ~expand:(expand grammar)
-       ~correct:
-         (if use_unification
-         then
-           fun candidate_body ->
-           let normalized_candidate_body =
-             norm sigma gamma env candidate_body
-           in
-           let normalized_candidate_body_uniterm =
-             Unification_adapter.to_unification_term
-               sigma
-               stdlib
-               normalized_candidate_body
-           in
-           (* Useful debugging snippet: *)
-           (* let () =
-             if String.equal
-                  (Exp.show_single candidate_body)
-                  ""
-             then
-               failwith
-                 (sprintf
-                    "%s\n\n%s\n\n%s\n\n%s\n\n%s\n\n%s"
-                    (Exp.show_single reference)
-                    (Exp.show_single candidate_body)
-                    (Exp.show_single normalized_reference_body)
-                    (Exp.show_single normalized_candidate_body)
-                    (Unification.show_term normalized_reference_body_uniterm)
-                    (Unification.show_term normalized_candidate_body_uniterm))
-             else ()
-           in *)
-           (* let () =
-             if String.is_substring
-                  ~substring:"maybe_withDefault"
-                  (Exp.show_single candidate_body)
-                && String.is_substring
-                     ~substring:"maybe_map"
-                     (Exp.show_single candidate_body)
-             then
-               failwith
-               @@ sprintf
-                    "%s\n\n%s\n\n%s\n\n%s\n\n;;;;;"
-                    (Exp.show_single reference)
-                    (Exp.show_single candidate_body)
-                    (Exp.show_single normalized_reference_body)
-                    (Exp.show_single normalized_candidate_body)
-             else ()
-           in *)
-           match
-             Unification.unify
-               1000
-               normalized_candidate_body_uniterm
-               normalized_reference_body_uniterm
-           with
-           | Unification.Solved subs ->
-               Some
-                 (Exp.build_abs
-                    normalized_reference_params
-                    (Exp.fill_holes
-                       (Unification_adapter.simplify_solution sigma subs)
-                       candidate_body))
-           | Unification.Impossible -> None
-           | Unification.OutOfFuel -> None
-         else
-           fun candidate_body ->
-           let candidate = Exp.build_abs reference_params candidate_body in
-           if Exp.alpha_equivalent
-                (norm sigma gamma env candidate)
-                normalized_reference
-           then Some candidate
-           else None))
+    (T.record_thunk T.Enumeration (fun () ->
+         Cbr_framework.Enumerative_search.top_down
+           ~max_iterations:depth
+           ~start:[ EHole (Util.gensym "start", reference_codomain) ]
+           ~expand:(expand grammar)
+           ~correct:
+             (if use_semantic_unification
+             then (
+               let normalized_reference_body_uniterm =
+                 T.record_thunk T.UnificationInsideEnumeration (fun () ->
+                     Unification_adapter.to_unification_term
+                       sigma
+                       stdlib
+                       normalized_reference_body)
+               in
+               let unify =
+                 T.record1
+                   T.UnificationInsideEnumeration
+                   (fun normalized_candidate_body ->
+                     let normalized_candidate_body_uniterm =
+                       Unification_adapter.to_unification_term
+                         sigma
+                         stdlib
+                         normalized_candidate_body
+                     in
+                     Unification.unify
+                       1000
+                       normalized_candidate_body_uniterm
+                       normalized_reference_body_uniterm)
+               in
+               fun candidate_body ->
+                 let normalized_candidate_body =
+                   canon sigma gamma env candidate_body
+                 in
+                 match unify normalized_candidate_body with
+                 | Unification.Solved subs ->
+                     Some
+                       (Exp.build_abs
+                          normalized_reference_params
+                          (Exp.fill_holes
+                             (Unification_adapter.simplify_solution sigma subs)
+                             candidate_body))
+                 | Unification.Impossible -> None
+                 | Unification.OutOfFuel -> None)
+             else (
+               let normalized_reference_body =
+                 T.record_thunk T.UnificationInsideEnumeration (fun () ->
+                     Exp.alpha_normalize normalized_reference_body)
+               in
+               let unify =
+                 T.record1
+                   T.UnificationInsideEnumeration
+                   (fun normalized_candidate_body ->
+                     Exp.pattern_match
+                       ~reference:normalized_reference_body
+                       ~sketch:normalized_candidate_body)
+               in
+               fun candidate_body ->
+                 let normalized_candidate_body =
+                   canon sigma gamma env candidate_body
+                 in
+                 Option.map
+                   ~f:(fun filling ->
+                     candidate_body
+                     |> Exp.build_abs normalized_reference_params
+                     |> Exp.fill_holes filling)
+                   (unify normalized_candidate_body)))))
     ~f:(fun (expansions, messy_solution) ->
       ( expansions
       , Exp.normalize
@@ -210,6 +197,3 @@ let solve' : bool -> int -> problem -> (int * exp) option =
              (Exp.build_app
                 messy_solution
                 (List.map ~f:(fun x -> EVar x) reference_params))) ))
-
-let solve : use_unification:bool -> depth:int -> problem -> (int * exp) option =
- fun ~use_unification ~depth prob -> solve' use_unification depth prob

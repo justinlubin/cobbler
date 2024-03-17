@@ -5,37 +5,49 @@ let enabled : bool =
     "--timing-breakdown=true"
 
 type category =
-  | Synthesis
-  | Unification
-  | Canonicalization
+  | Enumeration
+  | UnificationOutsideEnumeration
+  | UnificationInsideEnumeration
+  | CanonicalizationOutsideEnumeration
+  | CanonicalizationInsideEnumeration
 
-let synth : float ref = ref 0.0
-let unif : float ref = ref 0.0
-let canon : float ref = ref 0.0
+type overall_category =
+  | EnumerationOnly
+  | UnificationOnly
+  | CanonicalizationOnly
+
+let enum : float ref = ref 0.0
+let unif_out : float ref = ref 0.0
+let unif_in : float ref = ref 0.0
+let canon_out : float ref = ref 0.0
+let canon_in : float ref = ref 0.0
 
 let add_time : category -> float -> unit =
  fun cat x ->
   match cat with
-  | Synthesis -> synth := !synth +. x
-  | Unification -> unif := !unif +. x
-  | Canonicalization -> canon := !canon +. x
+  | Enumeration -> enum := !enum +. x
+  | UnificationOutsideEnumeration -> unif_out := !unif_out +. x
+  | UnificationInsideEnumeration -> unif_in := !unif_in +. x
+  | CanonicalizationOutsideEnumeration -> canon_out := !canon_out +. x
+  | CanonicalizationInsideEnumeration -> canon_in := !canon_in +. x
 
-let time_taken : category -> float =
+let time_taken : overall_category -> float =
  fun cat ->
   match cat with
-  | Synthesis -> !synth
-  | Unification -> !unif
-  | Canonicalization -> !canon
+  | EnumerationOnly -> !enum -. !unif_in -. !canon_in
+  | UnificationOnly -> !unif_out +. !unif_in
+  | CanonicalizationOnly -> !canon_out +. !canon_in
 
 let record1 cat f =
   if enabled
   then
     fun a ->
     let start = Unix.gettimeofday () in
-    let res = f a in
-    let stop = Unix.gettimeofday () in
-    let () = add_time cat (stop -. start) in
-    res
+    Fun.protect
+      (fun () -> f a)
+      ~finally:(fun () ->
+        let stop = Unix.gettimeofday () in
+        add_time cat (stop -. start))
   else f
 
 let record3 cat f =
@@ -43,10 +55,11 @@ let record3 cat f =
   then
     fun a b c ->
     let start = Unix.gettimeofday () in
-    let res = f a b c in
-    let stop = Unix.gettimeofday () in
-    let () = add_time cat (stop -. start) in
-    res
+    Fun.protect
+      (fun () -> f a b c)
+      ~finally:(fun () ->
+        let stop = Unix.gettimeofday () in
+        add_time cat (stop -. start))
   else f
 
 let record4 cat f =
@@ -54,8 +67,11 @@ let record4 cat f =
   then
     fun a b c d ->
     let start = Unix.gettimeofday () in
-    let res = f a b c d in
-    let stop = Unix.gettimeofday () in
-    let () = add_time cat (stop -. start) in
-    res
+    Fun.protect
+      (fun () -> f a b c d)
+      ~finally:(fun () ->
+        let stop = Unix.gettimeofday () in
+        add_time cat (stop -. start))
   else f
+
+let record_thunk cat thunk = record1 cat thunk ()

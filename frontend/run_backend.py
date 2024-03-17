@@ -9,7 +9,7 @@ import extract
 import util
 
 OCAML_TIME_FIELDS = [
-    "ocaml_synthesis_time",
+    "ocaml_enumeration_time",
     "ocaml_canonicalization_time",
     "ocaml_unification_time",
 ]

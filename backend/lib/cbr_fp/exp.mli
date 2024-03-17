@@ -91,3 +91,11 @@ val clean : exp -> exp
 (** [apply_type_sub subst e] applies the type substitute [subst] to the
     expression [e], modifying any relevant types that are referenced in it. *)
 val apply_type_sub : Typ.sub -> exp -> exp
+
+(** [pattern_match ~reference ~sketch] syntactically unifies the holes in
+    [reference] and [sketch] by returning a hole substitution that makes them
+    syntactically equal (or [None] if no such substitution exists) with two
+    very important caveats:
+      1) This function assumes [reference] does not have any holes
+      2) This function assumes [reference] has been alpha normalized  *)
+val pattern_match : reference:exp -> sketch:exp -> (string * exp) list option

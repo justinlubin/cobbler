@@ -1,16 +1,10 @@
 open Core
+module T = Util.Timing_breakdown
 
 let time_info () =
-  [ ( "ocaml_synthesis_time"
-    , `Float (Util.Timing_breakdown.time_taken Util.Timing_breakdown.Synthesis)
-    )
-  ; ( "ocaml_canonicalization_time"
-    , `Float
-        (Util.Timing_breakdown.time_taken
-           Util.Timing_breakdown.Canonicalization) )
-  ; ( "ocaml_unification_time"
-    , `Float
-        (Util.Timing_breakdown.time_taken Util.Timing_breakdown.Unification) )
+  [ ("ocaml_enumeration_time", `Float (T.time_taken T.EnumerationOnly))
+  ; ("ocaml_canonicalization_time", `Float (T.time_taken T.CanonicalizationOnly))
+  ; ("ocaml_unification_time", `Float (T.time_taken T.UnificationOnly))
   ]
 
 let elm_stdlib_fname : string = "backend/bin/Stdlib.json"
@@ -71,7 +65,9 @@ let main_elm : int -> bool -> string -> Yojson.Basic.t =
     let problem =
       Synthesis.problem_of_definitions (stdlib_sigma, gamma, env) name
     in
-    match Synthesis.solve ~use_unification:(not ablation) ~depth problem with
+    match
+      Synthesis.solve ~use_semantic_unification:(not ablation) ~depth problem
+    with
     | None -> `Assoc ([ ("status", `String "SynthFail") ] @ time_info ())
     | Some (expansions, wrapped_solution) ->
         (try

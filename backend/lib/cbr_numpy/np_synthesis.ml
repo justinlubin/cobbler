@@ -1,6 +1,7 @@
 open Lang
 open Env
 open Core
+module T = Util.Timing_breakdown
 
 let make_grammar_entry
     :  String.Set.t -> required:String.Set.t -> string -> hole_type list
@@ -152,8 +153,7 @@ let substitute_expr : expr -> substitutions -> expr option =
   | IncorrectSubstitutionType (tau, binding) -> None
 
 let canonicalize : program -> program =
-  Util.Timing_breakdown.record1 Util.Timing_breakdown.Canonicalization
-  @@ fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
+ fun p -> p |> Inline.inline_program |> Partial_eval.partial_eval_program
 
 let rec fix_filter : expr -> expr =
   let fix_filter_pred array pred =
@@ -474,37 +474,37 @@ let infer : program -> string * hole_type list =
         | Hole (_, _) -> failwith "user input has a hole") )
   | _ -> raise (EarlyCutoff "last statement not a variable return")
 
-let solve' : int -> bool -> bool -> program -> (int * program) option =
-  Util.Timing_breakdown.record4 Util.Timing_breakdown.Synthesis
-  @@ fun depth debug use_egraphs target ->
-  let target = canonicalize target in
+let solve
+    :  int -> ?debug:bool -> use_egraphs:bool -> program
+    -> (int * program) option
+  =
+ fun depth ?(debug = false) ~use_egraphs target ->
+  let target =
+    T.record_thunk T.CanonicalizationOutsideEnumeration (fun () ->
+        canonicalize target)
+  in
   let target_var, target_possible_types = infer target in
   let target_loop_vars = loop_vars target in
   let unify : program -> substitutions option =
     if use_egraphs
     then (
       let graph =
-        Util.Timing_breakdown.record1
-          Util.Timing_breakdown.Unification
+        T.record_thunk
+          T.UnificationOutsideEnumeration
           (Unification.construct_egraph ~target ~debug)
-          ()
       in
-      Util.Timing_breakdown.record1 Util.Timing_breakdown.Unification
+      T.record1 T.UnificationInsideEnumeration
       @@ fun pattern -> Unification.unify_egraph ~graph ~debug ~pattern ())
     else
-      Util.Timing_breakdown.record1 Util.Timing_breakdown.Unification
+      T.record1 T.UnificationInsideEnumeration
       @@ fun pattern -> Unification.unify_naive ~target ~debug ~pattern ()
+  in
+  let canon : program -> program =
+    T.record1 T.CanonicalizationInsideEnumeration canonicalize
   in
   let correct : expr -> expr option =
    fun e ->
-    let canonical = canonicalize (np_env, [ Return e ]) in
-    (* if String.is_substring ~substring:"randint_size" ([%show: expr] e)
-    then (
-      Printf.eprintf "%s\n" ([%show: expr] e);
-      Printf.eprintf "%s\n" (canonical |> snd |> [%show: block]);
-      Printf.eprintf "%s\n" (target |> snd |> [%show: block]);
-      Printf.eprintf "-------------------------\n")
-    else (); *)
+    let canonical = canon (np_env, [ Return e ]) in
     match unify canonical with
     | Some sub ->
         (match substitute_expr e sub with
@@ -520,20 +520,14 @@ let solve' : int -> bool -> bool -> program -> (int * program) option =
     | None -> None
   in
   match
-    Cbr_framework.Enumerative_search.top_down
-      ~max_iterations:depth
-      ~start:
-        (target_possible_types
-        |> List.map ~f:(fun t -> Hole (t, Util.gensym "hole")))
-      ~expand:(expand (referenced_vars target))
-      ~correct
+    T.record_thunk T.Enumeration (fun () ->
+        Cbr_framework.Enumerative_search.top_down
+          ~max_iterations:depth
+          ~start:
+            (target_possible_types
+            |> List.map ~f:(fun t -> Hole (t, Util.gensym "hole")))
+          ~expand:(expand (referenced_vars target))
+          ~correct)
   with
   | Some (expansions, ans) -> Some (expansions, (np_env, [ Return (clean ans) ]))
   | None -> None
-
-let solve
-    :  int -> ?debug:bool -> use_egraphs:bool -> program
-    -> (int * program) option
-  =
- fun depth ?(debug = false) ~use_egraphs target ->
-  solve' depth debug use_egraphs target

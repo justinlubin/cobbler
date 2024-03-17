@@ -434,3 +434,60 @@ let apply_type_sub : Typ.sub -> exp -> exp =
     | ERScheme (rs, dt, args) -> ERScheme (rs, dt, List.map ~f:recurse args)
   in
   recurse e
+
+let compare_branches : branch -> branch -> int =
+ fun (ctor1, _) (ctor2, _) -> String.compare ctor1 ctor2
+
+let pattern_match : reference:exp -> sketch:exp -> (string * exp) list option =
+ fun ~reference ~sketch ->
+  let var_assert xs ys vmap =
+    List.fold2_exn
+      ~init:vmap
+      ~f:(fun vmap x y ->
+        match List.Assoc.find vmap x ~equal:String.equal with
+        | Some y' ->
+            assert (String.equal y y');
+            vmap
+        | None -> (x, y) :: vmap)
+      xs
+      ys
+  in
+  let rec recurse r s map =
+    match (r, s) with
+    | EVar rx, EVar sx -> (fst map, var_assert [ rx ] [ sx ] (snd map))
+    | EApp (rhead, rarg), EApp (shead, sarg) ->
+        map |> recurse rhead shead |> recurse rarg sarg
+    | EAbs (rx, rbody), EAbs (sx, sbody) ->
+        recurse rbody sbody (fst map, var_assert [ rx ] [ sx ] (snd map))
+    | EMatch (rscrutinee, rbranches), EMatch (sscrutinee, sbranches) ->
+        List.fold2_exn
+          ~init:(recurse rscrutinee sscrutinee map)
+          ~f:(fun map (_, (rparams, rrhs)) (_, (sparams, srhs)) ->
+            recurse rrhs srhs (fst map, var_assert rparams sparams (snd map)))
+          (List.sort rbranches ~compare:compare_branches)
+          (List.sort sbranches ~compare:compare_branches)
+    | ECtor (rhead, rargs), ECtor (shead, sargs) when String.equal rhead shead
+      ->
+        List.fold2_exn
+          ~init:map
+          ~f:(fun map rarg sarg -> recurse rarg sarg map)
+          rargs
+          sargs
+    | EBase rbase, EBase sbase when [%eq: base_exp] rbase sbase -> map
+    | ERScheme (rrs, rdt, rargs), ERScheme (srs, sdt, sargs)
+      when [%eq: rscheme] rrs srs && String.equal rdt sdt ->
+        List.fold2_exn
+          ~init:map
+          ~f:(fun map rarg sarg -> recurse rarg sarg map)
+          rargs
+          sargs
+    | _, EHole (name, _) ->
+        (match List.Assoc.find (fst map) name ~equal:String.equal with
+        | Some binding ->
+            assert ([%eq: exp] binding r);
+            map
+        | None -> ((name, r) :: fst map, snd map))
+    | _, _ -> failwith "no match"
+  in
+  try Some (fst (recurse reference sketch ([], []))) with
+  | _ -> None

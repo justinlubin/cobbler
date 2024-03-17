@@ -11,7 +11,7 @@ OUTPUT_DIR = "evaluation/output/analyses"
 # %% Load data
 
 OCAML_TIME_FIELDS = [
-    "ocaml_synthesis_time",
+    "ocaml_enumeration_time",
     "ocaml_canonicalization_time",
     "ocaml_unification_time",
 ]
@@ -23,27 +23,26 @@ def load_data(filename):
     ]
     df = df[df["status"].isin(["Success", "SynthFail"])].reset_index(drop=True)
 
-    # Synthesis times
-    sts = df["ocaml_synthesis_time"].str.split(",", expand=True).astype(float)
-    replicates = len(sts.columns)
+    # Enumeration times
+    enum = df["ocaml_enumeration_time"].str.split(",", expand=True).astype(float)
+    replicates = len(enum.columns)
 
-    # Canonicalization times and percents
-    cts = df["ocaml_canonicalization_time"].str.split(",", expand=True).astype(float)
-    assert len(cts.columns) == replicates
-    cps = cts / sts
-    df["canon % med"] = cps.median(axis=1)
+    # Canonicalization times
+    canon = df["ocaml_canonicalization_time"].str.split(",", expand=True).astype(float)
+    assert len(canon.columns) == replicates
 
-    # Unification times and percents
-    uts = df["ocaml_unification_time"].str.split(",", expand=True).astype(float)
-    assert len(uts.columns) == replicates
-    ups = uts / sts
-    df["unif % med"] = ups.median(axis=1)
+    # Unification times
+    unif = df["ocaml_unification_time"].str.split(",", expand=True).astype(float)
+    assert len(unif.columns) == replicates
 
-    # Enumeration times and percents
-    ets = sts - (cts + uts)
-    eps = ets / sts
-    eps_med = eps.median(axis=1)
-    df["enum % med"] = eps.median(axis=1)
+    # Total (tracked) times
+    total = enum + canon + unif
+
+    # Percents
+
+    df["enum % med"] = (enum / total).median(axis=1)
+    df["canon % med"] = (canon / total).median(axis=1)
+    df["unif % med"] = (unif / total).median(axis=1)
 
     df.drop(columns=OCAML_TIME_FIELDS, inplace=True)
     return df
@@ -91,7 +90,10 @@ def plot(df, title, subtitle):
         ax[i].set_xlim(-0.01, 1.01)
         ax[i].set_xticks(
             BINS,
-            labels=[str(round(b * 100)) + "%" if i % 2 == 0 else "" for i, b in enumerate(BINS)],
+            labels=[
+                str(round(b * 100)) + "%" if i % 2 == 0 else ""
+                for i, b in enumerate(BINS)
+            ],
         )
 
         ax[i].set_ylim(0, 1)

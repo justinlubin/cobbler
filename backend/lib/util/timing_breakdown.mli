@@ -7,12 +7,20 @@
 
 (** The component categories to time *)
 type category =
-  | Synthesis
-  | Unification
-  | Canonicalization
+  | Enumeration
+  | UnificationOutsideEnumeration
+  | UnificationInsideEnumeration
+  | CanonicalizationOutsideEnumeration
+  | CanonicalizationInsideEnumeration
 
-(** [time_taken cat] returns the time taken on component category [cat] *)
-val time_taken : category -> float
+(** The overall categories (computed from lower-level categories) *)
+type overall_category =
+  | EnumerationOnly
+  | UnificationOnly
+  | CanonicalizationOnly
+
+(** [time_taken cat] returns the time taken on overall category [cat] *)
+val time_taken : overall_category -> float
 
 (** [record1 cat f] returns [f] augmented with time tracking information for
     [cat] if this module is enabled (see module documentation); otherwise, it
@@ -31,3 +39,8 @@ val record4
   -> 'c
   -> 'd
   -> 'e
+
+(** [record_thunk cat thunk] tracks the time taken to execute [thunk] and adds
+    it to the [cat] category if this module is enabled (see module
+    documentation); otherwise, it simply executes [thunk]. *)
+val record_thunk : category -> (unit -> 'a) -> 'a
