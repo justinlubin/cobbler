@@ -110,3 +110,14 @@ def plot(data, data_ablation, title, *, sizes):
 
 plot(elm, elm_ablation, "Elm", sizes=False)
 plot(python, python_ablation, "Python", sizes=False)
+
+with open(f"{OUTPUT_DIR}/ablation.txt", "w") as f:
+    fmt = "{:,}"
+    f.write(
+        "\\newcommand{\\ElmAblation}{" + fmt.format(sum(elm_ablation.values())) + "}\n"
+    )
+    f.write(
+        "\\newcommand{\\PythonAblation}{"
+        + fmt.format(sum(python_ablation.values()))
+        + "}\n"
+    )
