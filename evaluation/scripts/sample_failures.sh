@@ -10,5 +10,5 @@ OUTPUT_DIR="evaluation/failures"
 ./cobbler subsample --seed=0 --size=90 --input="$OUTPUT_DIR/elm_test_failures.tsv" --output="$OUTPUT_DIR/subsampled_elm_test_failures.tsv"
 ./cobbler subsample --seed=0 --size=50 --input="$OUTPUT_DIR/python_test_failures.tsv" --output="$OUTPUT_DIR/subsampled_python_test_failures.tsv"
 
-./cobbler inputs --language=elm --input="$OUTPUT_DIR/subsampled_elm_test_failures.tsv" --output="$OUTPUT_DIR/elm/"
-./cobbler inputs --language=python --input="$OUTPUT_DIR/subsampled_python_test_failures.tsv" --output="$OUTPUT_DIR/python/"
+./cobbler inputs --language=elm --input="$OUTPUT_DIR/subsampled_elm_test_failures.tsv" --output="$OUTPUT_DIR/samples/elm/"
+./cobbler inputs --language=python --input="$OUTPUT_DIR/subsampled_python_test_failures.tsv" --output="$OUTPUT_DIR/samples/python/"
