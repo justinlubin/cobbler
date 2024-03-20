@@ -28,7 +28,9 @@ def summarize(filename):
     df["synth time med"] = df["synth time"].apply(lambda r: np.median(r))
     df["synth time max"] = df["synth time"].apply(lambda r: np.max(r))
 
-    return df[["synthed ast size", "synth time min", "synth time med", "synth time max"]]
+    return df[
+        ["synthed ast size", "synth time min", "synth time med", "synth time max"]
+    ]
 
 
 elm = summarize("elm_synthetic.tsv")
@@ -36,7 +38,7 @@ python = summarize("python_synthetic.tsv")
 
 # %% Plot data
 
-fig, ax = plt.subplots(1, 1, figsize=(2.7, 3))
+fig, ax = plt.subplots(1, 1, figsize=(3.5, 3))
 
 DATAS = [elm, python]
 NAMES = ["Elm", "Python"]
@@ -60,7 +62,7 @@ for i, data in enumerate(DATAS):
     )
 
 ax.set_xticks(x)
-ax.set_yticks(np.arange(-2, 4.1, 1.0))
+ax.set_yticks(np.arange(-2, 2.1, 1.0))
 
 ax.set_ylabel(r"log$_{10}$($\bf{Synthesis\ time}$ in seconds)")
 ax.set_xlabel(r"$\bf{\#\ Components}$ in solution")

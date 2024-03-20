@@ -54,7 +54,7 @@ NUMBERS = "⓪①②③④⑤"
 
 
 def plot(data, data_ablation, title, *, sizes):
-    fig, ax = plt.subplots(1, 1, figsize=(2, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(2, 2))
 
     data_total = sum(data.values())
     data_ablation_total = sum(data_ablation.values())
@@ -95,7 +95,7 @@ def plot(data, data_ablation, title, *, sizes):
 
     max_count = max(data_total, data_ablation_total)
     ystep = 20 if max_count < 300 else 500
-    ax.set_ylim(0, max_count * 1.1)
+    ax.set_ylim(0, max_count * 1.2)
     ax.set_yticks(np.arange(0, max_count, ystep))
     ax.set_ylabel(r"$\bf{\#\ Successes}$")
 
