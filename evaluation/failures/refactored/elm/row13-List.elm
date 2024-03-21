@@ -12,4 +12,20 @@ buildFunction args currentType remainingTypes =
         t :: ts ->
             buildFunction (currentType :: args) t ts
 
--- *** TODO
+-- *** Nontrivial
+
+buildFunction : List Type -> Type -> List Type -> Type
+buildFunction args currentType remainingTypes =
+  let
+      (newArgs, newCurrentType) =
+          List.foldl
+              (\x (a, ct) -> (ct :: a, x))
+              (args, currentType)
+              remainingTypes
+  in
+  case List.isEmpty newArgs of
+      True ->
+          newCurrentType
+
+      False ->
+          Function (List.reverse newArgs) newCurrentType

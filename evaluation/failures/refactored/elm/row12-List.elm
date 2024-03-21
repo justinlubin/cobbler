@@ -7,7 +7,7 @@ listGeneral f acc rest =
         current :: newRest ->
             listGeneral f (f current acc) newRest
 
--- *** List.foldl
+-- *** List.foldl (exact)
 
 listGeneral : (any -> acc -> acc) -> acc -> List any -> acc
 listGeneral f acc rest =

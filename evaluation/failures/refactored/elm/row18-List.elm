@@ -7,4 +7,8 @@ incorporateLines rawLines ast =
         rawLine :: rawLinesTail ->
             incorporateLines rawLinesTail (incorporateLine rawLine ast)
 
--- *** TODO
+-- *** List.foldl (exact)
+
+incorporateLines : List String -> List (Block b i) -> List (Block b i)
+incorporateLines rawLines ast =
+    List.foldl incorporateLine ast rawLines

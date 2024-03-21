@@ -12,7 +12,7 @@ getColumnHelper column items data =
         [] ->
             Just items
 
--- *** Early-cutoff foldl
+-- *** List.foldl (early-cutoff)
 
 getColumnHelper : Int -> Array a -> List (Array a) -> Maybe (Array a)
 getColumnHelper column items data =

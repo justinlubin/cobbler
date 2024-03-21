@@ -7,4 +7,9 @@ getContacts shapes1 shapes2 =
         [] ->
             []
 
--- *** TODO
+-- *** List.uncons
+
+getContacts : List (Shape WorldCoordinates) -> List (Shape WorldCoordinates) -> List Contact
+getContacts shapes1 shapes2 =
+    shapes1
+        |> List.uncons [] (\x -> \y -> getContactsHelp x y shapes2 shapes2 [])
