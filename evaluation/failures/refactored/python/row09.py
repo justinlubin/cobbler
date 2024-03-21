@@ -3,7 +3,7 @@
 #     nlist.append(i.strip())
 # nlist
 
-# *** Vectorized method call (semi-automatic)
+# *** Vectorized flexibility (semi-automatic)
 
 f = lambda x: strip(x)
 nlist = list(np.vectorize(f)(np.array(list(tlist), dtype=object)))

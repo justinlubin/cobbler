@@ -6,3 +6,9 @@ for age in ages:
     else:
         adult.append(False)
 adult
+
+# *** Interaction with np.where
+
+ages = np.arange(1, 50)
+adult = np.where(ages > 18, True, False)
+adult

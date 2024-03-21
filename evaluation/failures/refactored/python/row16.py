@@ -4,3 +4,5 @@ for text in content:
         if re.findall(pattern, text):
             res.append(text)
 res
+
+# *** Cannot refactor (2D jagged arrays)
