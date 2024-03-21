@@ -6,3 +6,10 @@ publicationResultText result =
 
         Err error ->
             httpErrorToString error
+
+-- *** Result.catamorphism (auto)
+
+publicationResultText : Result Error PublicationResult -> String
+publicationResultText result =
+    result
+        |> Result.catamorphism httpErrorToString (\_ -> "Message sent")

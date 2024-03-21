@@ -6,3 +6,10 @@ getOrCrash res =
 
         Ok r ->
             r
+
+-- *** Result.catamorphism (auto)
+
+getOrCrash : Result String r -> r
+getOrCrash res =
+    res
+        |> Result.catamorphism Debug.crash (\x -> x)

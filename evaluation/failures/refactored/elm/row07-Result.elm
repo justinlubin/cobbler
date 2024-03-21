@@ -6,3 +6,10 @@ resultToJson r =
 
         Err e ->
             Json.Decode.fail e
+
+-- *** Result.catamorphism (auto)
+
+resultToJson : Result String a -> Decoder a
+resultToJson r =
+    r
+        |> Result.catamorphism Json.Decode.fail Json.Decode.succeed

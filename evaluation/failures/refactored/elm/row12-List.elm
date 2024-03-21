@@ -6,3 +6,9 @@ listGeneral f acc rest =
 
         current :: newRest ->
             listGeneral f (f current acc) newRest
+
+-- *** List.foldl
+
+listGeneral : (any -> acc -> acc) -> acc -> List any -> acc
+listGeneral f acc rest =
+    List.foldl f acc rest

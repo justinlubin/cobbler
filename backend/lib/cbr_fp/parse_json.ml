@@ -169,7 +169,7 @@ let variable_definition_of_json : Json.t -> string * typ_scheme * exp =
               "missing type declaration for top-level definition '%s'"
               name))
 
-let definition_of_json : Json.t -> definition =
+let definition_of_json : Json.t -> definition option =
  fun j ->
   match j |> J.member "tag" |> J.to_string with
   | "CustomType" ->
@@ -180,10 +180,11 @@ let definition_of_json : Json.t -> definition =
       let variants =
         j |> J.member "variants" |> J.to_list |> List.map ~f:variant_of_json
       in
-      CustomType (dt, (params, variants))
+      Some (CustomType (dt, (params, variants)))
   | "Definition" ->
       let s, t, e = variable_definition_of_json j in
-      VariableDefinition (s, t, e)
+      Some (VariableDefinition (s, t, e))
+  | "Comment" -> None
   | s -> raise (ParseFail (sprintf "unknown definition tag '%s'" s))
 
 let merge_definitions : definition list -> datatype_env * typ_env * env =
@@ -203,7 +204,7 @@ let definitions_of_json : Json.t -> datatype_env * typ_env * env =
   j
   |> J.member "body"
   |> J.to_list
-  |> List.map ~f:definition_of_json
+  |> List.filter_map ~f:definition_of_json
   |> merge_definitions
 
 (* Exports *)

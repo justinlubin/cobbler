@@ -115,3 +115,23 @@ list_tail____CBR xs =
   case xs of
     [] -> Nothing
     hd :: tl -> Just tl
+
+-- Catamorphisms
+--
+-- maybe_catamorphism____CBR : b -> (a -> b) -> Maybe a -> b
+-- maybe_catamorphism____CBR base f mx =
+--   case mx of
+--     Nothing -> base
+--     Just x -> f x
+--
+-- result_catamorphism____CBR : (a -> c) -> (b -> c) -> Result a b -> c
+-- result_catamorphism____CBR f g rx =
+--   case rx of
+--     Err x -> f x
+--     Ok y -> g y
+--
+-- list_catamorphism____CBR : b -> (a -> b -> b) -> List a -> b
+-- list_catamorphism____CBR acc f xs =
+--   case xs of
+--     [] -> acc
+--     hd :: tl -> f hd (list_catamorphism____CBR acc f tl)

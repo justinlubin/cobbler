@@ -6,3 +6,10 @@ extractNewNumberFact result =
 
         Ok numberFact ->
             NewNumberFact numberFact
+
+-- *** Result.catamorphism (auto)
+
+extractNewNumberFact : Result String NumberFact -> Msg
+extractNewNumberFact result =
+    result
+        |> Result.catamorphism (\y -> ErrorGettingNumberFact y) (\x -> NewNumberFact x)
