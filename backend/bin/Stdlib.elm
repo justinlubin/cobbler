@@ -116,7 +116,7 @@ list_tail____CBR xs =
     [] -> Nothing
     hd :: tl -> Just tl
 
--- Catamorphisms
+-- Catamorphisms and other destructors
 --
 -- maybe_catamorphism____CBR : b -> (a -> b) -> Maybe a -> b
 -- maybe_catamorphism____CBR base f mx =
@@ -135,3 +135,9 @@ list_tail____CBR xs =
 --   case xs of
 --     [] -> acc
 --     hd :: tl -> f hd (list_catamorphism____CBR acc f tl)
+--
+-- list_uncons____CBR : b -> (a -> List a -> b) -> List a -> b
+-- list_uncons____CBR nil cons xs =
+--   case xs of
+--     [] -> nil
+--     hd :: tl -> cons hd tl

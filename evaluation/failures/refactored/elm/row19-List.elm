@@ -12,4 +12,15 @@ getColumnHelper column items data =
         [] ->
             Just items
 
--- *** TODO
+-- *** Early-cutoff foldl
+
+getColumnHelper : Int -> Array a -> List (Array a) -> Maybe (Array a)
+getColumnHelper column items data =
+  List.foldl
+    ( \x acc ->
+        case Array.get column x of
+          Just item -> Maybe.map (Array.push item) acc
+          Nothing -> Nothing
+    )
+    (Just items)
+    data
