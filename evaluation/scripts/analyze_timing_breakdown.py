@@ -56,11 +56,11 @@ data_python = load_data("python_test_timing_breakdown.tsv")
 BINS = np.arange(0, 1.05, 0.1)
 
 
-def plot(df, title, subtitle):
+def plot(df, title, subtitle=None):
     fig, ax = plt.subplots(
         3,
         1,
-        figsize=(3, 3),
+        figsize=(3, 2.5),
         layout="constrained",
     )
     fig.get_layout_engine().set(hspace=0.05)
@@ -114,12 +114,19 @@ def plot(df, title, subtitle):
     ax[2].set_xlabel(r"$\bf{Time\ taken}$", fontsize=10)
     ax[1].set_ylabel(r"$\bf Relative\ frequency$", fontsize=10)
 
-    fig.suptitle(f"$\\bf {title}$ ({subtitle})")
-    fig.savefig(f"{OUTPUT_DIR}/{title}-{subtitle}-timing_breakdown.pdf")
+    if subtitle:
+        fig.suptitle(f"$\\bf {title}$ ({subtitle})")
+        fig.savefig(f"{OUTPUT_DIR}/{title}-{subtitle}-timing_breakdown.pdf")
+    else:
+        fig.suptitle(f"$\\bf {title}$")
+        fig.savefig(f"{OUTPUT_DIR}/{title}-timing_breakdown.pdf")
 
 
-plot(data_elm[data_elm["status"] == "Success"], "Elm", "Successful")
-plot(data_elm[data_elm["status"] == "SynthFail"], "Elm", "Unsuccessful")
+# plot(data_elm[data_elm["status"] == "Success"], "Elm", "Successful")
+# plot(data_elm[data_elm["status"] == "SynthFail"], "Elm", "Unsuccessful")
+#
+# plot(data_python[data_python["status"] == "Success"], "Python", "Successful")
+# plot(data_python[data_python["status"] == "SynthFail"], "Python", "Unsuccessful")
 
-plot(data_python[data_python["status"] == "Success"], "Python", "Successful")
-plot(data_python[data_python["status"] == "SynthFail"], "Python", "Unsuccessful")
+plot(data_elm, "Elm")
+plot(data_python, "Python")

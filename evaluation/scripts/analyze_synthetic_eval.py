@@ -38,7 +38,7 @@ python = summarize("python_synthetic.tsv")
 
 # %% Plot data
 
-fig, ax = plt.subplots(1, 1, figsize=(3.5, 3))
+fig, ax = plt.subplots(1, 1, figsize=(2.7, 3))
 
 DATAS = [elm, python]
 NAMES = ["Elm", "Python"]
