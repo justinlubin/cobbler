@@ -7,7 +7,7 @@ getContacts shapes1 shapes2 =
         [] ->
             []
 
--- *** List.uncons
+-- *** List.uncons (auto)
 
 getContacts : List (Shape WorldCoordinates) -> List (Shape WorldCoordinates) -> List Contact
 getContacts shapes1 shapes2 =
