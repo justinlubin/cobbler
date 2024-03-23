@@ -97,3 +97,27 @@ let%test_unit "unification 3" =
   | Solved subs -> ()
   | Impossible -> failwith "shouldn't be impossible"
   | OutOfFuel -> failwith "shouldn't run out of fuel"
+
+let%test_unit "unification 4" =
+  let bt1 = Elementary (TVar "base1") in
+  let bt2 = Elementary (TVar "base2") in
+  let u1 =
+    Abstraction
+      ( "f"
+      , Arrow (bt1, bt2)
+      , Application
+          ( Atom (Variable ("hole", Arrow (bt1, bt2)))
+          , Atom (Constant ("constant", bt1)) ) )
+  in
+  let u2 =
+    Abstraction
+      ( "g"
+      , Arrow (bt1, bt2)
+      , Application
+          ( Atom (Variable ("g", Arrow (bt1, bt2)))
+          , Atom (Constant ("constant", bt1)) ) )
+  in
+  match Unification.unify 100 u1 u2 with
+  | Solved subs -> failwith "should fail"
+  | Impossible -> ()
+  | OutOfFuel -> failwith "shouldn't run out of fuel"
