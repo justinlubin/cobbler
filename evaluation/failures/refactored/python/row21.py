@@ -5,7 +5,7 @@ for dfs in dfss:
         nation.append(i)
 nation
 
-# *** Dictionary indexing + np.concat (2D array)
+# *** Dictionary indexing + np.concatenate (list of arrays)
 
 intermediate = [dfs['Location'] for dfs in dfss]
 nation = list(np.concatenate(intermediate))
