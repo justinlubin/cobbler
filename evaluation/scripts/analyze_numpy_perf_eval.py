@@ -204,7 +204,10 @@ def make_plot1(column_prefix):
     for _, row in data.iterrows():
         ax.plot(
             util.DATA_SIZE_POWERS,
-            [np.log10(row[f"{column_prefix} speedup {p}"]) for p in util.DATA_SIZE_POWERS],
+            [
+                np.log10(row[f"{column_prefix} speedup {p}"])
+                for p in util.DATA_SIZE_POWERS
+            ],
             marker="o",
             markersize=2,
             color=perf_color if row["perf"] == 1 else noperf_color,
