@@ -56,7 +56,7 @@ data_python = load_data("python_test_timing_breakdown.tsv")
 BINS = np.arange(0, 1.05, 0.1)
 
 
-def plot(df, title, subtitle=None):
+def plot_hist(df, title, subtitle=None):
     fig, ax = plt.subplots(
         3,
         1,
@@ -122,11 +122,58 @@ def plot(df, title, subtitle=None):
         fig.savefig(f"{OUTPUT_DIR}/{title}-timing_breakdown.pdf")
 
 
+def plot_box(df, title, subtitle=None):
+    fig, ax = plt.subplots(1, 1, figsize=(3, 2))
+
+    cats = ["canon", "unif", "enum"]
+    nice_cats = ["C", "U", "E"]
+    ax.boxplot(
+        [df[f"{cat} % med"][~(df[f"{cat} % med"].isna())] for cat in cats],
+        labels=nice_cats,
+        vert=False,
+        flierprops={
+            "markersize": 1,
+            "marker": "o",
+            "markerfacecolor": "black",
+            "markeredgecolor": None,
+        },
+        medianprops={
+            "color": "black",
+        },
+    )
+
+    ax.set_xlim(-0.01, 1.01)
+    ax.set_xticks(
+        BINS,
+        labels=[
+            str(round(b * 100)) + "%" if i % 2 == 0 else "" for i, b in enumerate(BINS)
+        ],
+    )
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    # ax[i].text(
+    #     0.5,
+    #     0.5,
+    #     nice_cat,
+    #     ha="center",
+    #     va="bottom",
+    #     transform=ax[i].transAxes,
+    # )
+
+    # ax[2].set_xlabel(r"$\bf{Time\ taken}$", fontsize=10)
+    # ax[1].set_ylabel(r"$\bf Relative\ frequency$", fontsize=10)
+
+    fig.suptitle(f"$\\bf {title}$")
+    fig.savefig(f"{OUTPUT_DIR}/NEW-{title}-timing_breakdown.pdf")
+
+
 # plot(data_elm[data_elm["status"] == "Success"], "Elm", "Successful")
 # plot(data_elm[data_elm["status"] == "SynthFail"], "Elm", "Unsuccessful")
 #
 # plot(data_python[data_python["status"] == "Success"], "Python", "Successful")
 # plot(data_python[data_python["status"] == "SynthFail"], "Python", "Unsuccessful")
 
-plot(data_elm, "Elm")
-plot(data_python, "Python")
+plot_hist(data_elm, "Elm")
+plot_hist(data_python, "Python")

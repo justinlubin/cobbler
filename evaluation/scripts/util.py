@@ -3,16 +3,20 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def use_quick_eval():
     return (
-        "COBBLER_QUICK_EVAL" in os.environ and
-        os.environ["COBBLER_QUICK_EVAL"] == "1"
+        "COBBLER_QUICK_EVAL" in os.environ and os.environ["COBBLER_QUICK_EVAL"] == "1"
     )
 
-DATA_SIZE_POWERS = [0, 1, 2, 3, 4, 5, 6] if use_quick_eval() else [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+DATA_SIZE_POWERS = (
+    [0, 1, 2, 3, 4, 5, 6] if use_quick_eval() else [0, 1, 2, 3, 4, 5, 6, 7, 8]
+)
 
 # Handle Python bug: these count as failures
 PYTHON_SUCCESS_ROWS_TO_DROP = set([24, 29, 43, 44, 53, 87])
+
 
 def bar_plot(
     ax,
@@ -114,3 +118,8 @@ def bar_plot(
 
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
+
+
+def is_int(x, eps=1e-3):
+    print(x)
+    return abs(x - int(x)) < eps

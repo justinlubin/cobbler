@@ -196,7 +196,7 @@ def synthtime_vs_astsize_1(data, name):
     fig.savefig(f"{OUTPUT_DIR}/{name}-synthtime_vs_astsize.pdf")
 
 
-def synthtime_vs_astsize(data, name, title):
+def synthtime_vs_astsize_boxplot(data, name, title):
     fig, ax = plt.subplots(1, 1, figsize=(6, 2.5))
 
     sizes = []
@@ -249,8 +249,65 @@ def synthtime_vs_astsize(data, name, title):
     fig.savefig(f"{OUTPUT_DIR}/{name}-synthtime_vs_astsize.pdf")
 
 
-synthtime_vs_astsize(data_elm, "elm", "Elm")
-synthtime_vs_astsize(data_python, "python", "Python")
+BINS = np.arange(-2.0, 0.05, 0.25)
+
+
+def synthtime_vs_astsize_hist(data, name, title):
+    fig, ax = plt.subplots(1, 1, figsize=(6, 2.5))
+
+    grouped_data = []
+    for size, subdata in data.groupby("synthed ast size"):
+        grouped_data.append(
+            (
+                size,
+                np.log10(subdata["synth time med"]).values,
+            )
+        )
+
+    fig, ax = plt.subplots(
+        len(grouped_data),
+        1,
+        figsize=(3, 2.5),
+        layout="constrained",
+    )
+    fig.get_layout_engine().set(hspace=0.05)
+
+    yticks = [0, 0.25, 0.5, 0.75, 1]
+    yticklabels = ["0%", "", "50%", "", "100%"]
+
+    xticks = BINS
+    xticklabels = [str(b) if util.is_int(b * 2) else "" for b in BINS]
+
+    for i, (size, vals) in enumerate(grouped_data):
+        counts, _, _ = ax[i].hist(
+            vals,
+            bins=BINS,
+            color="gray",
+            edgecolor="black",
+            weights=np.ones_like(vals) / len(vals),
+        )
+
+        median = np.median(vals)
+        ax[i].axvline(x=median, c="#DD0000", lw=1.5)
+
+        ax[i].set_xlim(min(xticks) - 0.1, max(xticks) + 0.1)
+        ax[i].set_xticks(xticks, labels=xticklabels)
+
+        ax[i].set_ylim(0, 1)
+        ax[i].set_yticks(yticks, labels=yticklabels)
+
+        ax[i].spines["top"].set_visible(False)
+        ax[i].spines["right"].set_visible(False)
+
+    ax[-1].set_xlabel(r"log$_{10}$($\bf{Synthesis\ time}$ in seconds)", fontsize=12)
+    ax[1].set_ylabel(r"$\bf Relative\ frequency$", fontsize=12)
+
+    fig.suptitle(f"$\\bf {title}$")
+    fig.savefig(f"{OUTPUT_DIR}/NEW-{title}-timing_breakdown.pdf")
+
+
+synthtime_vs_astsize_boxplot(data_elm, "elm", "Elm")
+synthtime_vs_astsize_boxplot(data_python, "python", "Python")
 
 # %% AST size histograms
 
