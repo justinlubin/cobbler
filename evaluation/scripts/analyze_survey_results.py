@@ -237,7 +237,7 @@ def simple_bars(summary, adjective, filename=None):
 
 
 def stacked_bars(summary, adjective, filename=None):
-    fig, ax = plt.subplots(1, 1, figsize=(3, 3))
+    fig, ax = plt.subplots(1, 1, figsize=(3, 3.1))
 
     summary_i = summary[summary["Code Style"] == "Direct (input)"]
     summary_o = summary[summary["Code Style"] == "Combinator (output)"]
@@ -382,7 +382,7 @@ qsum["Shrinkage"] = qsum["IChars"] / qsum["OChars"]
 
 
 def shrinkage_plot(prefix, adjective):
-    fig, ax = plt.subplots(1, 1, figsize=(5, 2.5))
+    fig, ax = plt.subplots(1, 1, figsize=(5.5, 2.5))
     for ty in ["Maybe", "Result", "List"]:
         subdata = qsum[qsum.index.str.endswith(f"-{ty[0]}")]
         ax.scatter(
@@ -423,11 +423,9 @@ shrinkage_plot("Prefer", "preferred")
 # %% Print survey info
 
 with open(f"{OUTPUT_DIR}/survey_stats.txt", "w") as f:
+    f.write("Number of participants: " + str(len(readsums)) + "\n")
     f.write(
-        "Number of participants: " + str(len(readsums)) + "\n"
-    )
-    f.write(
-        "Number of questions answered: " + str(
-            readsums["I Sum"].sum() + readsums["O Sum"].sum()
-        ) + "\n"
+        "Number of questions answered: "
+        + str(readsums["I Sum"].sum() + readsums["O Sum"].sum())
+        + "\n"
     )

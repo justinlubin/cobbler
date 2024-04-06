@@ -89,7 +89,7 @@ def plot(data, data_ablation, title, *, sizes):
             color="gray",
             edgecolor="black",
         )
-        ax.bar_label(b)
+        ax.bar_label(b, padding=2)
 
     ax.set_xticks([0, 1], labels=["Full", "Ablated"])
 

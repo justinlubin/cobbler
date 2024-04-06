@@ -328,7 +328,7 @@ def astsize_dist(data, name, title):
         color="gray",
         edgecolor="black",
     )
-    ax.bar_label(b)
+    ax.bar_label(b, padding=1)
 
     ax.set_xticks(labels)
     ax.set_xlabel(r"$\bf{\#\ Components}$", fontsize=12)
