@@ -1,5 +1,8 @@
 # %% Import and configuration
 
+import matplotlib
+matplotlib.rcParams["pdf.fonttype"] = 42
+
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
