@@ -111,10 +111,9 @@ y
 
 ## Additional information
 
-For information about how this project is structured, please see
+- For information about how this project is structured, please see
 `ARCHITECTURE.md`.
-
-For information about the artifact evaluation process for our PLDI 2024 paper,
+- For information about the artifact evaluation process for our PLDI 2024 paper,
 please see `ARTIFACT_EVALUATION.md`.
 
 ## Resource acknowledgments
