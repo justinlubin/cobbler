@@ -19,6 +19,96 @@ the root of this repository.
 
 For help, run `./cobbler --help`.
 
+## Examples
+
+### Elm
+
+#### withDefault/map
+
+**Input:**
+
+```
+main : (Int -> Int) -> Maybe Int -> Int
+main f mx =
+ case mx of
+   Nothing -> 0
+   Just x -> f (f x)
+```
+
+**Output:**
+
+```
+main : (Int -> Int) -> Maybe Int -> Int
+main f mx =
+    mx
+        |> Maybe.map (\x -> f (f x))
+        |> Maybe.withDefault 0
+```
+
+#### concat/map/filter
+
+**Input:**
+
+```
+main : (String -> Bool) -> (String -> List Int) -> List String -> List Int
+main p f list =
+  case list of
+    [] -> []
+    head :: tail -> if p head then f head ++ main p f tail else main p f tail
+```
+
+**Output:**
+
+```
+main : (String -> Bool) -> (String -> List Int) -> List String -> List Int
+main p f list =
+    list
+        |> List.filter p
+        |> List.map f
+        |> List.concat
+```
+
+### Python
+
+#### Dot product
+
+**Input:**
+
+```
+s = 0
+for i in range(len(x)):
+    s += x[i] * y[i]
+s
+```
+
+**Output:**
+
+```
+s = np.sum(np.multiply(x, y[:len(x)]))
+s
+```
+
+#### Rolling sum
+
+**Input:**
+
+```
+y = np.zeros(len(x) - WINDOW_SIZE + 1)
+for i in range(len(y)):
+    s = 0
+    for j in range(WINDOW_SIZE):
+        s += x[i + j]
+    y[i] = s
+y
+```
+
+**Output:**
+
+```
+y = np.convolve(x, np.full(WINDOW_SIZE, 1), mode="valid")
+y
+```
+
 ## Additional information
 
 For information about how this project is structured, please see
