@@ -25,9 +25,9 @@ For help, run `./cobbler --help`.
 
 #### withDefault/map
 
-**Input:**
+Input:
 
-```
+```elm
 main : (Int -> Int) -> Maybe Int -> Int
 main f mx =
  case mx of
@@ -35,9 +35,9 @@ main f mx =
    Just x -> f (f x)
 ```
 
-**Output:**
+Output:
 
-```
+```elm
 main : (Int -> Int) -> Maybe Int -> Int
 main f mx =
     mx
@@ -47,9 +47,9 @@ main f mx =
 
 #### concat/map/filter
 
-**Input:**
+Input:
 
-```
+```elm
 main : (String -> Bool) -> (String -> List Int) -> List String -> List Int
 main p f list =
   case list of
@@ -57,9 +57,9 @@ main p f list =
     head :: tail -> if p head then f head ++ main p f tail else main p f tail
 ```
 
-**Output:**
+Output:
 
-```
+```elm
 main : (String -> Bool) -> (String -> List Int) -> List String -> List Int
 main p f list =
     list
@@ -72,27 +72,27 @@ main p f list =
 
 #### Dot product
 
-**Input:**
+Input:
 
-```
+```python
 s = 0
 for i in range(len(x)):
     s += x[i] * y[i]
 s
 ```
 
-**Output:**
+Output:
 
-```
+```python
 s = np.sum(np.multiply(x, y[:len(x)]))
 s
 ```
 
 #### Rolling sum
 
-**Input:**
+Input:
 
-```
+```python
 y = np.zeros(len(x) - WINDOW_SIZE + 1)
 for i in range(len(y)):
     s = 0
@@ -102,9 +102,9 @@ for i in range(len(y)):
 y
 ```
 
-**Output:**
+Output:
 
-```
+```python
 y = np.convolve(x, np.full(WINDOW_SIZE, 1), mode="valid")
 y
 ```
