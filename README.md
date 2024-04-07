@@ -1,4 +1,4 @@
-# Cobbler
+# `cobbler`: The Component-Based Refactoring Synthesizer
 
 [![Tests](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml/badge.svg)](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml)
 
