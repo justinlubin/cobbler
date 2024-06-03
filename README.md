@@ -22,6 +22,9 @@ script in the root of this repository.
 
 **For help:** Run `./cobbler --help`.
 
+**For information about how `cobbler` works:** Please see our
+[PLDI 2024 paper preprint](https://jlubin.net/assets/pldi24-preprint.pdf)!
+
 ## Examples
 
 ### Elm
