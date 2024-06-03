@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="banner.png" alt="cobbler">
+</div>
+
 # `cobbler`: The Component-Based Refactoring Synthesizer
 
 [![Tests](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml/badge.svg)](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml)
@@ -116,8 +120,10 @@ y
 - For information about the artifact evaluation process for our PLDI 2024 paper,
 please see `ARTIFACT_EVALUATION.md`.
 
-## Resource acknowledgments
+## Acknowledgments
 
+- Thanks to [Anna
+    Christenson](https://www.linkedin.com/in/anna-christenson-a51a08213/) for the logo!
 - Thanks to
   [Patrick Gillespie](http://patorjk.com/)
   for the
