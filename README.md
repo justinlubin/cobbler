@@ -8,13 +8,13 @@
 
 `cobbler` refactors programs to use library functions.
 
-It currently supports:
+It currently supports refactoring:
 
-- Refactoring [Elm](https://elm-lang.org/) programs to use functions like those
-  found in the Elm Standard Library (e.g. functional combinators like `map` and
-  `filter`); specifically, the ones defined in [this file](backend/bin/Stdlib.elm)
-- Refactoring Python programs to use the [NumPy](https://numpy.org/)
-  high-performance computing library
+- **[Elm](https://elm-lang.org/) programs** to use functions like those found in
+  the Elm Standard Library (e.g. `map` and `filter`); specifically, the ones
+  defined in [this file](backend/bin/Stdlib.elm)
+- **Python programs** to use the [NumPy](https://numpy.org/) high-performance 
+  computing library
 
 **How to run:** First, install `cobbler`'s dependencies by following the
 instructions in [`DEPENDENCIES.md`](DEPENDENCIES.md); then, you can run
