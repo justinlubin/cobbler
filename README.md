@@ -2,11 +2,9 @@
   <img src="banner.png" alt="cobbler">
 </div>
 
-# `cobbler`: The Component-Based Refactoring Synthesizer
-
 [![Tests](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml/badge.svg)](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml)
 
-Cobbler refactors programs to use library functions. It currently supports:
+`cobbler` refactors programs to use library functions. It currently supports:
 
 - Refactoring [Elm](https://elm-lang.org/) programs to use functions like those
   found in the Elm Standard Library (e.g. functional combinators like `map` and
@@ -14,13 +12,11 @@ Cobbler refactors programs to use library functions. It currently supports:
 - Refactoring Python programs to use the [NumPy](https://numpy.org/)
   high-performance computing library.
 
-For information about how to install the dependencies for this project, please
-see `DEPENDENCIES.md`.
+**How to run:** First, install `cobbler`'s dependencies by following the
+instructions in `DEPENDENCIES.md`; then, you can run `cobbler` via the `cobbler`
+script in the root of this repository.
 
-Once depencies are installed, you can run Cobbler via the `cobbler` script in
-the root of this repository.
-
-For help, run `./cobbler --help`.
+**For help:** Run `./cobbler --help`.
 
 ## Examples
 
