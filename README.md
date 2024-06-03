@@ -17,8 +17,8 @@ It currently supports:
   high-performance computing library
 
 **How to run:** First, install `cobbler`'s dependencies by following the
-instructions in `DEPENDENCIES.md`; then, you can run `cobbler` via the `cobbler`
-script in the root of this repository.
+instructions in [`DEPENDENCIES.md`](DEPENDENCIES.md); then, you can run
+`cobbler` via the `cobbler` script in the root of this repository.
 
 **For help:** Run `./cobbler --help`.
 
@@ -118,9 +118,9 @@ y
 ## Additional information
 
 - For information about how this project is structured, please see
-`ARCHITECTURE.md`.
+[`ARCHITECTURE.md`](ARCHITECTURE.md).
 - For information about the artifact evaluation process for our PLDI 2024 paper,
-please see `ARTIFACT_EVALUATION.md`.
+please see [`ARTIFACT_EVALUATION.md`](ARTIFACT_EVALUATION.md).
 
 ## Art acknowledgments
 
