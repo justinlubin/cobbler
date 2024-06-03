@@ -6,7 +6,6 @@
 
 [![Tests](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml/badge.svg)](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml)
 
-This project contains the source code for the Cobbler program synthesizer.
 Cobbler refactors programs to use library functions. It currently supports:
 
 - Refactoring [Elm](https://elm-lang.org/) programs to use functions like those
