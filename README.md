@@ -122,7 +122,7 @@ y
 - For information about the artifact evaluation process for our PLDI 2024 paper,
 please see `ARTIFACT_EVALUATION.md`.
 
-## Acknowledgments
+## Art acknowledgments
 
 - Thanks to [Anna
     Christenson](https://www.linkedin.com/in/anna-christenson-a51a08213/) for the logo!
