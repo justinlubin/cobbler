@@ -2,15 +2,19 @@
   <img src="banner.png" alt="cobbler">
 </div>
 
+# `cobbler`
+
 [![Tests](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml/badge.svg)](https://github.com/justinlubin/component-based-refactoring/actions/workflows/workflow.yml)
 
-`cobbler` refactors programs to use library functions. It currently supports:
+`cobbler` refactors programs to use library functions.
+
+It currently supports:
 
 - Refactoring [Elm](https://elm-lang.org/) programs to use functions like those
   found in the Elm Standard Library (e.g. functional combinators like `map` and
-  `filter`), and
+  `filter`); specifically, the ones defined in [this file](backend/bin/Stdlib.elm)
 - Refactoring Python programs to use the [NumPy](https://numpy.org/)
-  high-performance computing library.
+  high-performance computing library
 
 **How to run:** First, install `cobbler`'s dependencies by following the
 instructions in `DEPENDENCIES.md`; then, you can run `cobbler` via the `cobbler`
