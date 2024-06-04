@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="banner.png" alt="cobbler">
+  <img src="https://jlubin.net/assets/cobbler-banner.png" alt="cobbler">
 </div>
 
 # `cobbler`
