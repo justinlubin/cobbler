@@ -23,7 +23,7 @@ instructions in [`DEPENDENCIES.md`](DEPENDENCIES.md); then, you can run
 **For help:** Run `./cobbler --help`.
 
 **For information about how `cobbler` works:** Please see our
-[PLDI 2024 paper preprint](https://jlubin.net/assets/pldi24-preprint.pdf)!
+[PLDI 2024 paper](https://doi.org/10.1145/3656453)!
 
 ## Examples
 
