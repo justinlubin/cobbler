@@ -42,7 +42,7 @@ from the root of the repository unless otherwise stated):
 - `cat examples/FilterMapConcat.elm | ./cobbler refactor --language=elm`
 - `cat examples/MapFilter.elm | ./cobbler refactor --language=elm`
 - `cat examples/dot_product.py | ./cobbler refactor --language=python`
-- `cat examples/rolling_sum.elm | ./cobbler refactor --language=python`
+- `cat examples/rolling_sum.py | ./cobbler refactor --language=python`
 
 Note that, in Elm, `x |> f` is equivalent to `f x` (function application).
 
